@@ -176,7 +176,7 @@ namespace Silk.NET.BuildTools.Common
         public static string CheckMemberName(this string name, string fPrefix)
         {
             // ReSharper disable StringLiteralTypo
-            if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZ_".ToCharArray().Contains(name[0]))
+            if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_".ToCharArray().Contains(name[0]))
             // ReSharper restore StringLiteralTypo
             {
                 return fPrefix.ToUpper() + name;

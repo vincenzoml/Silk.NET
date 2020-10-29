@@ -115,8 +115,8 @@ namespace Silk.NET.BuildTools.Common
                 builder.Insert(0, "C");
             }
 
-            var newName = builder.ToString().Pascalize();
-            return newName.CheckMemberName(prefix).GetAlphanumericOnly();
+            var newName = builder.ToString();
+            return newName.CheckMemberName(prefix).GetAlphanumericOnly('_').Trim('_').Pascalize();
         }
 
         /// <summary>
@@ -135,13 +135,14 @@ namespace Silk.NET.BuildTools.Common
                 builder.Insert(0, "C");
             }
 
-            var newName = builder.ToString().Pascalize();
-            return newName.CheckMemberName(prefix).GetAlphanumericOnly();
+            var newName = builder.ToString();
+            return newName.CheckMemberName(prefix).GetAlphanumericOnly('_').Trim('_').Pascalize();
         }
 
-        public static string GetAlphanumericOnly(this string name)
+        public static string GetAlphanumericOnly(this string name, params char[] tolerate)
         {
-            const string alnum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567889";
+            var alnum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567889";
+            alnum += string.Join(string.Empty, tolerate);
             // ReSharper disable once SuggestVarOrType_Elsewhere
             Span<char> newString = stackalloc char[name.Length];
             var i = 0;
