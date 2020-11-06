@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <AssemblyName>Silk.NET.Maths.Experimental</AssemblyName>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>Silk.NET.Maths</RootNamespace>
+    </PropertyGroup>
+    <PropertyGroup>
         <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.0;net5.0</TargetFrameworks>
         <DefineConstants Condition="'$(TargetFramework)' == 'net5.0'">
             HALF;$(DefineConstants)

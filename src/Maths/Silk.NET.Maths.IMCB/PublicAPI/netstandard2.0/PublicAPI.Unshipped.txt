@@ -1,0 +1,64 @@
+Silk.NET.Maths.Scalar
+Silk.NET.Maths.Scalar<T>
+static Silk.NET.Maths.Scalar.Abs<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Acos<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Acosh<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Add<T>(T leftOg, T rightOg) -> T
+static Silk.NET.Maths.Scalar.Asin<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Asinh<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Atan2<T>(T y, T x) -> T
+static Silk.NET.Maths.Scalar.Atan<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Atanh<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Cbrt<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Ceiling<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Cos<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Cosh<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Divide<T>(T leftOg, T rightOg) -> T
+static Silk.NET.Maths.Scalar.Equal<T>(T left, T right) -> bool
+static Silk.NET.Maths.Scalar.Exp<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Floor<T>(T x) -> T
+static Silk.NET.Maths.Scalar.GreaterThan<T>(T leftOg, T rightOg) -> bool
+static Silk.NET.Maths.Scalar.GreaterThanOrEqual<T>(T leftOg, T rightOg) -> bool
+static Silk.NET.Maths.Scalar.IEEERemainder<T>(T x, T y) -> T
+static Silk.NET.Maths.Scalar.IsFinite<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsInfinity<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsNaN<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsNegative<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsNegativeInfinity<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsNormal<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsPositiveInfinity<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.IsSubnormal<T>(T f) -> bool
+static Silk.NET.Maths.Scalar.LessThan<T>(T leftOg, T rightOg) -> bool
+static Silk.NET.Maths.Scalar.LessThanOrEqual<T>(T leftOg, T rightOg) -> bool
+static Silk.NET.Maths.Scalar.Log10<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Log<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Log<T>(T x, T y) -> T
+static Silk.NET.Maths.Scalar.Max<T>(T x, T y) -> T
+static Silk.NET.Maths.Scalar.Min<T>(T x, T y) -> T
+static Silk.NET.Maths.Scalar.Multiply<T>(T leftOg, T rightOg) -> T
+static Silk.NET.Maths.Scalar.NotEqual<T>(T left, T right) -> bool
+static Silk.NET.Maths.Scalar.Pow<T>(T x, T y) -> T
+static Silk.NET.Maths.Scalar.Round<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Round<T>(T x, System.MidpointRounding mode) -> T
+static Silk.NET.Maths.Scalar.Round<T>(T x, int digits) -> T
+static Silk.NET.Maths.Scalar.Round<T>(T x, int digits, System.MidpointRounding mode) -> T
+static Silk.NET.Maths.Scalar.Sign<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Sin<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Sinh<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Sqrt<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Subtract<T>(T leftOg, T rightOg) -> T
+static Silk.NET.Maths.Scalar.Tan<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Tanh<T>(T x) -> T
+static Silk.NET.Maths.Scalar.Truncate<T>(T x) -> T
+static readonly Silk.NET.Maths.Scalar<T>.E -> T
+static readonly Silk.NET.Maths.Scalar<T>.Epsilon -> T
+static readonly Silk.NET.Maths.Scalar<T>.MaxValue -> T
+static readonly Silk.NET.Maths.Scalar<T>.MinValue -> T
+static readonly Silk.NET.Maths.Scalar<T>.NaN -> T
+static readonly Silk.NET.Maths.Scalar<T>.NegativeInfinity -> T
+static readonly Silk.NET.Maths.Scalar<T>.One -> T
+static readonly Silk.NET.Maths.Scalar<T>.Pi -> T
+static readonly Silk.NET.Maths.Scalar<T>.PositiveInfinity -> T
+static readonly Silk.NET.Maths.Scalar<T>.Tau -> T
+static readonly Silk.NET.Maths.Scalar<T>.Two -> T
+static readonly Silk.NET.Maths.Scalar<T>.Zero -> T

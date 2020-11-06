@@ -1,0 +1,24 @@
+﻿////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EXPLANATION OF THE UGLINESS IN THESE FILES:
+// - We often use a pattern similar to:
+//   if (typeof(T) == typeof(byte))
+//   {
+//       ...
+//   }
+//   else if (typeof(T) == typeof(sbyte))
+//   {
+//       ...
+//   }
+//   etc...
+//
+//   This, while absolutely horrible, gets us a nice performance boost as the JIT completely strikes off any
+//   inapplicable branches. This is called generic specialization, and when aggressively inlined it's almost
+//   like there's no Number<T> struct at all.
+//   
+//   However, there are some caveats to this:
+// - We use local functions in addition to the generic typeof(T) == typeof(whatever) pattern to work around some
+//   unfortunate inlining issues in platforms older that .NET 5, where the inliner was going over budget despite
+//   aggressively inlined functions supposedly being exempt from budgeting.
+//   See also: https://github.com/dotnet/runtime/issues/38106
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////

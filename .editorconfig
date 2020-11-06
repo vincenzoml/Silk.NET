@@ -44,6 +44,7 @@ csharp_style_expression_bodied_indexers = true:suggestion
 csharp_style_expression_bodied_accessors = true:suggestion
 csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = when_on_single_line:hint
+dotnet_diagnostic.CA1805.severity = none
 
 # ReSharper properties
 resharper_autodetect_indent_settings = true
