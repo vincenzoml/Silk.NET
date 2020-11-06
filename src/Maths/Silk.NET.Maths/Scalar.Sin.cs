@@ -4,8 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Silk.NET.Maths
 {
-#if !NETSTANDARD2_0
-    internal static partial class Scalar
+    static partial class Scalar
     {
         //
         // See https://gist.github.com/tannergooding/103be726d48dc3d0b09e890bad0b892f
@@ -31,28 +30,28 @@ namespace Silk.NET.Maths
         // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
         // THE SOFTWARE.
 
-        const double PiOverTwo = 1.5707963267948966;
-        const double PiOverTwoPartOne = 1.5707963267341256;
-        const double PiOverTwoPartOneTail = 6.077100506506192E-11;
-        const double PiOverTwoPartTwo = 6.077100506303966E-11;
-        const double PiOverTwoPartTwoTail = 2.0222662487959506E-21;
-        const double PiOverFour = 0.7853981633974483;
-        const double TwoOverPi = 0.6366197723675814;
-        const double TwoPowNegSeven = 0.0078125;
-        const double TwoPowNegThirteen = 0.0001220703125;
+        private const double PiOverTwo = 1.5707963267948966;
+        private const double PiOverTwoPartOne = 1.5707963267341256;
+        private const double PiOverTwoPartOneTail = 6.077100506506192E-11;
+        private const double PiOverTwoPartTwo = 6.077100506303966E-11;
+        private const double PiOverTwoPartTwoTail = 2.0222662487959506E-21;
+        private const double PiOverFour = 0.7853981633974483;
+        private const double TwoOverPi = 0.6366197723675814;
+        private const double TwoPowNegSeven = 0.0078125;
+        private const double TwoPowNegThirteen = 0.0001220703125;
 
-        const double C0 = -1.0 / 2.0; // 1 / 2!
-        const double C1 = +1.0 / 24.0; // 1 / 4!
-        const double C2 = -1.0 / 720.0; // 1 / 6!
-        const double C3 = +1.0 / 40320.0; // 1 / 8!
-        const double C4 = -1.0 / 3628800.0; // 1 / 10!
+        private const double C0 = -1.0 / 2.0; // 1 / 2!
+        private const double C1 = +1.0 / 24.0; // 1 / 4!
+        private const double C2 = -1.0 / 720.0; // 1 / 6!
+        private const double C3 = +1.0 / 40320.0; // 1 / 8!
+        private const double C4 = -1.0 / 3628800.0; // 1 / 10!
 
-        const double S1 = -1.0 / 6.0; // 1 / 3!
-        const double S2 = +1.0 / 120.0; // 1 / 5!
-        const double S3 = -1.0 / 5040.0; // 1 / 7!
-        const double S4 = +1.0 / 362880.0; // 1 / 9!
+        private const double S1 = -1.0 / 6.0; // 1 / 3!
+        private const double S2 = +1.0 / 120.0; // 1 / 5!
+        private const double S3 = -1.0 / 5040.0; // 1 / 7!
+        private const double S4 = +1.0 / 362880.0; // 1 / 9!
 
-        private static readonly long[] PiBits = new long[]
+        private static readonly long[] _piBits =
         {
             0,
             5215,
@@ -69,7 +68,7 @@ namespace Silk.NET.Maths
             18152700886
         };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
         private static long GetPiBits(int index)
         {
             switch (index)
@@ -106,15 +105,14 @@ namespace Silk.NET.Maths
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
-        public static float Sin_Ported(float x)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        internal static float Sin_Ported(float x)
         {
-            double result = x;
-
-            if (float.IsFinite(x))
+            if (CoreIsFinite(x))
             {
                 double ax = Math.Abs(x);
 
+                double result;
                 if (ax <= PiOverFour)
                 {
                     if (ax >= TwoPowNegSeven)
@@ -132,9 +130,9 @@ namespace Silk.NET.Maths
                 }
                 else
                 {
-                    int wasNegative = 0;
+                    var wasNegative = 0;
 
-                    if (float.IsNegative(x))
+                    if (CoreIsNegative(x))
                     {
                         x = -x;
                         wasNegative = 1;
@@ -150,16 +148,16 @@ namespace Silk.NET.Maths
                         // isn't quite accurate enough and introduces some error, but we account
                         // for that using a tail value that helps account for this.
 
-                        long axExp = BitConverter.DoubleToInt64Bits(ax) >> 52;
+                        var axExp = BitConverter.DoubleToInt64Bits(ax) >> 52;
 
                         region = (int) (x * TwoOverPi + 0.5);
                         double piOverTwoCount = region;
 
-                        double rHead = x - (piOverTwoCount * PiOverTwoPartOne);
-                        double rTail = (piOverTwoCount * PiOverTwoPartOneTail);
+                        var rHead = x - (piOverTwoCount * PiOverTwoPartOne);
+                        var rTail = (piOverTwoCount * PiOverTwoPartOneTail);
 
-                        double r = rHead - rTail;
-                        long rExp = (BitConverter.DoubleToInt64Bits(r) << 1) >> 53;
+                        var r = rHead - rTail;
+                        var rExp = (BitConverter.DoubleToInt64Bits(r) << 1) >> 53;
 
                         if ((axExp - rExp) > 15)
                         {
@@ -178,26 +176,15 @@ namespace Silk.NET.Maths
 
                         if (rExp >= 0x3F2) // r >= 2^-13
                         {
-                            if ((region & 1) == 0) // region 0 or 2
-                            {
-                                result = SinTaylorSeriesFourIterations(r);
-                            }
-                            else // region 1 or 3
-                            {
-                                result = CosTaylorSeriesFourIterations(r);
-                            }
+                            result = (region & 1) == 0
+                                ? SinTaylorSeriesFourIterations(r) // region 0 or 2
+                                : CosTaylorSeriesFourIterations(r); // region 1 or 3
                         }
                         else if (rExp > 0x3DE) // r > 1.1641532182693481E-10
                         {
-                            if ((region & 1) == 0) // region 0 or 2
-                            {
-                                result = SinTaylorSeriesOneIteration(r);
-                            }
-                            else // region 1 or 3
-                            {
-                                result = CosTaylorSeriesOneIteration(r);
-
-                            }
+                            result = (region & 1) == 0
+                                ? SinTaylorSeriesOneIteration(r) // region 0 or 2
+                                : CosTaylorSeriesOneIteration(r); // region 1 or 3
                         }
                         else
                         {
@@ -213,26 +200,21 @@ namespace Silk.NET.Maths
                     }
                     else
                     {
-                        double r = ReduceForLargeInput(x, out region);
+                        var r = ReduceForLargeInput(x, out region);
 
-                        if ((region & 1) == 0) // region 0 or 2
-                        {
-                            result = SinTaylorSeriesFourIterations(r);
-                        }
-                        else // region 1 or 3
-                        {
-                            result = CosTaylorSeriesFourIterations(r);
-                        }
+                        result = (region & 1) == 0
+                            ? SinTaylorSeriesFourIterations(r) // region 0 or 2
+                            : CosTaylorSeriesFourIterations(r);// region 1 or 3
                     }
 
                     region >>= 1;
 
-                    int tmp1 = region & wasNegative;
+                    var tmp1 = region & wasNegative;
 
                     region = ~region;
                     wasNegative = ~wasNegative;
 
-                    int tmp2 = region & wasNegative;
+                    var tmp2 = region & wasNegative;
 
                     if (((tmp1 | tmp2) & 1) == 0)
                     {
@@ -244,93 +226,92 @@ namespace Silk.NET.Maths
                     }
                 }
 
-                return (float)result;
+                return (float) result;
             }
 
             // modified to raise NaN on infinite 
             return float.NaN;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
             static double CosTaylorSeriesOneIteration(double x1)
             {
                 // 1 - (x^2 / 2!)
-                double x2 = x1 * x1;
+                var x2 = x1 * x1;
                 return 1.0 + (x2 * C1);
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
             static double CosTaylorSeriesFourIterations(double x1)
             {
                 // 1 - (x^2 / 2!) + (x^4 / 4!) - (x^6 / 6!) + (x^8 / 8!) - (x^10 / 10!)
 
-                double x2 = x1 * x1;
-                double x4 = x2 * x2;
+                var x2 = x1 * x1;
+                var x4 = x2 * x2;
 
                 return 1.0 + (x2 * C0) + (x4 * ((C1 + (x2 * C2)) + (x4 * (C3 + (x2 * C4)))));
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
             static unsafe double ReduceForLargeInput(double x, out int region)
             {
-                Debug.Assert(!double.IsNegative(x));
+                Debug.Assert(!CoreIsNegative(x));
 
                 // This method simulates multi-precision floating-point
                 // arithmetic and is accurate for all 1 <= x < infinity
 
-                const int BitsPerIteration = 36;
-                long ux = BitConverter.DoubleToInt64Bits(x);
+                const int bitsPerIteration = 36;
+                var ux = BitConverter.DoubleToInt64Bits(x);
 
-                int xExp = (int) (((ux & 0x7FF0000000000000) >> 52) - 1023);
+                var xExp = (int) (((ux & 0x7FF0000000000000) >> 52) - 1023);
                 ux = ((ux & 0x000FFFFFFFFFFFFF) | 0x0010000000000000) >> 29;
 
                 // Now ux is the mantissa bit pattern of x as a long integer
                 long mask = 1;
-                mask = (mask << BitsPerIteration) - 1;
+                mask = (mask << bitsPerIteration) - 1;
 
                 // Set first and last to the positions of the first and last chunks of (2 / PI) that we need
-                int first = xExp / BitsPerIteration;
-                int resultExp = xExp - (first * BitsPerIteration);
+                var first = xExp / bitsPerIteration;
+                var resultExp = xExp - (first * bitsPerIteration);
 
                 // 120 is the theoretical maximum number of bits (actually
                 // 115 for IEEE single precision) that we need to extract
                 // from the middle of (2 / PI) to compute the reduced argument
                 // accurately enough for our purposes
 
-                int last = first + (120 / BitsPerIteration);
+                var last = first + (120 / bitsPerIteration);
 
                 // Unroll the loop. This is only correct because we know that bitsper is fixed as 36.
 
-                long* result = stackalloc long[10];
-                long u, carry;
+                var result = stackalloc long[10];
 
                 result[4] = 0;
-                u = PiBits[last] * ux;
+                var u = _piBits[last] * ux;
 
                 result[3] = u & mask;
-                carry = u >> BitsPerIteration;
-                u = PiBits[last - 1] * ux + carry;
+                var carry = u >> bitsPerIteration;
+                u = _piBits[last - 1] * ux + carry;
 
                 result[2] = u & mask;
-                carry = u >> BitsPerIteration;
-                u = PiBits[last - 2] * ux + carry;
+                carry = u >> bitsPerIteration;
+                u = _piBits[last - 2] * ux + carry;
 
                 result[1] = u & mask;
-                carry = u >> BitsPerIteration;
-                u = PiBits[first] * ux + carry;
+                carry = u >> bitsPerIteration;
+                u = _piBits[first] * ux + carry;
 
                 result[0] = u & mask;
 
                 // Reconstruct the result
-                int ltb = (int) ((((result[0] << BitsPerIteration) | result[1]) >> (BitsPerIteration - 1 - resultExp)) &
+                var ltb = (int) ((((result[0] << bitsPerIteration) | result[1]) >> (bitsPerIteration - 1 - resultExp)) &
                                  7);
 
                 long mantissa;
                 long nextBits;
 
                 // determ says whether the fractional part is >= 0.5
-                bool determ = (ltb & 1) != 0;
+                var determ = (ltb & 1) != 0;
 
-                int i = 1;
+                var i = 1;
 
                 if (determ)
                 {
@@ -338,12 +319,12 @@ namespace Silk.NET.Maths
                     region = ((ltb >> 1) + 1) & 3;
 
                     mantissa = 1;
-                    mantissa = ~(result[1]) & ((mantissa << (BitsPerIteration - resultExp)) - 1);
+                    mantissa = ~(result[1]) & ((mantissa << (bitsPerIteration - resultExp)) - 1);
 
                     while (mantissa < 0x0000000000010000)
                     {
                         i++;
-                        mantissa = (mantissa << BitsPerIteration) | (~(result[i]) & mask);
+                        mantissa = (mantissa << bitsPerIteration) | (~(result[i]) & mask);
                     }
 
                     nextBits = (~(result[i + 1]) & mask);
@@ -353,12 +334,12 @@ namespace Silk.NET.Maths
                     region = (ltb >> 1);
 
                     mantissa = 1;
-                    mantissa = result[1] & ((mantissa << (BitsPerIteration - resultExp)) - 1);
+                    mantissa = result[1] & ((mantissa << (bitsPerIteration - resultExp)) - 1);
 
                     while (mantissa < 0x0000000000010000)
                     {
                         i++;
-                        mantissa = (mantissa << BitsPerIteration) | result[i];
+                        mantissa = (mantissa << bitsPerIteration) | result[i];
                     }
 
                     nextBits = result[i + 1];
@@ -367,7 +348,7 @@ namespace Silk.NET.Maths
                 // Normalize the mantissa.
                 // The shift value 6 here, determined by trial and error, seems to give optimal speed.
 
-                int bc = 0;
+                var bc = 0;
 
                 while (mantissa < 0x0000400000000000)
                 {
@@ -381,9 +362,9 @@ namespace Silk.NET.Maths
                     mantissa <<= 1;
                 }
 
-                mantissa |= nextBits >> (BitsPerIteration - bc);
+                mantissa |= nextBits >> (bitsPerIteration - bc);
 
-                int rExp = 52 + resultExp - bc - i * BitsPerIteration;
+                var rExp = 52 + resultExp - bc - i * bitsPerIteration;
 
                 // Put the result exponent rexp onto the mantissa pattern
                 u = (rExp + 1023L) << 52;
@@ -404,29 +385,70 @@ namespace Silk.NET.Maths
                 return x * PiOverTwo;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
             static double SinTaylorSeriesOneIteration(double x1)
             {
                 // x - (x^3 / 3!)
 
-                double x2 = x1 * x1;
-                double x3 = x2 * x1;
+                var x2 = x1 * x1;
+                var x3 = x2 * x1;
 
                 return x1 + (x3 * S1);
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions)512)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
             static double SinTaylorSeriesFourIterations(double x1)
             {
                 // x - (x^3 / 3!) + (x^5 / 5!) - (x^7 / 7!) + (x^9 / 9!)
 
-                double x2 = x1 * x1;
-                double x3 = x2 * x1;
-                double x4 = x2 * x2;
+                var x2 = x1 * x1;
+                var x3 = x2 * x1;
+                var x4 = x2 * x2;
 
                 return x1 + ((S1 + (x2 * S2) + (x4 * (S3 + (x2 * S4)))) * x3);
             }
         }
-    }
+
+#if NETSTANDARD2_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsNegative(double d) => BitConverter.DoubleToInt64Bits(d) < 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static unsafe bool CoreIsNegative(float f) => *(int*) &f < 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static unsafe bool CoreIsFinite(float f) => (*(int*) &f & 0x7FFFFFFF) < 0x7F800000;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static unsafe bool CoreIsSubnormal(float f)
+        {
+            var bits = *(int*) &f;
+            bits &= 0x7FFFFFFF;
+            return (bits < 0x7F800000) && (bits != 0) && ((bits & 0x7F800000) == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsSubnormal(double f)
+        {
+            var bits = BitConverter.DoubleToInt64Bits(f);
+            bits &= 0x7FFFFFFFFFFFFFFF;
+            return (bits < 0x7FF0000000000000) && (bits != 0) && ((bits & 0x7FF0000000000000) == 0);
+        }
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsNegative(double d) => double.IsNegative(d);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsNegative(float f) => float.IsNegative(f);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsFinite(float f) => float.IsFinite(f);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsSubnormal(float f) => float.IsSubnormal(f);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512)]
+        private static bool CoreIsSubnormal(double f) => double.IsSubnormal(f);
 #endif
+    }
 }
