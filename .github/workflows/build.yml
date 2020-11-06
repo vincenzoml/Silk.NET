@@ -10,7 +10,7 @@ on:
 
 jobs:
   Build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
@@ -18,9 +18,9 @@ jobs:
       with:
         dotnet-version: 5.0.100-rc.2.20479.15
     - name: Test
-      run: dotnet test --verbosity normal
+      run: "dotnet test -p:SilkNoExtraTFMs=true --verbosity normal"
     - name: Pack
-      run: dotnet pack --configuration Release --version-suffix build$GITHUB_RUN_NUMBER.0 -p:ContinuousIntegrationBuild=true
+      run: "msbuild -target:Pack -p:Configuration=Release -p:VersionSuffix=build$GITHUB_RUN_NUMBER.0 -p:ContinuousIntegrationBuild=true"
     - name: Setup NuGet
       if: ${{ github.repository == 'Ultz/Silk.NET' && github.event_name != 'pull_request' }}
       uses: nuget/setup-nuget@v1

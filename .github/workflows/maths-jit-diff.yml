@@ -20,7 +20,7 @@ jobs:
   check-comment:
     outputs:
       triggered: ${{ steps.check.outputs.triggered || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: khan/pull-request-comment-trigger@master
         if: github.event_name != 'push'
@@ -42,7 +42,7 @@ jobs:
         with: 
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Build Project
-        run: dotnet build ./src/Maths/JITTest/JITTest.csproj -f net5.0 -c Release -o ./sample/
+        run: dotnet build ./src/Maths/JITTest/JITTest.csproj -f net5.0 -c Release -o ./sample/ -p:SilkNoExtraTFMs=true
       - uses: actions/upload-artifact@v2
         with:
           name: sample

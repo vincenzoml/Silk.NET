@@ -10,7 +10,7 @@ on:
 
 jobs:
   Test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
@@ -18,7 +18,7 @@ jobs:
       with:
         dotnet-version: 5.0.100-preview.7.20366.6
     - name: Run Tests and Export NUnit
-      run: dotnet test ./src/Maths/Silk.NET.Maths.Tests/Silk.NET.Maths.Tests.fsproj -c Release -f net5.0 -l GitHubActions
+      run: dotnet test ./src/Maths/Silk.NET.Maths.Tests/Silk.NET.Maths.Tests.fsproj -c Release -f net5.0 -l GitHubActions -p:SilkNoExtraTFMs=true
   Coverage:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +28,7 @@ jobs:
       with: 
         dotnet-version: 5.0.100-preview.7.20366.6
     - name: Collect coverage
-      run: dotnet test ./src/Maths/Silk.NET.Maths.Tests/Silk.NET.Maths.Tests.fsproj --configuration Release /p:AltCover=true /p:AltCoverCobertura="cobertura.xml"
+      run: dotnet test ./src/Maths/Silk.NET.Maths.Tests/Silk.NET.Maths.Tests.fsproj --configuration Release /p:AltCover=true /p:AltCoverCobertura="cobertura.xml" /p:SilkNoExtraTFMs=true
     - uses: codecov/codecov-action@v1
       with:
         file: ./src/Maths/Silk.NET.Maths.Tests/cobertura.xml
