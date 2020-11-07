@@ -6,7 +6,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using static Silk.NET.Maths.Constants;
+using static Silk.NET.Maths.Helper;
 
 namespace Silk.NET.Maths
 {
@@ -25,6 +25,8 @@ namespace Silk.NET.Maths
         public static readonly T Zero = default;
         public static readonly T One;
         public static readonly T Two;
+        public static readonly T MinusOne;
+        public static readonly T MinusTwo;
         public static readonly T E;
         public static readonly T Pi;
         public static readonly T Tau;
@@ -53,6 +55,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = (T) (object) Half.PositiveInfinity;
                 One = (T) (object) (Half) 1;
                 Two = (T) (object) (Half) 2;
+                MinusOne = (T) (object) (Half) (-1f);
+                MinusTwo = (T) (object) (Half) (-2f);
                 E = (T) (object) (Half) FloatE;
                 Pi = (T) (object) (Half) FloatPi;
                 Tau = (T) (object) (Half) FloatTau;
@@ -67,6 +71,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = (T) (object) float.PositiveInfinity;
                 One = (T) (object) 1f;
                 Two = (T) (object) 2f;
+                MinusOne = (T) (object) -1f;
+                MinusTwo = (T) (object) -2f;
                 E = (T) (object) FloatE;
                 Pi = (T) (object) FloatPi;
                 Tau = (T) (object) FloatTau;
@@ -81,6 +87,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = (T) (object) double.PositiveInfinity;
                 One = (T) (object) 1d;
                 Two = (T) (object) 2d;
+                MinusOne = (T) (object) -1d;
+                MinusTwo = (T) (object) -2d;
                 E = (T) (object) Math.E;
                 Pi = (T) (object) Math.PI;
 #if !NET5_0
@@ -99,6 +107,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) (decimal) 1;
                 Two = (T) (object) (decimal) 2;
+                MinusOne = (T) (object) (decimal) -1;
+                MinusTwo = (T) (object) (decimal) -2;
                 E = (T) (object) (decimal) Math.E;
                 Pi = (T) (object) (decimal) Math.PI;
                 Tau = Scalar.Multiply(Pi, Two);
@@ -113,6 +123,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) (short) 1;
                 Two = (T) (object) (short) 2;
+                MinusOne = (T) (object) (short) -1;
+                MinusTwo = (T) (object) (short) -2;
                 E = (T) (object) (short) FloatE;
                 Pi = (T) (object) (short) FloatPi;
                 Tau = (T) (object) (short) FloatTau;
@@ -127,6 +139,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) (ushort) 1;
                 Two = (T) (object) (ushort) 2;
+                MinusOne = default;
+                MinusTwo = default;
                 E = (T) (object) (ushort) FloatE;
                 Pi = (T) (object) (ushort) FloatPi;
                 Tau = (T) (object) (ushort) FloatTau;
@@ -155,6 +169,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) (byte) 1;
                 Two = (T) (object) (byte) 2;
+                MinusOne = default;
+                MinusTwo = default;
                 E = (T) (object) (byte) FloatE;
                 Pi = (T) (object) (byte) FloatPi;
                 Tau = (T) (object) (byte) FloatTau;
@@ -169,6 +185,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) 1;
                 Two = (T) (object) 2;
+                MinusOne = (T) (object) -1;
+                MinusTwo = (T) (object) -2;
                 E = (T) (object) (int) FloatE;
                 Pi = (T) (object) (int) FloatPi;
                 Tau = (T) (object) (int) FloatTau;
@@ -183,6 +201,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) 1u;
                 Two = (T) (object) 2u;
+                MinusOne = default;
+                MinusTwo = default;
                 E = (T) (object) (uint) FloatE;
                 Pi = (T) (object) (uint) FloatPi;
                 Tau = (T) (object) (uint) FloatTau;
@@ -197,6 +217,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) 1L;
                 Two = (T) (object) 2L;
+                MinusOne = (T) (object) -1L;
+                MinusTwo = (T) (object) -2L;
                 E = (T) (object) (long) FloatE;
                 Pi = (T) (object) (long) FloatPi;
                 Tau = (T) (object) (long) FloatTau;
@@ -211,6 +233,8 @@ namespace Silk.NET.Maths
                 PositiveInfinity = default;
                 One = (T) (object) 1ul;
                 Two = (T) (object) 2ul;
+                MinusOne = default;
+                MinusTwo = default;
                 E = (T) (object) (ulong) FloatE;
                 Pi = (T) (object) (ulong) FloatPi;
                 Tau = (T) (object) (ulong) FloatTau;

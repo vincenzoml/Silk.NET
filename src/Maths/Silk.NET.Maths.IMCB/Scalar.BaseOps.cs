@@ -5,19 +5,19 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using static Silk.NET.Maths.Constants;
+using static Silk.NET.Maths.Helper;
 
 namespace Silk.NET.Maths
 {
     public static partial class Scalar
     {
-        private static void ThrowUnsupportedType()
+        internal static void ThrowUnsupportedType()
             => throw new NotSupportedException("The given type is unsupported for generic maths.");
         
-        private static void ThrowOpUnsupportedType()
+        internal static void ThrowOpUnsupportedType()
             => throw new NotSupportedException("This operation is not applicable for the given type.");
 
-        private static void ThrowOpUnsupportedPrecision()
+        internal static void ThrowOpUnsupportedPrecision()
             => throw new NotImplementedException
             (
                 "This operation is not applicable for the given type due to a high-enough precision algorithm not " +
@@ -1401,6 +1401,9 @@ namespace Silk.NET.Maths
                 return default;
             }
         }
+
+        [MethodImpl(MaxOpt)]
+        public static T Negate<T>(T x) where T : unmanaged => Multiply(x, Scalar<T>.MinusOne);
         // ReSharper restore RedundantCast
     }
 }

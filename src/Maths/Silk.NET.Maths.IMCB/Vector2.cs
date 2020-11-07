@@ -4,409 +4,432 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Globalization;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+#if INTRINSICS
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+#endif
+using static Silk.NET.Maths.Helper;
+using static Silk.NET.Maths.Scalar;
 
 namespace Silk.NET.Maths
 {
     [Serializable]
     public struct Vector2<T> : IEquatable<Vector2<T>> where T:unmanaged
     {
-        public static readonly Vector2<T> UnitX;
-        public static readonly Vector2<T> UnitY;
-        public static readonly Vector2<T> Zero;
-        public static readonly Vector2<T> One;
-        public static readonly Vector2<T> PositiveInfinity;
-        public static readonly Vector2<T> NegativeInfinity;
-        public static readonly int SizeInBytes;
-        private static readonly string ListSeparator;
+        public static readonly Vector2<T> UnitX = new Vector2<T>(Scalar<T>.One, Scalar<T>.Zero);
+        public static readonly Vector2<T> UnitY = new Vector2<T>(Scalar<T>.Zero, Scalar<T>.One);
+        public static readonly Vector2<T> Zero = new Vector2<T>(Scalar<T>.Zero);
+        public static readonly Vector2<T> One = new Vector2<T>(Scalar<T>.One);
+        public static readonly Vector2<T> MinusOne = new Vector2<T>(Scalar.Negate(Scalar<T>.One));
+        public static readonly Vector2<T> PositiveInfinity = new Vector2<T>(Scalar<T>.PositiveInfinity);
+        public static readonly Vector2<T> NegativeInfinity = new Vector2<T>(Scalar<T>.NegativeInfinity);
+        public static readonly unsafe int SizeInBytes = sizeof(Vector2<T>);
+        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
+
+        private static readonly bool IntrinsicsApplicable = typeof(T) == typeof(byte)
+                                                            || typeof(T) == typeof(sbyte)
+                                                            || typeof(T) == typeof(ushort)
+                                                            || typeof(T) == typeof(short)
+                                                            || typeof(T) == typeof(uint)
+                                                            || typeof(T) == typeof(int)
+                                                            || typeof(T) == typeof(ulong)
+                                                            || typeof(T) == typeof(long)
+                                                            || typeof(T) == typeof(float)
+                                                            || typeof(T) == typeof(double);
+
         public T X;
         public T Y;
 
         public Vector2(T value)
         {
-            throw new NotImplementedException();
+            X = value;
+            Y = value;
         }
 
         public Vector2(T x, T y)
         {
-            throw new NotImplementedException();
+            X = x;
+            Y = y;
         }
 
-        public T this[int index]
+        public unsafe ref T this[int index]
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get
+            {
+                AssertInRange(nameof(index), index, 0, 2);
+                fixed (T* data = &X)
+                {
+                    return ref data[index];
+                }
+            }
         }
 
-        public T Length => throw new NotImplementedException();
+        public readonly T GetLength() => Scalar.Sqrt(GetLengthSquared());
+        public readonly T GetLengthSquared() => Scalar.Add(Scalar.Multiply(X, X), Scalar.Multiply(Y, Y));
+        public readonly Vector2<T> GetPerpendicularRight() => new Vector2<T>(Y, Scalar.Negate(X));
+        public readonly Vector2<T> GetPerpendicularLeft() => new Vector2<T>(Scalar.Negate(Y), X);
+        public readonly Vector2<T> GetNormalized() => Vector2.Normalize(this);
+        public static Vector2<T> operator +(Vector2<T> left, Vector2<T> right) => Vector2.Add(left, right);
+        public static Vector2<T> operator -(Vector2<T> left, Vector2<T> right) => Vector2.Subtract(left, right);
+        public static Vector2<T> operator -(Vector2<T> vec) => Vector2.Negate(vec);
+        public static Vector2<T> operator *(Vector2<T> vec, T scale) => Vector2.Multiply(vec, scale);
+        public static Vector2<T> operator *(T scale, Vector2<T> vec) => vec * scale;
+        public static Vector2<T> operator *(Vector2<T> vec, Vector2<T> scale) => Vector2.Multiply(vec, scale);
+        public static Vector2<T> operator *(Vector2<T> vec, Matrix2<T> mat) => Vector2.Transform(vec, mat);
 
-        public T LengthFast => throw new NotImplementedException();
-
-        public T LengthSquared => throw new NotImplementedException();
-
-        public Vector2<T> PerpendicularRight => throw new NotImplementedException();
-
-        public Vector2<T> PerpendicularLeft => throw new NotImplementedException();
-
-        public Vector2<T> Normalized()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Normalize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void NormalizeFast()
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Add(Vector2<T> a, Vector2<T> b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Add(ref Vector2<T> a, ref Vector2<T> b, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Subtract(Vector2<T> a, Vector2<T> b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Subtract(ref Vector2<T> a, ref Vector2<T> b, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Multiply(Vector2<T> vector, T scale)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Multiply(ref Vector2<T> vector, T scale, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Multiply(Vector2<T> vector, Vector2<T> scale)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Multiply(ref Vector2<T> vector, ref Vector2<T> scale, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Divide(Vector2<T> vector, T scale)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Divide(ref Vector2<T> vector, T scale, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Divide(Vector2<T> vector, Vector2<T> scale)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Divide(ref Vector2<T> vector, ref Vector2<T> scale, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> ComponentMin(Vector2<T> a, Vector2<T> b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void ComponentMin(ref Vector2<T> a, ref Vector2<T> b, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> ComponentMax(Vector2<T> a, Vector2<T> b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void ComponentMax(ref Vector2<T> a, ref Vector2<T> b, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> MagnitudeMin(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void MagnitudeMin(ref Vector2<T> left, ref Vector2<T> right, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> MagnitudeMax(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void MagnitudeMax(ref Vector2<T> left, ref Vector2<T> right, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Clamp(Vector2<T> vec, Vector2<T> min, Vector2<T> max)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Clamp
-        (
-            ref Vector2<T> vec,
-            ref Vector2<T> min,
-            ref Vector2<T> max,
-            out Vector2<T> result
-        )
-        {
-            throw new NotImplementedException();
-        }
-
-        public static T Distance(Vector2<T> vec1, Vector2<T> vec2)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Distance(ref Vector2<T> vec1, ref Vector2<T> vec2, out T result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static T DistanceSquared(Vector2<T> vec1, Vector2<T> vec2)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void DistanceSquared(ref Vector2<T> vec1, ref Vector2<T> vec2, out T result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Normalize(Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Normalize(ref Vector2<T> vec, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> NormalizeFast(Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void NormalizeFast(ref Vector2<T> vec, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static T Dot(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Dot(ref Vector2<T> left, ref Vector2<T> right, out T result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static T PerpDot(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void PerpDot(ref Vector2<T> left, ref Vector2<T> right, out T result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Lerp(Vector2<T> a, Vector2<T> b, T blend)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Lerp(ref Vector2<T> a, ref Vector2<T> b, T blend, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> BaryCentric(Vector2<T> a, Vector2<T> b, Vector2<T> c, T u, T v)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void BaryCentric
-        (
-            ref Vector2<T> a,
-            ref Vector2<T> b,
-            ref Vector2<T> c,
-            T u,
-            T v,
-            out Vector2<T> result
-        )
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Transform(Vector2<T> vec, Matrix2<T> mat)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Transform(ref Vector2<T> vec, ref Matrix2<T> mat, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Transform(Vector2<T> vec, Quaternion<T> quat)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Transform(ref Vector2<T> vec, ref Quaternion<T> quat, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> Transform(Matrix2<T> mat, Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void Transform(ref Matrix2<T> mat, ref Vector2<T> vec, out Vector2<T> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator +(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator -(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator -(Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator *(Vector2<T> vec, T scale)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator *(T scale, Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator *(Vector2<T> vec, Vector2<T> scale)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator *(Vector2<T> vec, Matrix2<T> mat)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator *(Matrix2<T> mat, Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Vector2<T> operator *(Quaternion<T> quat, Vector2<T> vec)
-        {
-            throw new NotImplementedException();
-        }
+        public static Vector2<T> operator *(Matrix2<T> mat, Vector2<T> vec) => Vector2.Transform(mat, vec);
+        public static Vector2<T> operator *(Quaternion<T> quat, Vector2<T> vec) => Vector2.Transform(vec, quat);
 
         public static Vector2<T> operator /(Vector2<T> vec, T scale)
+            => new Vector2<T>(Scalar.Divide(vec.X, scale), Scalar.Divide(vec.Y, scale));
+        public static bool operator ==(Vector2<T> left, Vector2<T> right) => left.Equals(right);
+        public static bool operator !=(Vector2<T> left, Vector2<T> right) => !(left == right);
+        public static implicit operator Vector2<T>((T X, T Y) values) => new Vector2<T>(values.X, values.Y);
+        public override readonly string ToString() => $"({X}{ListSeparator} {Y})";
+        public override readonly int GetHashCode() => HashCode.Combine(X, Y);
+        public override readonly bool Equals(object obj) => obj is Vector2<T> vec && Equals(vec);
+        public readonly bool Equals(Vector2<T> other) => Equal(X, other.X) && Equal(Y, other.Y);
+        public readonly void Deconstruct(out T x, out T y)
         {
-            throw new NotImplementedException();
-        }
-
-        public static bool operator ==(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static bool operator !=(Vector2<T> left, Vector2<T> right)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static implicit operator Vector2<T>((T X, T Y) values)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string ToString()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool Equals(object obj)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Equals(Vector2<T> other)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Deconstruct(out T x, out T y)
-        {
-            throw new NotImplementedException();
+            x = X;
+            y = Y;
         }
 
 #if INTRINSICS
         public System.Runtime.Intrinsics.Vector64<T> AsVector64()
         {
-            throw new NotImplementedException();
+            if (!IntrinsicsApplicable)
+            {
+                ThrowOpUnsupportedType();
+                return default;
+            }
+            
+            return Byte(this);
+
+            static Vector64<T> Byte(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(byte))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((byte)(object)vec.X, (byte)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                return Sbyte(vec);
+            }
+            static Vector64<T> Sbyte(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(sbyte))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((sbyte)(object)vec.X, (sbyte)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Ushort(vec);
+            }
+            static Vector64<T> Ushort(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(ushort))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((ushort)(object)vec.X, (ushort)(object)vec.Y, 0, 0);
+                }
+                
+                return Short(vec);
+            }
+            static Vector64<T> Short(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(short))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((short)(object)vec.X, (short)(object)vec.Y, 0, 0);
+                }
+                
+                return Uint(vec);
+            }
+            static Vector64<T> Uint(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(uint))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((uint)(object)vec.X, (uint)(object)vec.Y);
+                }
+                
+                return Int(vec);
+            }
+            static Vector64<T> Int(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(int))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((int)(object)vec.X, (int)(object)vec.Y);
+                }
+                
+                return Ulong(vec);
+            }
+            static Vector64<T> Ulong(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(ulong))
+                {
+                    ThrowOpUnsupportedPrecision();
+                    return default;
+                }
+                
+                return Long(vec);
+            }
+            static Vector64<T> Long(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(long))
+                {
+                    ThrowOpUnsupportedPrecision();
+                    return default;
+                }
+                
+                return Float(vec);
+            }
+            static Vector64<T> Float(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(float))
+                {
+                    return (Vector64<T>)(object)Vector64.Create((float)(object)vec.X, (float)(object)vec.Y);
+                }
+                
+                return Double(vec);
+            }
+            static Vector64<T> Double(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(double))
+                {
+                    ThrowOpUnsupportedPrecision();
+                    return default;
+                }
+                
+                ThrowOpUnsupportedType();
+                return default;
+            }
         }
 
         public System.Runtime.Intrinsics.Vector128<T> AsVector128()
         {
-            throw new NotImplementedException();
+            if (!IntrinsicsApplicable)
+            {
+                ThrowOpUnsupportedType();
+                return default;
+            }
+            
+            return Byte(this);
+
+            static Vector128<T> Byte(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(byte))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((byte)(object)vec.X, (byte)(object)vec.Y, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                return Sbyte(vec);
+            }
+            static Vector128<T> Sbyte(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(sbyte))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((sbyte)(object)vec.X, (sbyte)(object)vec.Y, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Ushort(vec);
+            }
+            static Vector128<T> Ushort(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(ushort))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((ushort)(object)vec.X, (ushort)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Short(vec);
+            }
+            static Vector128<T> Short(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(short))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((short)(object)vec.X, (short)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Uint(vec);
+            }
+            static Vector128<T> Uint(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(uint))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((uint)(object)vec.X, (uint)(object)vec.Y, 0, 0);
+                }
+                
+                return Int(vec);
+            }
+            static Vector128<T> Int(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(int))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((int)(object)vec.X, (int)(object)vec.Y, 0, 0);
+                }
+                
+                return Ulong(vec);
+            }
+            static Vector128<T> Ulong(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(ulong))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((ulong)(object)vec.X, (ulong)(object)vec.Y);
+                }
+                
+                return Long(vec);
+            }
+            static Vector128<T> Long(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(long))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((long)(object)vec.X, (long)(object)vec.Y);
+                }
+                
+                return Float(vec);
+            }
+            static Vector128<T> Float(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(float))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((float)(object)vec.X, (float)(object)vec.Y, 0, 0);
+                }
+                
+                return Double(vec);
+            }
+            static Vector128<T> Double(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(double))
+                {
+                    return (Vector128<T>)(object)Vector128.Create((double)(object)vec.X, (double)(object)vec.Y);
+                }
+                
+                ThrowOpUnsupportedType();
+                return default;
+            }
         }
 
         public System.Runtime.Intrinsics.Vector256<T> AsVector256()
         {
-            throw new NotImplementedException();
+            if (!IntrinsicsApplicable)
+            {
+                ThrowOpUnsupportedType();
+                return default;
+            }
+            
+            return Byte(this);
+
+            static Vector256<T> Byte(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(byte))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((byte)(object)vec.X, (byte)(object)vec.Y, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                return Sbyte(vec);
+            }
+            static Vector256<T> Sbyte(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(sbyte))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((sbyte)(object)vec.X, (sbyte)(object)vec.Y, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Ushort(vec);
+            }
+            static Vector256<T> Ushort(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(ushort))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((ushort)(object)vec.X, (ushort)(object)vec.Y, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Short(vec);
+            }
+            static Vector256<T> Short(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(short))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((short)(object)vec.X, (short)(object)vec.Y, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Uint(vec);
+            }
+            static Vector256<T> Uint(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(uint))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((uint)(object)vec.X, (uint)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Int(vec);
+            }
+            static Vector256<T> Int(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(int))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((int)(object)vec.X, (int)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Ulong(vec);
+            }
+            static Vector256<T> Ulong(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(ulong))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((ulong)(object)vec.X, (ulong)(object)vec.Y, 0, 0);
+                }
+                
+                return Long(vec);
+            }
+            static Vector256<T> Long(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(long))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((long)(object)vec.X, (long)(object)vec.Y, 0, 0);
+                }
+                
+                return Float(vec);
+            }
+            static Vector256<T> Float(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(float))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((float)(object)vec.X, (float)(object)vec.Y, 0, 0, 0, 0, 0, 0);
+                }
+                
+                return Double(vec);
+            }
+            static Vector256<T> Double(Vector2<T> vec)
+            {
+                if (typeof(T) == typeof(double))
+                {
+                    return (Vector256<T>)(object)Vector256.Create((double)(object)vec.X, (double)(object)vec.Y, 0, 0);
+                }
+                
+                ThrowOpUnsupportedType();
+                return default;
+            }
         }
 #endif
 
 #if BTEC_INTRINSICS
         public System.Numerics.Vector<T> AsVector()
         {
-            throw new NotImplementedException();
+            if (!IntrinsicsApplicable)
+            {
+                ThrowOpUnsupportedType();
+                return default;
+            }
+            
+            if (Vector<T>.Count == 2)
+            {
+                return new Vector<T>(MemoryMarshal.CreateSpan(ref X, 2));
+            }
+            else
+            {
+                Span<T> data = stackalloc T[Vector<T>.Count];
+                data[0] = X;
+                data[1] = Y;
+                return new Vector<T>(data);
+            }
         }
 #endif
     }

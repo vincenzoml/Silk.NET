@@ -5,7 +5,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using static Silk.NET.Maths.Constants;
+using static Silk.NET.Maths.Helper;
 
 namespace Silk.NET.Maths
 {
