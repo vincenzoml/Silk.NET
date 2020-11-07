@@ -56,14 +56,32 @@ namespace Silk.NET.Maths
             Y = y;
         }
 
-        public unsafe ref T this[int index]
+        public T this[int index]
         {
             get
             {
                 AssertInRange(nameof(index), index, 0, 2);
-                fixed (T* data = &X)
+                if (index == 0)
                 {
-                    return ref data[index];
+                    return X;
+                }
+                else
+                {
+                    return Y;
+                }
+            }
+
+            set
+            {
+                
+                AssertInRange(nameof(index), index, 0, 2);
+                if (index == 0)
+                {
+                    X = value;
+                }
+                else
+                {
+                    Y = value;
                 }
             }
         }
