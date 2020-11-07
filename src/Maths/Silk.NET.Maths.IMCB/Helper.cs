@@ -11,7 +11,7 @@ namespace Silk.NET.Maths
 {
     internal static class Helper
     {
-        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
+        internal static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
         public const MethodImplOptions MaxOpt = MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512;
         public static void ThrowArgumentOutOfRange(string pName) => throw new ArgumentOutOfRangeException(pName);
 
