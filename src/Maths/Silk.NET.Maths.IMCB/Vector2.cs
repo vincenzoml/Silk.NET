@@ -28,7 +28,6 @@ namespace Silk.NET.Maths
         public static readonly Vector2<T> PositiveInfinity = new Vector2<T>(Scalar<T>.PositiveInfinity);
         public static readonly Vector2<T> NegativeInfinity = new Vector2<T>(Scalar<T>.NegativeInfinity);
         public static readonly unsafe int SizeInBytes = sizeof(Vector2<T>);
-        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
 
         public T X;
         public T Y;

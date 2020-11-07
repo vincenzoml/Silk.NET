@@ -4,12 +4,14 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace Silk.NET.Maths
 {
     internal static class Helper
     {
+        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
         public const MethodImplOptions MaxOpt = MethodImplOptions.AggressiveInlining | (MethodImplOptions) 512;
         public static void ThrowArgumentOutOfRange(string pName) => throw new ArgumentOutOfRangeException(pName);
 
