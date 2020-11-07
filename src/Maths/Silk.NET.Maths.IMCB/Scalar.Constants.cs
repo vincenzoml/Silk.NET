@@ -29,6 +29,7 @@ namespace Silk.NET.Maths
         public static readonly T MinusTwo;
         public static readonly T E;
         public static readonly T Pi;
+        public static readonly T PiOver2;
         public static readonly T Tau;
 
         internal static readonly bool IntrinsicsApplicable = typeof(T) == typeof(byte)
@@ -250,6 +251,8 @@ namespace Silk.NET.Maths
                 Pi = (T) (object) (ulong) FloatPi;
                 Tau = (T) (object) (ulong) FloatTau;
             }
+
+            PiOver2 = Scalar.Divide(Pi, Two);
         }
     }
 }
