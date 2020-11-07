@@ -4,6 +4,8 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using static Silk.NET.Maths.Helper;
+using static Silk.NET.Maths.Scalar;
 
 namespace Silk.NET.Maths
 {
@@ -23,30 +25,19 @@ namespace Silk.NET.Maths
             throw new NotImplementedException();
         }
 
-        public Vector3<T> Size
+        public Vector3<T> GetSize() => Max - Min;
+
+        public Box3<T> WithSize(Vector3<T> newSize)
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            var center = GetCenter();
+            var noughtPointFive = Divide(Scalar<T>.One, Scalar<T>.Two);
+            return new Box3<T>(center - newSize * noughtPointFive, center + newSize * noughtPointFive);
         }
 
-        public Vector3<T> HalfSize
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
-
-        public Vector3<T> Center
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
+        public Vector3<T> GetCenter() => GetSize() / Scalar<T>.Two + Min;
+        public Box3<T> WithCenter(Vector3<T> center) => GetTranslated(center - GetCenter());
 
         public bool Contains(Vector3<T> point)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Contains(Vector3<T> point, bool boundaryInclusive)
         {
             throw new NotImplementedException();
         }
@@ -61,32 +52,17 @@ namespace Silk.NET.Maths
             throw new NotImplementedException();
         }
 
-        public void Translate(Vector3<T> distance)
+        public Box3<T> GetTranslated(Vector3<T> distance)
         {
             throw new NotImplementedException();
         }
 
-        public Box3<T> Translated(Vector3<T> distance)
+        public Box3<T> GetScaled(Vector3<T> scale, Vector3<T> anchor)
         {
             throw new NotImplementedException();
         }
 
-        public void Scale(Vector3<T> scale, Vector3<T> anchor)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Box3<T> Scaled(Vector3<T> scale, Vector3<T> anchor)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Inflate(Vector3<T> point)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Box3<T> Inflated(Vector3<T> point)
+        public Box3<T> GetInflated(Vector3<T> point)
         {
             throw new NotImplementedException();
         }

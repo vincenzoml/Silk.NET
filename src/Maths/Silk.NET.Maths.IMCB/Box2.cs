@@ -44,7 +44,7 @@ namespace Silk.NET.Maths
             throw new NotImplementedException();
         }
 
-        public T DistanceToNearestEdge(Vector2<T> point)
+        public T GetDistanceToNearestEdge(Vector2<T> point)
         {
             throw new NotImplementedException();
         }
