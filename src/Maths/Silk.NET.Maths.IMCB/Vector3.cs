@@ -10,13 +10,13 @@ namespace Silk.NET.Maths
     [Serializable]
     public struct Vector3<T> : IEquatable<Vector3<T>> where T:unmanaged
     {
-        public static readonly Vector3<T> UnitX;
-        public static readonly Vector3<T> UnitY;
-        public static readonly Vector3<T> UnitZ;
-        public static readonly Vector3<T> Zero;
-        public static readonly Vector3<T> One;
-        public static readonly Vector3<T> PositiveInfinity;
-        public static readonly Vector3<T> NegativeInfinity;
+        public static readonly Vector3<T> UnitX = new Vector3<T>(Scalar<T>.One, Scalar<T>.Zero, Scalar<T>.Zero);
+        public static readonly Vector3<T> UnitY = new Vector3<T>(Scalar<T>.Zero, Scalar<T>.One, Scalar<T>.Zero);
+        public static readonly Vector3<T> UnitZ = new Vector3<T>(Scalar<T>.Zero, Scalar<T>.Zero, Scalar<T>.One);
+        public static readonly Vector3<T> Zero = new Vector3<T>(Scalar<T>.Zero);
+        public static readonly Vector3<T> One = new Vector3<T>(Scalar<T>.One);
+        public static readonly Vector3<T> PositiveInfinity = new Vector3<T>(Scalar<T>.PositiveInfinity);
+        public static readonly Vector3<T> NegativeInfinity = new Vector3<T>(Scalar<T>.NegativeInfinity);
         public static readonly int SizeInBytes;
         private static readonly string ListSeparator;
         public T X;
@@ -25,7 +25,9 @@ namespace Silk.NET.Maths
 
         public Vector3(T value)
         {
-            throw new NotImplementedException();
+            X = value;
+            Y = value;
+            Z = value;
         }
 
         public Vector3(T x, T y, T z)

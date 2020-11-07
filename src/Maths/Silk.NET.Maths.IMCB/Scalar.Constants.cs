@@ -31,6 +31,17 @@ namespace Silk.NET.Maths
         public static readonly T Pi;
         public static readonly T Tau;
 
+        internal static readonly bool IntrinsicsApplicable = typeof(T) == typeof(byte)
+                                                            || typeof(T) == typeof(sbyte)
+                                                            || typeof(T) == typeof(ushort)
+                                                            || typeof(T) == typeof(short)
+                                                            || typeof(T) == typeof(uint)
+                                                            || typeof(T) == typeof(int)
+                                                            || typeof(T) == typeof(ulong)
+                                                            || typeof(T) == typeof(long)
+                                                            || typeof(T) == typeof(float)
+                                                            || typeof(T) == typeof(double);
+
         private const float FloatE = 2.71828175f;
         private const float FloatPi = 3.14159274f;
         private const float FloatTau = 6.283185307f;

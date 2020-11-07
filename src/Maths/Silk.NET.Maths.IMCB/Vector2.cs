@@ -30,17 +30,6 @@ namespace Silk.NET.Maths
         public static readonly unsafe int SizeInBytes = sizeof(Vector2<T>);
         private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
 
-        private static readonly bool IntrinsicsApplicable = typeof(T) == typeof(byte)
-                                                            || typeof(T) == typeof(sbyte)
-                                                            || typeof(T) == typeof(ushort)
-                                                            || typeof(T) == typeof(short)
-                                                            || typeof(T) == typeof(uint)
-                                                            || typeof(T) == typeof(int)
-                                                            || typeof(T) == typeof(ulong)
-                                                            || typeof(T) == typeof(long)
-                                                            || typeof(T) == typeof(float)
-                                                            || typeof(T) == typeof(double);
-
         public T X;
         public T Y;
 
@@ -120,7 +109,7 @@ namespace Silk.NET.Maths
 #if INTRINSICS
         public System.Runtime.Intrinsics.Vector64<T> AsVector64()
         {
-            if (!IntrinsicsApplicable)
+            if (!Scalar<T>.IntrinsicsApplicable)
             {
                 ThrowOpUnsupportedType();
                 return default;
@@ -225,7 +214,7 @@ namespace Silk.NET.Maths
 
         public System.Runtime.Intrinsics.Vector128<T> AsVector128()
         {
-            if (!IntrinsicsApplicable)
+            if (!Scalar<T>.IntrinsicsApplicable)
             {
                 ThrowOpUnsupportedType();
                 return default;
@@ -327,7 +316,7 @@ namespace Silk.NET.Maths
 
         public System.Runtime.Intrinsics.Vector256<T> AsVector256()
         {
-            if (!IntrinsicsApplicable)
+            if (!Scalar<T>.IntrinsicsApplicable)
             {
                 ThrowOpUnsupportedType();
                 return default;
@@ -431,7 +420,7 @@ namespace Silk.NET.Maths
 #if BTEC_INTRINSICS
         public System.Numerics.Vector<T> AsVector()
         {
-            if (!IntrinsicsApplicable)
+            if (!Scalar<T>.IntrinsicsApplicable)
             {
                 ThrowOpUnsupportedType();
                 return default;
