@@ -12,7 +12,7 @@ namespace Silk.NET.Maths
     [Serializable]
     public struct Quaternion<T> : IEquatable<Quaternion<T>> where T:unmanaged
     {
-        public static readonly Quaternion<T> Identity;
+        public static readonly Quaternion<T> Identity = new Quaternion<T>(Vector3<T>.Zero, Scalar<T>.One);
         public Vector3<T> Xyz;
         public T W;
 
