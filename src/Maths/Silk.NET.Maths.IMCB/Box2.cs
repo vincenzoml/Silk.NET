@@ -13,6 +13,7 @@ namespace Silk.NET.Maths
     {
         private Vector2<T> Min;
         private Vector2<T> Max;
+        private static readonly T NoughtPointFive = Divide(Scalar<T>.One, Scalar<T>.Two);
 
         public Box2(Vector2<T> min, Vector2<T> max)
         {
@@ -29,8 +30,7 @@ namespace Silk.NET.Maths
         public Box2<T> WithSize(Vector2<T> newSize)
         {
             var center = GetCenter();
-            var noughtPointFive = Divide(Scalar<T>.One, Scalar<T>.Two);
-            return new Box2<T>(center - newSize * noughtPointFive, center + newSize * noughtPointFive);
+            return new Box2<T>(center - newSize * NoughtPointFive, center + newSize * NoughtPointFive);
         }
 
         public Vector2<T> GetCenter() => GetSize() / Scalar<T>.Two + Min;
