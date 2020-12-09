@@ -7,10 +7,6 @@
 [![CI Build](https://github.com/Ultz/Silk.NET/workflows/CI%20Build/badge.svg)](https://dev.azure.com/UltzOS/Silk.NET/_build/latest?definitionId=2&branchName=master) [![Join our Discord](https://img.shields.io/badge/chat%20on-discord-7289DA)](https://discord.gg/DTHHXRt)
 
 </h1>
-   
-<div align="center">
-    
-</div>
 
 Silk.NET is a high-speed, advanced library, providing bindings to popular low-level APIs such as OpenGL and OpenAL. Use Silk.NET to add cross-platform 3D graphics, audio, compute and haptics to your C# application.
 
@@ -18,7 +14,10 @@ Silk.NET works on any .NET Standard 2.0 compliant platform. This includes Xamari
 
 Proud to be an official project under the benevolent .NET Foundation umbrella.
 
-<div align="center"><img src="documentation/readme/dnf.svg" height="64"></img></div>
+<div align="center">
+    <img src="documentation/readme/dnf.svg" height="64"></img>
+    <sub>Proud to be a project under the benevolent .NET Foundation umbrella.</sub>
+</div>
 
 <h1 align="center">Features</h1>
 
