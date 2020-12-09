@@ -16,6 +16,7 @@ Proud to be an official project under the benevolent .NET Foundation umbrella.
 
 <div align="center">
     <img src="documentation/readme/dnf.svg" height="64"></img>
+    <br />
     <sub>Proud to be a project under the benevolent .NET Foundation umbrella.</sub>
 </div>
 
