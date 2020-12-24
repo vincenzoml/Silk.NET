@@ -21,7 +21,6 @@ namespace Aliquip
                 .AddSingleton(provider => provider.GetRequiredService<IWindowProvider>().Window)
                 .AddSingleton(provider => (IObservable<WindowResized>) provider.GetRequiredService<IWindowProvider>())
                 .AddSingleton(provider => (IObservable<WindowStateChanged>) provider.GetRequiredService<IWindowProvider>())
-                .AddHostedService(provider => provider.GetRequiredService<IWindowProvider>())
                 .AddSingleton<Vk>(x => Vk.GetApi())
                 .AddSingleton<IInstanceProvider, InstanceProvider>()
 #if DEBUG

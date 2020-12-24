@@ -19,19 +19,19 @@ namespace Aliquip
         
         private readonly IWindowProvider _windowProvider;
         private readonly Vk _vk;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly ISwapchainProvider _swapchainProvider;
         private readonly KhrSwapchain _khrSwapchain;
+        private readonly ICommandBufferProvider _commandBufferProvider;
+        private readonly IGraphicsQueueProvider _graphicsQueueProvider;
+        private readonly IPresentQueueProvider _presentQueueProvider;
         private readonly ISwapchainRecreationService _recreationService;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
         private readonly Fence[] _inFlightFences;
         private readonly Fence[] _imagesInFlight;
-        private readonly Device _device;
         private int _currentFrame = 0;
-        private readonly SwapchainKHR _swapchain;
-        private readonly CommandBuffer[] _commandBuffers;
-        private readonly Queue _graphicsQueue;
-        private readonly Queue _presentQueue;
 
         public unsafe DrawFrameService(IWindowProvider windowProvider, Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
             KhrSwapchain khrSwapchain, ICommandBufferProvider commandBufferProvider, IGraphicsQueueProvider graphicsQueueProvider, IPresentQueueProvider presentQueueProvider,
@@ -39,13 +39,13 @@ namespace Aliquip
         {
             _windowProvider = windowProvider;
             _vk = vk;
+            _logicalDeviceProvider = logicalDeviceProvider;
+            _swapchainProvider = swapchainProvider;
             _khrSwapchain = khrSwapchain;
+            _commandBufferProvider = commandBufferProvider;
+            _graphicsQueueProvider = graphicsQueueProvider;
+            _presentQueueProvider = presentQueueProvider;
             _recreationService = recreationService;
-            _device = logicalDeviceProvider.LogicalDevice;
-            _swapchain = swapchainProvider.Swapchain;
-            _commandBuffers = commandBufferProvider.CommandBuffers;
-            _graphicsQueue = graphicsQueueProvider.GraphicsQueue;
-            _presentQueue = presentQueueProvider.PresentQueue;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];
@@ -57,9 +57,9 @@ namespace Aliquip
 
             for (int i = 0; i < MaxFramesInFlight; i++)
             {
-                _vk.CreateSemaphore(_device, &semaphoreCreateInfo, null, out _imageAvailableSemaphores[i]).ThrowCode();
-                _vk.CreateSemaphore(_device, &semaphoreCreateInfo, null, out _renderFinishedSemaphores[i]).ThrowCode();
-                _vk.CreateFence(_device, &fenceCreateInfo, null, out _inFlightFences[i]).ThrowCode();
+                _vk.CreateSemaphore(_logicalDeviceProvider.LogicalDevice, &semaphoreCreateInfo, null, out _imageAvailableSemaphores[i]).ThrowCode();
+                _vk.CreateSemaphore(_logicalDeviceProvider.LogicalDevice, &semaphoreCreateInfo, null, out _renderFinishedSemaphores[i]).ThrowCode();
+                _vk.CreateFence(_logicalDeviceProvider.LogicalDevice, &fenceCreateInfo, null, out _inFlightFences[i]).ThrowCode();
             }
         }
 
@@ -77,13 +77,13 @@ namespace Aliquip
         
         public unsafe void OnNext(WindowRender value)
         {
-            _vk.WaitForFences(_device, 1, _inFlightFences[_currentFrame], true, ulong.MaxValue);
+            _vk.WaitForFences(_logicalDeviceProvider.LogicalDevice, 1, _inFlightFences[_currentFrame], true, ulong.MaxValue);
             uint imageIndex = 0;
-            var result = _khrSwapchain.AcquireNextImage(_device, _swapchain, ulong.MaxValue, _imageAvailableSemaphores[_currentFrame], default, ref imageIndex);
+            var result = _khrSwapchain.AcquireNextImage(_logicalDeviceProvider.LogicalDevice, _swapchainProvider.Swapchain, ulong.MaxValue, _imageAvailableSemaphores[_currentFrame], default, ref imageIndex);
 
             if (result == Result.ErrorOutOfDateKhr)
             {
-                _recreationService.RecreateSwapchain();
+                _recreationService.RecreateSwapchain(null);
                 return;
             }
 
@@ -92,7 +92,7 @@ namespace Aliquip
             if (_imagesInFlight[imageIndex].Handle != default)
             {
                 var v = _imagesInFlight[imageIndex];
-                _vk.WaitForFences(_device, 1, v, true, ulong.MaxValue).ThrowCode();
+                _vk.WaitForFences(_logicalDeviceProvider.LogicalDevice, 1, v, true, ulong.MaxValue).ThrowCode();
             }
 
             _imagesInFlight[imageIndex] = _inFlightFences[_currentFrame];
@@ -100,7 +100,7 @@ namespace Aliquip
             var waitSemaphores = stackalloc[] {_imageAvailableSemaphores[_currentFrame]};
             var waitStages = stackalloc[] {PipelineStageFlags.PipelineStageColorAttachmentOutputBit};
             var signalSemaphores = stackalloc[] {_renderFinishedSemaphores[_currentFrame]};
-            fixed (CommandBuffer* pCommandBuffers = _commandBuffers)
+            fixed (CommandBuffer* pCommandBuffers = _commandBufferProvider.CommandBuffers)
             {
                 var submitInfo = new SubmitInfo
                 (
@@ -113,12 +113,12 @@ namespace Aliquip
                     pSignalSemaphores: signalSemaphores
                 );
 
-                _vk.ResetFences(_device, 1, _inFlightFences[_currentFrame]).ThrowCode();
+                _vk.ResetFences(_logicalDeviceProvider.LogicalDevice, 1, _inFlightFences[_currentFrame]).ThrowCode();
 
-                _vk.QueueSubmit(_graphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]).ThrowCode();
+                _vk.QueueSubmit(_graphicsQueueProvider.GraphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]).ThrowCode();
             }
 
-            var swapchains = stackalloc[] {_swapchain};
+            var swapchains = stackalloc[] {_swapchainProvider.Swapchain};
             var presentInfo = new PresentInfoKHR
             (
                 waitSemaphoreCount: 1,
@@ -128,11 +128,11 @@ namespace Aliquip
                 pImageIndices: &imageIndex
             );
 
-            result = _khrSwapchain.QueuePresent(_presentQueue, &presentInfo);
+            result = _khrSwapchain.QueuePresent(_presentQueueProvider.PresentQueue, &presentInfo);
 
             if (result == Result.ErrorOutOfDateKhr || result == Result.SuboptimalKhr)
             {
-                _recreationService.RecreateSwapchain();
+                _recreationService.RecreateSwapchain(null);
             }
             else
             {
@@ -152,13 +152,13 @@ namespace Aliquip
         {
             _subscription?.Dispose();
 
-            _vk.DeviceWaitIdle(_device);
+            _vk.DeviceWaitIdle(_logicalDeviceProvider.LogicalDevice);
 
             for (int i = 0; i < MaxFramesInFlight; i++)
             {
-                _vk.DestroySemaphore(_device, _imageAvailableSemaphores[i], null);
-                _vk.DestroySemaphore(_device, _renderFinishedSemaphores[i], null);
-                _vk.DestroyFence(_device, _inFlightFences[i], null);
+                _vk.DestroySemaphore(_logicalDeviceProvider.LogicalDevice, _imageAvailableSemaphores[i], null);
+                _vk.DestroySemaphore(_logicalDeviceProvider.LogicalDevice, _renderFinishedSemaphores[i], null);
+                _vk.DestroyFence(_logicalDeviceProvider.LogicalDevice, _inFlightFences[i], null);
             }
         }
     }

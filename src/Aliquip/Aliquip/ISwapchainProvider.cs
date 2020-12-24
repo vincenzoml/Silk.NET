@@ -4,6 +4,7 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
@@ -14,6 +15,6 @@ namespace Aliquip
         Image[] SwapchainImages { get; }
         Format SwapchainFormat { get; }
         Extent2D SwapchainExtent { get; }
-        void RecreateSwapchain();
+        void RecreateSwapchain(Vector2D<int>? newSize);
     }
 }

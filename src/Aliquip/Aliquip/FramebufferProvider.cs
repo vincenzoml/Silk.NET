@@ -11,19 +11,19 @@ namespace Aliquip
     internal sealed class FramebufferProvider : IFramebufferProvider, IDisposable
     {
         private readonly Vk _vk;
+        private readonly ILogicalDeviceProvider _deviceProvider;
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IImageViewProvider _imageViewProvider;
-        private readonly Device _device;
         public Framebuffer[] Framebuffers { get; private set; }
 
         public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider)
         {
             _vk = vk;
+            _deviceProvider = deviceProvider;
             _swapchainProvider = swapchainProvider;
             _renderPassProvider = renderPassProvider;
             _imageViewProvider = imageViewProvider;
-            _device = deviceProvider.LogicalDevice;
             
             RecreateFramebuffers();
         }
@@ -46,7 +46,7 @@ namespace Aliquip
                     layers: 1
                 );
 
-                _vk.CreateFramebuffer(_device, &createInfo, null, out Framebuffers[i]).ThrowCode();
+                _vk.CreateFramebuffer(_deviceProvider.LogicalDevice, &createInfo, null, out Framebuffers[i]).ThrowCode();
             }
         }
 
@@ -54,7 +54,7 @@ namespace Aliquip
         {
             foreach (var framebuffer in Framebuffers)
             {
-                _vk.DestroyFramebuffer(_device, framebuffer, null);
+                _vk.DestroyFramebuffer(_deviceProvider.LogicalDevice, framebuffer, null);
             }
         }
     }

@@ -10,7 +10,7 @@ using Silk.NET.Windowing;
 namespace Aliquip
 {
     public interface IWindowProvider
-        : IHostedService,
+        :
             IDisposable,
             IObservable<WindowResized>,
             IObservable<WindowStateChanged>,

@@ -15,16 +15,16 @@ namespace Aliquip
     internal sealed class SwapchainProvider : ISwapchainProvider, IDisposable
     {
         private readonly KhrSwapchain _khrSwapchain;
-        private readonly Device _device;
-        private readonly SurfaceKHR _surface;
+        private readonly ILogicalDeviceProvider _deviceProvider;
         private readonly IWindow _window;
-        private readonly SurfaceFormatKHR _surfaceFormat;
-        private readonly PresentModeKHR _presentMode;
         private readonly uint _imageCount;
-        private readonly PhysicalDevice _physicalDevice;
         private readonly ILogger _logger;
         private readonly ISwapchainSupportProvider _swapchainSupportProvider;
+        private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly IQueueFamilyProvider _queueFamilyProvider;
+        private readonly ISurfaceProvider _surfaceProvider;
+        private readonly SurfaceFormatKHR _surfaceFormat;
+        private readonly PresentModeKHR _presentMode;
         public SwapchainKHR Swapchain { get; private set; }
         public Image[] SwapchainImages { get; private set; }
         public Format SwapchainFormat { get; private set; }
@@ -33,15 +33,15 @@ namespace Aliquip
         public unsafe SwapchainProvider(ILogger<SwapchainProvider> logger, IFormatRater formatRater, IColorspaceRater colorspaceRater, IWindowProvider windowProvider, ISwapchainSupportProvider swapchainSupportProvider, IPhysicalDeviceProvider physicalDeviceProvider
         , IQueueFamilyProvider queueFamilyProvider, ISurfaceProvider surfaceProvider, KhrSwapchain khrSwapchain, ILogicalDeviceProvider deviceProvider)
         {
-            _device = deviceProvider.LogicalDevice;
             _khrSwapchain = khrSwapchain;
-            _physicalDevice = physicalDeviceProvider.Device;
-            _surface = surfaceProvider.Surface;
+            _deviceProvider = deviceProvider;
             _window = windowProvider.Window;
             _logger = logger;
             _swapchainSupportProvider = swapchainSupportProvider;
+            _physicalDeviceProvider = physicalDeviceProvider;
             _queueFamilyProvider = queueFamilyProvider;
-            
+            _surfaceProvider = surfaceProvider;
+
             SurfaceFormatKHR ChooseSwapSurfaceFormat(SurfaceFormatKHR[] availableFormats)
             {
                 int maximum = 0;
@@ -97,7 +97,7 @@ namespace Aliquip
                 return best;
             }
 
-            var supportDetails = swapchainSupportProvider.QuerySwapchainSupport(_physicalDevice);
+            var supportDetails = swapchainSupportProvider.QuerySwapchainSupport(_physicalDeviceProvider.Device);
 
             _surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.Formats);
             _presentMode = ChooseSwapPresentMode(supportDetails.PresentModes);
@@ -120,10 +120,10 @@ namespace Aliquip
             logger.LogDebug("Selected present mode: {presentMode}", _presentMode);
             logger.LogDebug("Image count: {imageCount}", _imageCount);
 
-            RecreateSwapchain();
+            RecreateSwapchain(null);
         }
         
-        public unsafe void RecreateSwapchain()
+        public unsafe void RecreateSwapchain(Vector2D<int>? newSize)
         {            
             Extent2D ChooseSwapExtend(SurfaceCapabilitiesKHR capabilities)
             {
@@ -132,7 +132,7 @@ namespace Aliquip
                     return capabilities.CurrentExtent;
                 }
 
-                var windowSize = (Vector2D<uint>) _window.FramebufferSize;
+                var windowSize = (Vector2D<uint>) (newSize ?? _window.FramebufferSize);
                 var minImage = new Vector2D<uint>
                     (capabilities.MinImageExtent.Width, capabilities.MinImageExtent.Height);
                 var maxImage = new Vector2D<uint>
@@ -141,18 +141,18 @@ namespace Aliquip
                 var actual = Vector2D.Max(minImage, Vector2D.Max(maxImage, windowSize));
                 return new Extent2D(actual.X, actual.Y);
             }
-            var supportDetails = _swapchainSupportProvider.QuerySwapchainSupport(_physicalDevice);
+            var supportDetails = _swapchainSupportProvider.QuerySwapchainSupport(_physicalDeviceProvider.Device);
             var extent = ChooseSwapExtend(supportDetails.Capabilities);
 
             _logger.LogDebug("Creating swapchain");
 
-            var indices = _queueFamilyProvider.FindQueueFamilyIndices(_physicalDevice);
+            var indices = _queueFamilyProvider.FindQueueFamilyIndices(_physicalDeviceProvider.Device);
             var indicesSame = indices.GraphicsFamily == indices.PresentFamily;
 
             var queueFamilyIndices = stackalloc uint[] {indices.GraphicsFamily!.Value, indices.PresentFamily!.Value};
             SwapchainCreateInfoKHR createInfo = new SwapchainCreateInfoKHR
             (
-                surface: _surface,
+                surface: _surfaceProvider.Surface,
                 minImageCount: _imageCount,
                 imageFormat: _surfaceFormat.Format,
                 imageColorSpace: _surfaceFormat.ColorSpace,
@@ -168,13 +168,13 @@ namespace Aliquip
                 clipped: Vk.True
             );
 
-            _khrSwapchain.CreateSwapchain(_device, &createInfo, null, out var swapchain).ThrowCode();
+            _khrSwapchain.CreateSwapchain(_deviceProvider.LogicalDevice, &createInfo, null, out var swapchain).ThrowCode();
 
             var imageCount = _imageCount;
-            _khrSwapchain.GetSwapchainImages(_device, swapchain, ref imageCount, null);
+            _khrSwapchain.GetSwapchainImages(_deviceProvider.LogicalDevice, swapchain, ref imageCount, null);
             var images = new Image[imageCount];
             fixed (Image* pImages =
-                images) _khrSwapchain.GetSwapchainImages(_device, swapchain, ref imageCount, pImages);
+                images) _khrSwapchain.GetSwapchainImages(_deviceProvider.LogicalDevice, swapchain, ref imageCount, pImages);
 
             Swapchain = swapchain;
             SwapchainImages = images;
@@ -184,7 +184,7 @@ namespace Aliquip
 
         public unsafe void Dispose()
         {
-            _khrSwapchain.DestroySwapchain(_device, Swapchain, null);
+            _khrSwapchain.DestroySwapchain(_deviceProvider.LogicalDevice, Swapchain, null);
         }
     }
 }

@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Silk.NET.Maths;
+using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
@@ -23,6 +25,8 @@ namespace Aliquip
         private readonly IFramebufferProvider _framebufferProvider;
         private readonly ICommandBufferProvider _commandBufferProvider;
         private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
+        private readonly Vk _vk;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private IDisposable? _subscription;
 
         public SwapchainRecreationService
@@ -35,7 +39,9 @@ namespace Aliquip
             IGraphicsPipelineProvider graphicsPipelineProvider,
             IFramebufferProvider framebufferProvider,
             ICommandBufferProvider commandBufferProvider,
-            IPipelineLayoutProvider pipelineLayoutProvider
+            IPipelineLayoutProvider pipelineLayoutProvider,
+            Vk vk,
+            ILogicalDeviceProvider logicalDeviceProvider
         )
         {
             _windowProvider = windowProvider;
@@ -47,6 +53,8 @@ namespace Aliquip
             _framebufferProvider = framebufferProvider;
             _commandBufferProvider = commandBufferProvider;
             _pipelineLayoutProvider = pipelineLayoutProvider;
+            _vk = vk;
+            _logicalDeviceProvider = logicalDeviceProvider;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -61,9 +69,13 @@ namespace Aliquip
             return Task.CompletedTask;
         }
 
-        public void RecreateSwapchain()
+        public void RecreateSwapchain(Vector2D<int>? newSize)
         {
+            if (_windowProvider.Window.IsClosing)
+                return;
+            
             _logger.LogDebug("Recreating swapchain");
+            _vk.DeviceWaitIdle(_logicalDeviceProvider.LogicalDevice);
 
             _commandBufferProvider.Dispose();
             _framebufferProvider.Dispose();
@@ -73,7 +85,7 @@ namespace Aliquip
             _imageViewProvider.Dispose();
             _swapchainProvider.Dispose();
             
-            _swapchainProvider.RecreateSwapchain();
+            _swapchainProvider.RecreateSwapchain(newSize);
             _imageViewProvider.RecreateImageViews();
             _renderPassProvider.RecreateRenderPass();
             _pipelineLayoutProvider.RecreatePipelineLayout();
@@ -90,7 +102,7 @@ namespace Aliquip
 
         public void OnNext(WindowResized value)
         {
-            RecreateSwapchain();
+            RecreateSwapchain(value.EventArgs);
         }
     }
 }

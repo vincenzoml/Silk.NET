@@ -14,14 +14,14 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly KhrSurface _khrSurface;
+        private readonly ISurfaceProvider _surfaceProvider;
         private readonly Dictionary<PhysicalDevice, QueueFamilyIndices> _queueFamilyIndices = new();
-        private readonly SurfaceKHR _surface;
 
         public QueueFamilyProvider(Vk vk, KhrSurface khrSurface, ISurfaceProvider surfaceProvider)
         {
             _vk = vk;
             _khrSurface = khrSurface;
-            _surface = surfaceProvider.Surface;
+            _surfaceProvider = surfaceProvider;
         }
         
         public unsafe QueueFamilyIndices FindQueueFamilyIndices(PhysicalDevice device)
@@ -43,7 +43,7 @@ namespace Aliquip
                     indices.GraphicsFamily = i;
 
                 Bool32 presentSupport = default;
-                _khrSurface.GetPhysicalDeviceSurfaceSupport(device, i, _surface, &presentSupport);
+                _khrSurface.GetPhysicalDeviceSurfaceSupport(device, i, _surfaceProvider.Surface, &presentSupport);
 
                 if (presentSupport)
                 {

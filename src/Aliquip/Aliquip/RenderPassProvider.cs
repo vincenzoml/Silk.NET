@@ -11,17 +11,23 @@ namespace Aliquip
     internal sealed class RenderPassProvider : IRenderPassProvider, IDisposable
     {
         private readonly Vk _vk;
-        private Device _device;
-        private RenderPassCreateInfo _renderPassInfo;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly ISwapchainProvider _swapchainProvider;
         public RenderPass RenderPass { get; private set; }
 
         public unsafe RenderPassProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider)
         {
-            _device = logicalDeviceProvider.LogicalDevice;
             _vk = vk;
+            _logicalDeviceProvider = logicalDeviceProvider;
+            _swapchainProvider = swapchainProvider;
+            RecreateRenderPass();
+        }
+
+        public unsafe void RecreateRenderPass()
+        {
             var colorAttachment = new AttachmentDescription
             (
-                format: swapchainProvider.SwapchainFormat, // this is the only external dependency, and as it doesn't change when recreating the swapchain, there is no need to rebuild all this.
+                format: _swapchainProvider.SwapchainFormat, // this is the only external dependency, and as it doesn't change when recreating the swapchain, there is no need to rebuild all this.
                 samples: SampleCountFlags.SampleCount1Bit,
                 loadOp: AttachmentLoadOp.Clear,
                 storeOp: AttachmentStoreOp.Store,
@@ -50,7 +56,7 @@ namespace Aliquip
                 dstAccessMask: AccessFlags.AccessColorAttachmentWriteBit | AccessFlags.AccessColorAttachmentReadBit // is read needed?
             );
             
-            _renderPassInfo = new RenderPassCreateInfo
+            var renderPassInfo = new RenderPassCreateInfo
             (
                 attachmentCount: 1,
                 pAttachments: &colorAttachment,
@@ -60,21 +66,13 @@ namespace Aliquip
                 pDependencies: &dependency
             );
             
-            RecreateRenderPass();
-        }
-
-        public unsafe void RecreateRenderPass()
-        {
-            fixed (RenderPassCreateInfo* renderPassInfo = &_renderPassInfo)
-            {
-                _vk.CreateRenderPass(_device, renderPassInfo, null, out var renderPass).ThrowCode();
-                RenderPass = renderPass;
-            }
+            _vk.CreateRenderPass(_logicalDeviceProvider.LogicalDevice, &renderPassInfo, null, out var renderPass).ThrowCode();
+            RenderPass = renderPass;
         }
 
         public unsafe void Dispose()
         {
-            _vk.DestroyRenderPass(_device, RenderPass, null);
+            _vk.DestroyRenderPass(_logicalDeviceProvider.LogicalDevice, RenderPass, null);
         }
     }
 }

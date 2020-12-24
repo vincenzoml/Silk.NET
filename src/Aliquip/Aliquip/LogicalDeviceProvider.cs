@@ -14,22 +14,22 @@ namespace Aliquip
 {
     internal sealed class LogicalDeviceProvider : ILogicalDeviceProvider, IGraphicsQueueProvider, IPresentQueueProvider, IDisposable
     {
+        private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly Vk _vk;
-        private readonly PhysicalDevice _physicalDevice;
         public Device LogicalDevice { get; }
         public Queue GraphicsQueue { get; }
         public Queue PresentQueue { get; }
 
         public unsafe LogicalDeviceProvider(IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vk vk)
         {
+            _physicalDeviceProvider = physicalDeviceProvider;
             _vk = vk;
-            _physicalDevice = physicalDeviceProvider.Device;
             // TODO: dedup device extensions
             // (LogicalDeviceProvider & PhysicalDeviceProvider)
             var deviceExtensions = new List<string>();
             deviceExtensions.Add(KhrSwapchain.ExtensionName);
             
-            QueueFamilyIndices indices = queueFamilyProvider.FindQueueFamilyIndices(_physicalDevice);
+            QueueFamilyIndices indices = queueFamilyProvider.FindQueueFamilyIndices(physicalDeviceProvider.Device);
 
             List<uint> queuesToCreate = new();
             queuesToCreate.Add(indices.GraphicsFamily!.Value);
@@ -60,7 +60,7 @@ namespace Aliquip
                 //     : default
             );
 
-            _vk.CreateDevice(_physicalDevice, &deviceCreateInfo, null, out var logicalDevice).ThrowCode();
+            _vk.CreateDevice(physicalDeviceProvider.Device, &deviceCreateInfo, null, out var logicalDevice).ThrowCode();
             LogicalDevice = logicalDevice;
             _vk.CurrentDevice = LogicalDevice;
             _vk.GetDeviceQueue(LogicalDevice, indices.GraphicsFamily!.Value, 0, out var graphicsQueue);

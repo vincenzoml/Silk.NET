@@ -11,16 +11,16 @@ namespace Aliquip
     internal sealed class ImageViewProvider : IImageViewProvider, IDisposable
     {
         private readonly Vk _vk;
-        private readonly Device _device;
         private readonly ISwapchainProvider _swapchainProvider;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         public ImageView[] ImageViews { get; private set; }
 
         public unsafe ImageViewProvider(Vk vk, ISwapchainProvider swapchainProvider, ILogicalDeviceProvider logicalDeviceProvider)
         {
             _vk = vk;
-            _device = logicalDeviceProvider.LogicalDevice;
             _swapchainProvider = swapchainProvider;
-            
+            _logicalDeviceProvider = logicalDeviceProvider;
+
             RecreateImageViews();
         }
         
@@ -45,14 +45,14 @@ namespace Aliquip
                     subresourceRange: new ImageSubresourceRange(ImageAspectFlags.ImageAspectColorBit, 0, 1, 0, 1)
                 );
 
-                _vk.CreateImageView(_device, createInfo, null, out ImageViews[i]).ThrowCode();
+                _vk.CreateImageView(_logicalDeviceProvider.LogicalDevice, createInfo, null, out ImageViews[i]).ThrowCode();
             }
         }
 
         public unsafe void Dispose()
         {
             foreach (var imageView in ImageViews)
-                _vk.DestroyImageView(_device, imageView, null);
+                _vk.DestroyImageView(_logicalDeviceProvider.LogicalDevice, imageView, null);
         }
     }
 }

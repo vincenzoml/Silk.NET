@@ -27,10 +27,9 @@ namespace Aliquip
         private IObservable<WindowResized> _windowResizeObservable;
         private IObservable<WindowStateChanged> _windowStateChangedObservable;
         private IObservable<WindowRender> _windowRenderObservable;
-        private Task _runTask;
         private readonly ILogger<WindowProvider> _logger;
 
-        public WindowProvider(ILogger<WindowProvider> logger)
+        public unsafe WindowProvider(ILogger<WindowProvider> logger)
         {
             _logger = logger;
             Window = Silk.NET.Windowing.Window.Create
@@ -68,42 +67,13 @@ namespace Aliquip
             _logger.LogDebug("Waiting for window to load");
             
             Window.Initialize();
-        }
-
-        public unsafe Task StartAsync(CancellationToken cancellationToken)
-        {
-            _runTask = Task.Factory.StartNew(
-                () =>
-                {
-                    Window.Run(() =>
-                    {
-                        _logger.LogTrace("Updating");
-                        Window.DoEvents();
-                        if (Window.IsClosing)
-                            return;
-                        Window.DoUpdate();
-                        Window.DoRender();
-                    });
-                    Window.DoEvents();
-                    Window.Reset();
-                }, TaskCreationOptions.LongRunning);
             var glfwExtensions = Window.VkSurface!.GetRequiredExtensions(out var count);
             InstanceExtensions = SilkMarshal.PtrToStringArray((IntPtr) glfwExtensions, (int)count);
-            Window.Center(Window.Monitor);
-
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            Window.Dispose();
-            return Task.CompletedTask;
         }
 
         public void Dispose()
         {
             Window?.Dispose();
-            _runTask?.Dispose();
         }
 
         public IDisposable Subscribe(IObserver<WindowResized> observer)

@@ -15,22 +15,22 @@ namespace Aliquip
     internal sealed class GraphicsPipelineProvider : IGraphicsPipelineProvider, IDisposable
     {
         private readonly Vk _vk;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IResourceProvider _resourceProvider;
-        private readonly Device _device;
         public Pipeline GraphicsPipeline { get; private set; }
 
         public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
             IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider)
         {
             _vk = vk;
+            _logicalDeviceProvider = logicalDeviceProvider;
             _swapchainProvider = swapchainProvider;
             _pipelineLayoutProvider = pipelineLayoutProvider;
             _renderPassProvider = renderPassProvider;
             _resourceProvider = resourceProvider;
-            _device = logicalDeviceProvider.LogicalDevice;
             
             RecreateGraphicsPipeline();
         }
@@ -47,7 +47,7 @@ namespace Aliquip
                         codeSize: (UIntPtr) fileContents.Length,
                         pCode: (uint*) pFile
                     );
-                    _vk!.CreateShaderModule(_device, &createInfo, null, out var module).ThrowCode();
+                    _vk!.CreateShaderModule(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var module).ThrowCode();
                     return module;
                 }
             }
@@ -157,17 +157,17 @@ namespace Aliquip
                     basePipelineHandle: null
                 );
 
-                _vk.CreateGraphicsPipelines(_device, default, 1, &pipelineInfo, null, out var graphicsPipeline).ThrowCode();
+                _vk.CreateGraphicsPipelines(_logicalDeviceProvider.LogicalDevice, default, 1, &pipelineInfo, null, out var graphicsPipeline).ThrowCode();
                 GraphicsPipeline = graphicsPipeline;
             }
             
-            _vk.DestroyShaderModule(_device, vertModule, null);
-            _vk.DestroyShaderModule(_device, fragModule, null);
+            _vk.DestroyShaderModule(_logicalDeviceProvider.LogicalDevice, vertModule, null);
+            _vk.DestroyShaderModule(_logicalDeviceProvider.LogicalDevice, fragModule, null);
         }
 
         public unsafe void Dispose()
         {
-            _vk.DestroyPipeline(_device, GraphicsPipeline, null);
+            _vk.DestroyPipeline(_logicalDeviceProvider.LogicalDevice, GraphicsPipeline, null);
         }
     }
 }

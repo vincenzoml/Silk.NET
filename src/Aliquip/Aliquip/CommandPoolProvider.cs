@@ -11,24 +11,24 @@ namespace Aliquip
     internal sealed class CommandPoolProvider : ICommandPoolProvider, IDisposable
     {
         private readonly Vk _vk;
-        private readonly Device _device;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         public CommandPool CommandPool { get; }
 
         public unsafe CommandPoolProvider(Vk vk, IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, ILogicalDeviceProvider logicalDeviceProvider)
         {
             _vk = vk;
-            _device = logicalDeviceProvider.LogicalDevice;
+            _logicalDeviceProvider = logicalDeviceProvider;
             var indices = queueFamilyProvider.FindQueueFamilyIndices(physicalDeviceProvider.Device);
 
             var createInfo = new CommandPoolCreateInfo(queueFamilyIndex: indices.GraphicsFamily!.Value);
 
-            _vk.CreateCommandPool(_device, &createInfo, null, out var cp).ThrowCode();
+            _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var cp).ThrowCode();
             CommandPool = cp;
         }
 
         public unsafe void Dispose()
         {
-            _vk.DestroyCommandPool(_device, CommandPool, null);
+            _vk.DestroyCommandPool(_logicalDeviceProvider.LogicalDevice, CommandPool, null);
         }
     }
 }
