@@ -22,7 +22,7 @@ namespace Aliquip
                 .AddSingleton(provider => (IObservable<WindowResized>) provider.GetRequiredService<IWindowProvider>())
                 .AddSingleton(provider => (IObservable<WindowStateChanged>) provider.GetRequiredService<IWindowProvider>())
                 .AddHostedService(provider => provider.GetRequiredService<IWindowProvider>())
-                .AddSingleton(Vk.GetApi())
+                .AddSingleton<Vk>(x => Vk.GetApi())
                 .AddSingleton<IInstanceProvider, InstanceProvider>()
 #if DEBUG
                 .AddSingleton<IDebugMessengerProvider, DebugMessengerProvider>()
@@ -63,6 +63,9 @@ namespace Aliquip
                 .AddSingleton<ICommandBufferProvider, CommandBufferProvider>()
                 .AddHostedService<DrawFrameService>()
                 .AddSingleton<IResourceProvider, ResourceProvider>()
+                .AddSingleton<SwapchainRecreationService>()
+                .AddSingleton(x => (ISwapchainRecreationService)x.GetRequiredService<SwapchainRecreationService>())
+                .AddHostedService(x => x.GetRequiredService<SwapchainRecreationService>())
                 ;
         }
     }

@@ -20,6 +20,7 @@ namespace Aliquip
         private readonly IWindowProvider _windowProvider;
         private readonly Vk _vk;
         private readonly KhrSwapchain _khrSwapchain;
+        private readonly ISwapchainRecreationService _recreationService;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
@@ -33,11 +34,13 @@ namespace Aliquip
         private readonly Queue _presentQueue;
 
         public unsafe DrawFrameService(IWindowProvider windowProvider, Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
-            KhrSwapchain khrSwapchain, ICommandBufferProvider commandBufferProvider, IGraphicsQueueProvider graphicsQueueProvider, IPresentQueueProvider presentQueueProvider)
+            KhrSwapchain khrSwapchain, ICommandBufferProvider commandBufferProvider, IGraphicsQueueProvider graphicsQueueProvider, IPresentQueueProvider presentQueueProvider,
+            ISwapchainRecreationService recreationService)
         {
             _windowProvider = windowProvider;
             _vk = vk;
             _khrSwapchain = khrSwapchain;
+            _recreationService = recreationService;
             _device = logicalDeviceProvider.LogicalDevice;
             _swapchain = swapchainProvider.Swapchain;
             _commandBuffers = commandBufferProvider.CommandBuffers;
@@ -80,7 +83,7 @@ namespace Aliquip
 
             if (result == Result.ErrorOutOfDateKhr)
             {
-                // TODO: recreate swapchain
+                _recreationService.RecreateSwapchain();
                 return;
             }
 
@@ -129,7 +132,7 @@ namespace Aliquip
 
             if (result == Result.ErrorOutOfDateKhr || result == Result.SuboptimalKhr)
             {
-                // recreate swapchain
+                _recreationService.RecreateSwapchain();
             }
             else
             {
@@ -148,6 +151,8 @@ namespace Aliquip
         public unsafe void Dispose()
         {
             _subscription?.Dispose();
+
+            _vk.DeviceWaitIdle(_device);
 
             for (int i = 0; i < MaxFramesInFlight; i++)
             {

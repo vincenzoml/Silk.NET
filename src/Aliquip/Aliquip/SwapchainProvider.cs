@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
+using Silk.NET.Windowing;
 
 namespace Aliquip
 {
@@ -15,18 +16,31 @@ namespace Aliquip
     {
         private readonly KhrSwapchain _khrSwapchain;
         private readonly Device _device;
-        public SwapchainKHR Swapchain { get; }
-        public Image[] SwapchainImages { get; }
-        public Format SwapchainFormat { get; }
-        public Extent2D SwapchainExtent { get; }
+        private readonly SurfaceKHR _surface;
+        private readonly IWindow _window;
+        private readonly SurfaceFormatKHR _surfaceFormat;
+        private readonly PresentModeKHR _presentMode;
+        private readonly uint _imageCount;
+        private readonly PhysicalDevice _physicalDevice;
+        private readonly ILogger _logger;
+        private readonly ISwapchainSupportProvider _swapchainSupportProvider;
+        private readonly IQueueFamilyProvider _queueFamilyProvider;
+        public SwapchainKHR Swapchain { get; private set; }
+        public Image[] SwapchainImages { get; private set; }
+        public Format SwapchainFormat { get; private set; }
+        public Extent2D SwapchainExtent { get; private set; }
 
         public unsafe SwapchainProvider(ILogger<SwapchainProvider> logger, IFormatRater formatRater, IColorspaceRater colorspaceRater, IWindowProvider windowProvider, ISwapchainSupportProvider swapchainSupportProvider, IPhysicalDeviceProvider physicalDeviceProvider
         , IQueueFamilyProvider queueFamilyProvider, ISurfaceProvider surfaceProvider, KhrSwapchain khrSwapchain, ILogicalDeviceProvider deviceProvider)
         {
             _device = deviceProvider.LogicalDevice;
             _khrSwapchain = khrSwapchain;
-            var physicalDevice = physicalDeviceProvider.Device;
-            var surface = surfaceProvider.Surface;
+            _physicalDevice = physicalDeviceProvider.Device;
+            _surface = surfaceProvider.Surface;
+            _window = windowProvider.Window;
+            _logger = logger;
+            _swapchainSupportProvider = swapchainSupportProvider;
+            _queueFamilyProvider = queueFamilyProvider;
             
             SurfaceFormatKHR ChooseSwapSurfaceFormat(SurfaceFormatKHR[] availableFormats)
             {
@@ -83,6 +97,34 @@ namespace Aliquip
                 return best;
             }
 
+            var supportDetails = swapchainSupportProvider.QuerySwapchainSupport(_physicalDevice);
+
+            _surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.Formats);
+            _presentMode = ChooseSwapPresentMode(supportDetails.PresentModes);
+            
+            _imageCount = 3;
+            
+            var hasMaxImage = supportDetails.Capabilities.MaxImageCount > 0;
+            if (hasMaxImage && _imageCount > supportDetails.Capabilities.MaxImageCount)
+                _imageCount = supportDetails.Capabilities.MaxImageCount;
+
+            if (_imageCount < supportDetails.Capabilities.MinImageCount)
+                _imageCount = supportDetails.Capabilities.MinImageCount;
+            
+            logger.LogDebug("Best possible format: {format}, rating: {rating}", formatRater.BestPossibleFormat.Item1, formatRater.BestPossibleFormat.Item2);
+            var formatRating = formatRater.Rate(_surfaceFormat.Format);
+            logger.LogDebug("Selected format: {format}, rating: {rating} ({percent}%)", _surfaceFormat.Format, formatRating, MathF.Round((float)formatRating / (float)formatRater.BestPossibleFormat.Item2 * 100f, 2));
+            logger.LogDebug("Best possible colorspace: {colorspace}, rating: {rating}", colorspaceRater.BestPossibleColorspace.Item1, colorspaceRater.BestPossibleColorspace.Item2);
+            var colorspaceRating = colorspaceRater.Rate(_surfaceFormat.ColorSpace);
+            logger.LogDebug("Selected colorspace: {colorspace}, rating: {rating}, ({percent}%)", _surfaceFormat.ColorSpace, colorspaceRating, MathF.Round((float)colorspaceRating / (float)colorspaceRater.BestPossibleColorspace.Item2 * 100f, 2));
+            logger.LogDebug("Selected present mode: {presentMode}", _presentMode);
+            logger.LogDebug("Image count: {imageCount}", _imageCount);
+
+            RecreateSwapchain();
+        }
+        
+        public unsafe void RecreateSwapchain()
+        {            
             Extent2D ChooseSwapExtend(SurfaceCapabilitiesKHR capabilities)
             {
                 if (capabilities.CurrentExtent.Width != uint.MaxValue)
@@ -90,7 +132,7 @@ namespace Aliquip
                     return capabilities.CurrentExtent;
                 }
 
-                var windowSize = (Vector2D<uint>) windowProvider.Window.FramebufferSize;
+                var windowSize = (Vector2D<uint>) _window.FramebufferSize;
                 var minImage = new Vector2D<uint>
                     (capabilities.MinImageExtent.Width, capabilities.MinImageExtent.Height);
                 var maxImage = new Vector2D<uint>
@@ -99,42 +141,21 @@ namespace Aliquip
                 var actual = Vector2D.Max(minImage, Vector2D.Max(maxImage, windowSize));
                 return new Extent2D(actual.X, actual.Y);
             }
-
-            var supportDetails = swapchainSupportProvider.QuerySwapchainSupport(physicalDevice);
-
-            var surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.Formats);
-            var presentMode = ChooseSwapPresentMode(supportDetails.PresentModes);
+            var supportDetails = _swapchainSupportProvider.QuerySwapchainSupport(_physicalDevice);
             var extent = ChooseSwapExtend(supportDetails.Capabilities);
 
-            uint imageCount = 3;
-            
-            var hasMaxImage = supportDetails.Capabilities.MaxImageCount > 0;
-            if (hasMaxImage && imageCount > supportDetails.Capabilities.MaxImageCount)
-                imageCount = supportDetails.Capabilities.MaxImageCount;
+            _logger.LogDebug("Creating swapchain");
 
-            if (imageCount < supportDetails.Capabilities.MinImageCount)
-                imageCount = supportDetails.Capabilities.MinImageCount;
-            
-            logger.LogDebug("Creating swapchain");
-            logger.LogDebug("Best possible format: {format}, rating: {rating}", formatRater.BestPossibleFormat.Item1, formatRater.BestPossibleFormat.Item2);
-            var formatRating = formatRater.Rate(surfaceFormat.Format);
-            logger.LogDebug("Selected format: {format}, rating: {rating} ({percent}%)", surfaceFormat.Format, formatRating, MathF.Round((float)formatRating / (float)formatRater.BestPossibleFormat.Item2 * 100f, 2));
-            logger.LogDebug("Best possible colorspace: {colorspace}, rating: {rating}", colorspaceRater.BestPossibleColorspace.Item1, colorspaceRater.BestPossibleColorspace.Item2);
-            var colorspaceRating = colorspaceRater.Rate(surfaceFormat.ColorSpace);
-            logger.LogDebug("Selected colorspace: {colorspace}, rating: {rating}, ({percent}%)", surfaceFormat.ColorSpace, colorspaceRating, MathF.Round((float)colorspaceRating / (float)colorspaceRater.BestPossibleColorspace.Item2 * 100f, 2));
-            logger.LogDebug("Selected present mode: {presentMode}", presentMode);
-            logger.LogDebug("Image count: {imageCount}", imageCount);
-
-            var indices = queueFamilyProvider.FindQueueFamilyIndices(physicalDevice);
+            var indices = _queueFamilyProvider.FindQueueFamilyIndices(_physicalDevice);
             var indicesSame = indices.GraphicsFamily == indices.PresentFamily;
 
             var queueFamilyIndices = stackalloc uint[] {indices.GraphicsFamily!.Value, indices.PresentFamily!.Value};
             SwapchainCreateInfoKHR createInfo = new SwapchainCreateInfoKHR
             (
-                surface: surface,
-                minImageCount: imageCount,
-                imageFormat: surfaceFormat.Format,
-                imageColorSpace: surfaceFormat.ColorSpace,
+                surface: _surface,
+                minImageCount: _imageCount,
+                imageFormat: _surfaceFormat.Format,
+                imageColorSpace: _surfaceFormat.ColorSpace,
                 imageExtent: extent,
                 imageArrayLayers: 1,
                 imageUsage: ImageUsageFlags.ImageUsageColorAttachmentBit,
@@ -143,12 +164,13 @@ namespace Aliquip
                 pQueueFamilyIndices: indicesSame ? default : queueFamilyIndices,
                 preTransform: supportDetails.Capabilities.CurrentTransform,
                 compositeAlpha: CompositeAlphaFlagsKHR.CompositeAlphaOpaqueBitKhr,
-                presentMode: presentMode,
+                presentMode: _presentMode,
                 clipped: Vk.True
             );
 
             _khrSwapchain.CreateSwapchain(_device, &createInfo, null, out var swapchain).ThrowCode();
 
+            var imageCount = _imageCount;
             _khrSwapchain.GetSwapchainImages(_device, swapchain, ref imageCount, null);
             var images = new Image[imageCount];
             fixed (Image* pImages =
@@ -156,7 +178,7 @@ namespace Aliquip
 
             Swapchain = swapchain;
             SwapchainImages = images;
-            SwapchainFormat = surfaceFormat.Format;
+            SwapchainFormat = _surfaceFormat.Format;
             SwapchainExtent = extent;
         }
 

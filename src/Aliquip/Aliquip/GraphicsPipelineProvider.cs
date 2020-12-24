@@ -15,18 +15,31 @@ namespace Aliquip
     internal sealed class GraphicsPipelineProvider : IGraphicsPipelineProvider, IDisposable
     {
         private readonly Vk _vk;
+        private readonly ISwapchainProvider _swapchainProvider;
+        private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
+        private readonly IRenderPassProvider _renderPassProvider;
+        private readonly IResourceProvider _resourceProvider;
         private readonly Device _device;
-        public Pipeline GraphicsPipeline { get; }
+        public Pipeline GraphicsPipeline { get; private set; }
 
-        public unsafe GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
+        public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
             IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider)
         {
             _vk = vk;
+            _swapchainProvider = swapchainProvider;
+            _pipelineLayoutProvider = pipelineLayoutProvider;
+            _renderPassProvider = renderPassProvider;
+            _resourceProvider = resourceProvider;
             _device = logicalDeviceProvider.LogicalDevice;
+            
+            RecreateGraphicsPipeline();
+        }
 
+        public unsafe void RecreateGraphicsPipeline()
+        {
             ShaderModule CreateShaderModule(string path)
             {
-                var fileContents = resourceProvider[path];
+                var fileContents = _resourceProvider[path];
                 fixed (byte* pFile = fileContents)
                 {
                     var createInfo = new ShaderModuleCreateInfo
@@ -80,13 +93,13 @@ namespace Aliquip
                 (
                     0,
                     0,
-                    swapchainProvider.SwapchainExtent.Width,
-                    swapchainProvider.SwapchainExtent.Height,
+                    _swapchainProvider.SwapchainExtent.Width,
+                    _swapchainProvider.SwapchainExtent.Height,
                     0f,
                     1f
                 );
 
-                var scissor = new Rect2D(new Offset2D(0, 0), swapchainProvider.SwapchainExtent);
+                var scissor = new Rect2D(new Offset2D(0, 0), _swapchainProvider.SwapchainExtent);
 
                 var viewportState = new PipelineViewportStateCreateInfo
                 (
@@ -138,8 +151,8 @@ namespace Aliquip
                     pRasterizationState: &rasterizer,
                     pMultisampleState: &multisampling,
                     pColorBlendState: &colorBlending,
-                    layout: pipelineLayoutProvider.PipelineLayout,
-                    renderPass: renderPassProvider.RenderPass,
+                    layout: _pipelineLayoutProvider.PipelineLayout,
+                    renderPass: _renderPassProvider.RenderPass,
                     subpass: 0,
                     basePipelineHandle: null
                 );

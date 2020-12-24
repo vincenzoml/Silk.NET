@@ -9,25 +9,32 @@ using Silk.NET.Vulkan;
 namespace Aliquip
 {
     internal sealed class ImageViewProvider : IImageViewProvider, IDisposable
-
     {
         private readonly Vk _vk;
         private readonly Device _device;
-        public ImageView[] ImageViews { get; }
+        private readonly ISwapchainProvider _swapchainProvider;
+        public ImageView[] ImageViews { get; private set; }
 
         public unsafe ImageViewProvider(Vk vk, ISwapchainProvider swapchainProvider, ILogicalDeviceProvider logicalDeviceProvider)
         {
             _vk = vk;
             _device = logicalDeviceProvider.LogicalDevice;
-            ImageViews = new ImageView[swapchainProvider.SwapchainImages.Length];
+            _swapchainProvider = swapchainProvider;
+            
+            RecreateImageViews();
+        }
+        
+        public unsafe void RecreateImageViews()
+        {
+            ImageViews = new ImageView[_swapchainProvider.SwapchainImages.Length];
 
             for (int i = 0; i < ImageViews.Length; i++)
             {
                 var createInfo = new ImageViewCreateInfo
                 (
-                    image: swapchainProvider.SwapchainImages[i],
+                    image: _swapchainProvider.SwapchainImages[i],
                     viewType: ImageViewType.ImageViewType2D,
-                    format: swapchainProvider.SwapchainFormat,
+                    format: _swapchainProvider.SwapchainFormat,
                     components: new ComponentMapping
                     (
                         ComponentSwizzle.Identity,

@@ -8,11 +8,16 @@ using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
-    internal sealed class CommandBufferProvider : ICommandBufferProvider
+    internal sealed class CommandBufferProvider : ICommandBufferProvider, IDisposable
     {
         private readonly Vk _vk;
+        private readonly ICommandPoolProvider _commandPoolProvider;
+        private readonly IFramebufferProvider _framebufferProvider;
+        private readonly IRenderPassProvider _renderPassProvider;
+        private readonly ISwapchainProvider _swapchainProvider;
+        private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
         private readonly Device _device;
-        public CommandBuffer[] CommandBuffers { get; }
+        public CommandBuffer[] CommandBuffers { get; private set; }
 
         public unsafe CommandBufferProvider
         (
@@ -26,13 +31,23 @@ namespace Aliquip
         )
         {
             _vk = vk;
+            _commandPoolProvider = commandPoolProvider;
+            _framebufferProvider = framebufferProvider;
+            _renderPassProvider = renderPassProvider;
+            _swapchainProvider = swapchainProvider;
+            _graphicsPipelineProvider = graphicsPipelineProvider;
             _device = logicalDeviceProvider.LogicalDevice;
+            
+            RecreateCommandBuffers();
+        }
 
-            CommandBuffers = new CommandBuffer[framebufferProvider.Framebuffers.Length];
+        public unsafe void RecreateCommandBuffers()
+        {
+            CommandBuffers = new CommandBuffer[_framebufferProvider.Framebuffers.Length];
 
             var allocInfo = new CommandBufferAllocateInfo
             (
-                commandPool: commandPoolProvider.CommandPool, level: CommandBufferLevel.Primary,
+                commandPool: _commandPoolProvider.CommandPool, level: CommandBufferLevel.Primary,
                 commandBufferCount: (uint) CommandBuffers.Length
             );
 
@@ -49,22 +64,27 @@ namespace Aliquip
                 
                 var renderPassInfo = new RenderPassBeginInfo
                 (
-                    renderPass: renderPassProvider.RenderPass,
-                    framebuffer: framebufferProvider.Framebuffers[i],
-                    renderArea: new Rect2D(new Offset2D(0, 0), swapchainProvider.SwapchainExtent),
+                    renderPass: _renderPassProvider.RenderPass,
+                    framebuffer: _framebufferProvider.Framebuffers[i],
+                    renderArea: new Rect2D(new Offset2D(0, 0), _swapchainProvider.SwapchainExtent),
                     clearValueCount: 1,
                     pClearValues: &clearColor
                 );
                 
                 _vk.CmdBeginRenderPass(CommandBuffers[i], renderPassInfo, SubpassContents.Inline);
                 
-                _vk.CmdBindPipeline(CommandBuffers[i], PipelineBindPoint.Graphics, graphicsPipelineProvider.GraphicsPipeline);
+                _vk.CmdBindPipeline(CommandBuffers[i], PipelineBindPoint.Graphics, _graphicsPipelineProvider.GraphicsPipeline);
                 _vk.CmdDraw(CommandBuffers[i], 3, 1, 0, 0);
                 
                 _vk.CmdEndRenderPass(CommandBuffers[i]);
 
                 _vk.EndCommandBuffer(CommandBuffers[i]).ThrowCode();
             }
+        }
+
+        public void Dispose()
+        {
+            _vk.FreeCommandBuffers(_device, _commandPoolProvider.CommandPool, (uint) CommandBuffers.Length, CommandBuffers);
         }
     }
 }

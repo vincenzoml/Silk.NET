@@ -11,26 +11,38 @@ namespace Aliquip
     internal sealed class FramebufferProvider : IFramebufferProvider, IDisposable
     {
         private readonly Vk _vk;
+        private readonly ISwapchainProvider _swapchainProvider;
+        private readonly IRenderPassProvider _renderPassProvider;
+        private readonly IImageViewProvider _imageViewProvider;
         private readonly Device _device;
-        public Framebuffer[] Framebuffers { get; }
+        public Framebuffer[] Framebuffers { get; private set; }
 
         public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider)
         {
             _vk = vk;
+            _swapchainProvider = swapchainProvider;
+            _renderPassProvider = renderPassProvider;
+            _imageViewProvider = imageViewProvider;
             _device = deviceProvider.LogicalDevice;
-            Framebuffers = new Framebuffer[swapchainProvider.SwapchainImages.Length];
+            
+            RecreateFramebuffers();
+        }
+
+        public unsafe void RecreateFramebuffers()
+        {
+            Framebuffers = new Framebuffer[_swapchainProvider.SwapchainImages.Length];
             
             for (int i = 0; i < Framebuffers.Length; i++)
             {
-                var attachment = imageViewProvider.ImageViews[i];
+                var attachment = _imageViewProvider.ImageViews[i];
 
                 var createInfo = new FramebufferCreateInfo
                 (
-                    renderPass: renderPassProvider.RenderPass,
+                    renderPass: _renderPassProvider.RenderPass,
                     attachmentCount: 1,
                     pAttachments: &attachment,
-                    width: swapchainProvider.SwapchainExtent.Width,
-                    height: swapchainProvider.SwapchainExtent.Height,
+                    width: _swapchainProvider.SwapchainExtent.Width,
+                    height: _swapchainProvider.SwapchainExtent.Height,
                     layers: 1
                 );
 

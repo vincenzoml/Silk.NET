@@ -12,7 +12,8 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private Device _device;
-        public RenderPass RenderPass { get; }
+        private RenderPassCreateInfo _renderPassInfo;
+        public RenderPass RenderPass { get; private set; }
 
         public unsafe RenderPassProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider)
         {
@@ -20,7 +21,7 @@ namespace Aliquip
             _vk = vk;
             var colorAttachment = new AttachmentDescription
             (
-                format: swapchainProvider.SwapchainFormat,
+                format: swapchainProvider.SwapchainFormat, // this is the only external dependency, and as it doesn't change when recreating the swapchain, there is no need to rebuild all this.
                 samples: SampleCountFlags.SampleCount1Bit,
                 loadOp: AttachmentLoadOp.Clear,
                 storeOp: AttachmentStoreOp.Store,
@@ -49,7 +50,7 @@ namespace Aliquip
                 dstAccessMask: AccessFlags.AccessColorAttachmentWriteBit | AccessFlags.AccessColorAttachmentReadBit // is read needed?
             );
             
-            var renderPassInfo = new RenderPassCreateInfo
+            _renderPassInfo = new RenderPassCreateInfo
             (
                 attachmentCount: 1,
                 pAttachments: &colorAttachment,
@@ -58,9 +59,17 @@ namespace Aliquip
                 dependencyCount: 1,
                 pDependencies: &dependency
             );
+            
+            RecreateRenderPass();
+        }
 
-            _vk.CreateRenderPass(_device, &renderPassInfo, null, out var renderPass).ThrowCode();
-            RenderPass = renderPass;
+        public unsafe void RecreateRenderPass()
+        {
+            fixed (RenderPassCreateInfo* renderPassInfo = &_renderPassInfo)
+            {
+                _vk.CreateRenderPass(_device, renderPassInfo, null, out var renderPass).ThrowCode();
+                RenderPass = renderPass;
+            }
         }
 
         public unsafe void Dispose()

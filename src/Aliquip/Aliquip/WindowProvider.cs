@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Core.Native;
+using Silk.NET.GLFW;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using VideoMode = Silk.NET.Windowing.VideoMode;
@@ -39,7 +40,7 @@ namespace Aliquip
                     true, new Vector2D<int>(50, 50), new Vector2D<int>(1280, 720), 0.0, 0.0,
                     new GraphicsAPI
                         (ContextAPI.Vulkan, ContextProfile.Core, ContextFlags.ForwardCompatible, new APIVersion(1, 2)),
-                    "Aliquip sample title", WindowState.Normal, WindowBorder.Resizable, false, false, VideoMode.Default
+                    "Aliquip sample title", WindowState.Normal, WindowBorder.Resizable, false, false, new VideoMode()
                 )
             );
 
@@ -71,11 +72,12 @@ namespace Aliquip
 
         public unsafe Task StartAsync(CancellationToken cancellationToken)
         {
-            _runTask = Task.Run(
+            _runTask = Task.Factory.StartNew(
                 () =>
                 {
                     Window.Run(() =>
                     {
+                        _logger.LogTrace("Updating");
                         Window.DoEvents();
                         if (Window.IsClosing)
                             return;
@@ -84,9 +86,10 @@ namespace Aliquip
                     });
                     Window.DoEvents();
                     Window.Reset();
-                });
-            var glfwExtensions = Window.VkSurface.GetRequiredExtensions(out var count);
+                }, TaskCreationOptions.LongRunning);
+            var glfwExtensions = Window.VkSurface!.GetRequiredExtensions(out var count);
             InstanceExtensions = SilkMarshal.PtrToStringArray((IntPtr) glfwExtensions, (int)count);
+            Window.Center(Window.Monitor);
 
             return Task.CompletedTask;
         }
