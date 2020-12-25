@@ -12,13 +12,17 @@ using Silk.NET.Vulkan.Extensions.KHR;
 
 namespace Aliquip
 {
-    internal sealed class LogicalDeviceProvider : ILogicalDeviceProvider, IGraphicsQueueProvider, IPresentQueueProvider, IDisposable
+    internal sealed class LogicalDeviceProvider : ILogicalDeviceProvider, IGraphicsQueueProvider, IPresentQueueProvider, ITransferQueueProvider, IDisposable
     {
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly Vk _vk;
         public Device LogicalDevice { get; }
         public Queue GraphicsQueue { get; }
+        public uint GraphicsQueueIndex { get; set; }
         public Queue PresentQueue { get; }
+        public uint PresentQueueIndex { get; }
+        public Queue TransferQueue { get; }
+        public uint TransferQueueIndex { get; }
 
         public unsafe LogicalDeviceProvider(IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vk vk)
         {
@@ -34,6 +38,7 @@ namespace Aliquip
             List<uint> queuesToCreate = new();
             queuesToCreate.Add(indices.GraphicsFamily!.Value);
             queuesToCreate.Add(indices.PresentFamily!.Value);
+            queuesToCreate.Add(indices.TransferFamily!.Value);
             queuesToCreate = queuesToCreate.Distinct().ToList();
 
             var queueCreateInfos = stackalloc DeviceQueueCreateInfo[queuesToCreate.Count];
@@ -65,8 +70,13 @@ namespace Aliquip
             _vk.CurrentDevice = LogicalDevice;
             _vk.GetDeviceQueue(LogicalDevice, indices.GraphicsFamily!.Value, 0, out var graphicsQueue);
             GraphicsQueue = graphicsQueue;
+            GraphicsQueueIndex = indices.GraphicsFamily.Value;
             _vk.GetDeviceQueue(LogicalDevice, indices.PresentFamily!.Value, 0, out var presentQueue);
             PresentQueue = presentQueue;
+            PresentQueueIndex = indices.PresentFamily.Value;
+            _vk.GetDeviceQueue(LogicalDevice, indices.TransferFamily!.Value, 0, out var transferQueue);
+            TransferQueue = transferQueue;
+            TransferQueueIndex = indices.TransferFamily.Value;
         }
 
         public unsafe void Dispose()

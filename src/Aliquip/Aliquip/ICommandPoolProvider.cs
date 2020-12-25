@@ -9,6 +9,6 @@ namespace Aliquip
 {
     public interface ICommandPoolProvider
     {
-        CommandPool CommandPool { get; }
+        CommandPool this[uint queueFamilyIndex] { get; }
     }
 }

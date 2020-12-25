@@ -5,14 +5,11 @@
 
 using System;
 using Silk.NET.Vulkan;
-using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Aliquip
 {
-    public interface IGraphicsPipelineProvider : IDisposable
+    public interface ICommandBufferFactory
     {
-        Pipeline GraphicsPipeline { get; }
-        Buffer VertexBuffer { get; }
-        void RecreateGraphicsPipeline();
+        CommandBuffer[] CreateCommandBuffers(int amount, uint queueFamilyIndex, CommandBufferBeginInfo? commandBufferBeginInfo, Action<CommandBuffer, int> record);
     }
 }

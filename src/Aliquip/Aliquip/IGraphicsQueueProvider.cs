@@ -10,5 +10,6 @@ namespace Aliquip
     public interface IGraphicsQueueProvider
     {
         Queue GraphicsQueue { get; }
+        uint GraphicsQueueIndex { get; set; }
     }
 }

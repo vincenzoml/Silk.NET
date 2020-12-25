@@ -42,6 +42,10 @@ namespace Aliquip
                 if ((pQueueFamilies[i].QueueFlags & QueueFlags.QueueGraphicsBit) != 0)
                     indices.GraphicsFamily = i;
 
+                // else because we don't want the TransferFamily = the GraphicsFamily, that's the whole point.
+                else if ((pQueueFamilies[i].QueueFlags & QueueFlags.QueueTransferBit) != 0)
+                    indices.TransferFamily = i;
+
                 Bool32 presentSupport = default;
                 _khrSurface.GetPhysicalDeviceSurfaceSupport(device, i, _surfaceProvider.Surface, &presentSupport);
 

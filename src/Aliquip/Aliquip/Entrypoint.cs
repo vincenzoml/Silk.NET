@@ -59,12 +59,12 @@ namespace Aliquip
                 .AddSingleton<IGraphicsPipelineProvider, GraphicsPipelineProvider>()
                 .AddSingleton<IFramebufferProvider, FramebufferProvider>()
                 .AddSingleton<ICommandPoolProvider, CommandPoolProvider>()
-                .AddSingleton<ICommandBufferProvider, CommandBufferProvider>()
                 .AddHostedService<DrawFrameService>()
                 .AddSingleton<IResourceProvider, ResourceProvider>()
                 .AddSingleton<SwapchainRecreationService>()
                 .AddSingleton(x => (ISwapchainRecreationService)x.GetRequiredService<SwapchainRecreationService>())
                 .AddHostedService(x => x.GetRequiredService<SwapchainRecreationService>())
+                .AddSingleton<ICommandBufferFactory, CommandBufferFactory>()
                 ;
         }
     }

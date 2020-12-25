@@ -16,10 +16,11 @@ namespace Aliquip
     {
         public uint? GraphicsFamily;
         public uint? PresentFamily;
+        public uint? TransferFamily;
 
         public bool IsComplete()
         {
-            return GraphicsFamily.HasValue && PresentFamily.HasValue;
+            return GraphicsFamily.HasValue && PresentFamily.HasValue && TransferFamily.HasValue;
         }
     }
 }

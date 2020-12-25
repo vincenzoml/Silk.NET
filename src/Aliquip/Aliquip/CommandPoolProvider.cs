@@ -4,6 +4,7 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Collections.Generic;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
@@ -12,23 +13,34 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
-        public CommandPool CommandPool { get; }
+        private readonly Dictionary<uint, CommandPool> _pools = new();
 
-        public unsafe CommandPoolProvider(Vk vk, IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        public unsafe CommandPoolProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
-            var indices = queueFamilyProvider.FindQueueFamilyIndices(physicalDeviceProvider.Device);
-
-            var createInfo = new CommandPoolCreateInfo(queueFamilyIndex: indices.GraphicsFamily!.Value);
-
-            _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var cp).ThrowCode();
-            CommandPool = cp;
         }
 
         public unsafe void Dispose()
         {
-            _vk.DestroyCommandPool(_logicalDeviceProvider.LogicalDevice, CommandPool, null);
+            foreach (var cp in _pools.Values)
+                _vk.DestroyCommandPool(_logicalDeviceProvider.LogicalDevice, cp, null);
+            _pools.Clear();
+        }
+
+        public unsafe CommandPool this[uint queueFamilyIndex]
+        {
+            get
+            {
+                if (_pools.TryGetValue(queueFamilyIndex, out var cp))
+                    return cp;
+                
+                var createInfo = new CommandPoolCreateInfo(queueFamilyIndex: queueFamilyIndex);
+
+                _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out cp).ThrowCode();
+                _pools[queueFamilyIndex] = cp;
+                return cp;
+            }
         }
     }
 }

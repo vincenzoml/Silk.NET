@@ -23,7 +23,6 @@ namespace Aliquip
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
         private readonly IFramebufferProvider _framebufferProvider;
-        private readonly ICommandBufferProvider _commandBufferProvider;
         private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
@@ -38,7 +37,6 @@ namespace Aliquip
             IRenderPassProvider renderPassProvider,
             IGraphicsPipelineProvider graphicsPipelineProvider,
             IFramebufferProvider framebufferProvider,
-            ICommandBufferProvider commandBufferProvider,
             IPipelineLayoutProvider pipelineLayoutProvider,
             Vk vk,
             ILogicalDeviceProvider logicalDeviceProvider
@@ -51,7 +49,6 @@ namespace Aliquip
             _renderPassProvider = renderPassProvider;
             _graphicsPipelineProvider = graphicsPipelineProvider;
             _framebufferProvider = framebufferProvider;
-            _commandBufferProvider = commandBufferProvider;
             _pipelineLayoutProvider = pipelineLayoutProvider;
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
@@ -77,7 +74,6 @@ namespace Aliquip
             _logger.LogDebug("Recreating swapchain");
             _vk.DeviceWaitIdle(_logicalDeviceProvider.LogicalDevice);
 
-            _commandBufferProvider.Dispose();
             _framebufferProvider.Dispose();
             _graphicsPipelineProvider.Dispose();
             _pipelineLayoutProvider.Dispose();
@@ -91,7 +87,6 @@ namespace Aliquip
             _pipelineLayoutProvider.RecreatePipelineLayout();
             _graphicsPipelineProvider.RecreateGraphicsPipeline();
             _framebufferProvider.RecreateFramebuffers();
-            _commandBufferProvider.RecreateCommandBuffers();
         }
 
         public void OnCompleted()

@@ -3,14 +3,13 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
-using System;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
-    public interface ICommandBufferProvider : IDisposable
+    public interface ITransferQueueProvider
     {
-        CommandBuffer[] CommandBuffers { get; }
-        void RecreateCommandBuffers();
+        Queue TransferQueue { get; }
+        uint TransferQueueIndex { get; }
     }
 }

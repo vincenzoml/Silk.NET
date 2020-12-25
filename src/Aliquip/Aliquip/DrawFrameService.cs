@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
+using Buffer = Silk.NET.Vulkan.Buffer;
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 
 namespace Aliquip
@@ -22,7 +23,6 @@ namespace Aliquip
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly KhrSwapchain _khrSwapchain;
-        private readonly ICommandBufferProvider _commandBufferProvider;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly IPresentQueueProvider _presentQueueProvider;
         private readonly ISwapchainRecreationService _recreationService;
@@ -31,21 +31,34 @@ namespace Aliquip
         private readonly Semaphore[] _renderFinishedSemaphores;
         private readonly Fence[] _inFlightFences;
         private readonly Fence[] _imagesInFlight;
+        private readonly CommandBuffer[] _graphicsCommandBuffers;
         private int _currentFrame = 0;
 
-        public unsafe DrawFrameService(IWindowProvider windowProvider, Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
-            KhrSwapchain khrSwapchain, ICommandBufferProvider commandBufferProvider, IGraphicsQueueProvider graphicsQueueProvider, IPresentQueueProvider presentQueueProvider,
-            ISwapchainRecreationService recreationService)
+        public unsafe DrawFrameService
+        (
+            IWindowProvider windowProvider,
+            Vk vk,
+            ILogicalDeviceProvider logicalDeviceProvider,
+            ISwapchainProvider swapchainProvider,
+            KhrSwapchain khrSwapchain,
+            IGraphicsQueueProvider graphicsQueueProvider,
+            IPresentQueueProvider presentQueueProvider,
+            ISwapchainRecreationService recreationService,
+            ICommandBufferFactory commandBufferFactory,
+            IRenderPassProvider renderPassProvider,
+            IFramebufferProvider framebufferProvider,
+            IGraphicsPipelineProvider graphicsPipelineProvider
+        )
         {
             _windowProvider = windowProvider;
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _swapchainProvider = swapchainProvider;
             _khrSwapchain = khrSwapchain;
-            _commandBufferProvider = commandBufferProvider;
             _graphicsQueueProvider = graphicsQueueProvider;
             _presentQueueProvider = presentQueueProvider;
             _recreationService = recreationService;
+            IGraphicsPipelineProvider graphicsPipelineProvider1 = graphicsPipelineProvider;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];
@@ -57,10 +70,51 @@ namespace Aliquip
 
             for (int i = 0; i < MaxFramesInFlight; i++)
             {
-                _vk.CreateSemaphore(_logicalDeviceProvider.LogicalDevice, &semaphoreCreateInfo, null, out _imageAvailableSemaphores[i]).ThrowCode();
-                _vk.CreateSemaphore(_logicalDeviceProvider.LogicalDevice, &semaphoreCreateInfo, null, out _renderFinishedSemaphores[i]).ThrowCode();
-                _vk.CreateFence(_logicalDeviceProvider.LogicalDevice, &fenceCreateInfo, null, out _inFlightFences[i]).ThrowCode();
+                _vk.CreateSemaphore
+                    (
+                        _logicalDeviceProvider.LogicalDevice, &semaphoreCreateInfo, null,
+                        out _imageAvailableSemaphores[i]
+                    )
+                    .ThrowCode();
+                _vk.CreateSemaphore
+                    (
+                        _logicalDeviceProvider.LogicalDevice, &semaphoreCreateInfo, null,
+                        out _renderFinishedSemaphores[i]
+                    )
+                    .ThrowCode();
+                _vk.CreateFence
+                        (_logicalDeviceProvider.LogicalDevice, &fenceCreateInfo, null, out _inFlightFences[i])
+                    .ThrowCode();
             }
+
+            _graphicsCommandBuffers = commandBufferFactory.CreateCommandBuffers
+            (
+                swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null, 
+                (commandBuffer, i) =>
+                {
+                    var clearColor = new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f));
+
+                    var renderPassInfo = new RenderPassBeginInfo
+                    (
+                        renderPass: renderPassProvider.RenderPass, framebuffer: framebufferProvider.Framebuffers[i],
+                        renderArea: new Rect2D(new Offset2D(0, 0), _swapchainProvider.SwapchainExtent),
+                        clearValueCount: 1, pClearValues: &clearColor
+                    );
+
+                    _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.Inline);
+
+                    _vk.CmdBindPipeline
+                        (commandBuffer, PipelineBindPoint.Graphics, graphicsPipelineProvider1.GraphicsPipeline);
+
+                    var vertexBuffers = stackalloc[] {graphicsPipelineProvider1.VertexBuffer};
+                    var offsets = stackalloc[] {(ulong) 0};
+                    _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+                    _vk.CmdDraw(commandBuffer, 3, 1, 0, 0);
+
+                    _vk.CmdEndRenderPass(commandBuffer);
+                }
+            );
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -100,7 +154,7 @@ namespace Aliquip
             var waitSemaphores = stackalloc[] {_imageAvailableSemaphores[_currentFrame]};
             var waitStages = stackalloc[] {PipelineStageFlags.PipelineStageColorAttachmentOutputBit};
             var signalSemaphores = stackalloc[] {_renderFinishedSemaphores[_currentFrame]};
-            fixed (CommandBuffer* pCommandBuffers = _commandBufferProvider.CommandBuffers)
+            fixed (CommandBuffer* pCommandBuffers = _graphicsCommandBuffers)
             {
                 var submitInfo = new SubmitInfo
                 (

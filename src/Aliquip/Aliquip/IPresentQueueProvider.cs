@@ -10,5 +10,6 @@ namespace Aliquip
     public interface IPresentQueueProvider
     {
         Queue PresentQueue { get; }
+        uint PresentQueueIndex { get; }
     }
 }
