@@ -16,7 +16,7 @@ namespace Aliquip
     {
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly Vk _vk;
-        public Device LogicalDevice { get; }
+        public Device LogicalDevice { get; private set; }
         public Queue GraphicsQueue { get; }
         public uint GraphicsQueueIndex { get; set; }
         public Queue PresentQueue { get; }
@@ -81,7 +81,11 @@ namespace Aliquip
 
         public unsafe void Dispose()
         {
-            _vk.DestroyDevice(LogicalDevice, null);
+            if (LogicalDevice.Handle != default)
+            {
+                _vk.DestroyDevice(LogicalDevice, null);
+                LogicalDevice = default;
+            }
         }
     }
 }

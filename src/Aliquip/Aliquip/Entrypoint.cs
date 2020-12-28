@@ -1,4 +1,4 @@
-﻿// This file is part of Silk.NET.
+// This file is part of Silk.NET.
 // 
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
@@ -65,6 +65,8 @@ namespace Aliquip
                 .AddSingleton(x => (ISwapchainRecreationService)x.GetRequiredService<SwapchainRecreationService>())
                 .AddHostedService(x => x.GetRequiredService<SwapchainRecreationService>())
                 .AddSingleton<ICommandBufferFactory, CommandBufferFactory>()
+                .AddSingleton<IBufferFactory, BufferFactory>()
+                .AddSingleton<IGraphicsCommandBufferProvider, GraphicsCommandBufferProvider>()
                 ;
         }
     }

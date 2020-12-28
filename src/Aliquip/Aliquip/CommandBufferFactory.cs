@@ -23,7 +23,7 @@ namespace Aliquip
 
         public unsafe CommandBuffer[] CreateCommandBuffers(int amount, uint queueFamilyIndex, CommandBufferBeginInfo? commandBufferBeginInfo, Action<CommandBuffer, int>? record)
         {
-            var commandBuffers = new CommandBuffer[amount];
+            var commandBuffers = GC.AllocateUninitializedArray<CommandBuffer>(amount, true);
 
             var allocInfo = new CommandBufferAllocateInfo
             (
@@ -46,6 +46,14 @@ namespace Aliquip
             }
 
             return commandBuffers;
+        }
+
+        public void FreeCommandBuffers(CommandBuffer[] commandBuffers, uint queueFamilyIndex)
+        {
+            _vk.FreeCommandBuffers
+            (
+                _logicalDeviceProvider.LogicalDevice, _commandPoolProvider[queueFamilyIndex], (uint) commandBuffers.Length, commandBuffers
+            );
         }
     }
 }

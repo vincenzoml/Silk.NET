@@ -11,5 +11,6 @@ namespace Aliquip
     public interface ICommandBufferFactory
     {
         CommandBuffer[] CreateCommandBuffers(int amount, uint queueFamilyIndex, CommandBufferBeginInfo? commandBufferBeginInfo, Action<CommandBuffer, int> record);
+        void FreeCommandBuffers(CommandBuffer[] commandBuffers, uint queueFamilyIndex);
     }
 }

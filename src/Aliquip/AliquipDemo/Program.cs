@@ -11,7 +11,7 @@ namespace AliquipDemo
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             using var host = Host.CreateDefaultBuilder(args)
                 .UseSerilog
@@ -27,10 +27,12 @@ namespace AliquipDemo
                 .UseConsoleLifetime()
                 .Build();
 
-            using var task = host.RunAsync();
+            var task = host.RunAsync();
+            if (task.IsFaulted)
+                task.GetAwaiter().GetResult();
 
             var window = host.Services.GetRequiredService<IWindowProvider>().Window;
-            task.ContinueWith((x) => window.Close());
+            task = task.ContinueWith((x) => window.Close());
             
             window.Run
             (
@@ -47,6 +49,9 @@ namespace AliquipDemo
 
             window.DoEvents();
             window.Reset();
+
+            await host.StopAsync();
+            await task;
         }
     }
 }

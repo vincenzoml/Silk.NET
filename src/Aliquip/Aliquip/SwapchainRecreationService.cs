@@ -26,6 +26,7 @@ namespace Aliquip
         private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
         private IDisposable? _subscription;
 
         public SwapchainRecreationService
@@ -39,7 +40,8 @@ namespace Aliquip
             IFramebufferProvider framebufferProvider,
             IPipelineLayoutProvider pipelineLayoutProvider,
             Vk vk,
-            ILogicalDeviceProvider logicalDeviceProvider
+            ILogicalDeviceProvider logicalDeviceProvider,
+            IGraphicsCommandBufferProvider graphicsCommandBufferProvider
         )
         {
             _windowProvider = windowProvider;
@@ -52,6 +54,7 @@ namespace Aliquip
             _pipelineLayoutProvider = pipelineLayoutProvider;
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -74,6 +77,7 @@ namespace Aliquip
             _logger.LogDebug("Recreating swapchain");
             _vk.DeviceWaitIdle(_logicalDeviceProvider.LogicalDevice);
 
+            _graphicsCommandBufferProvider.Dispose();
             _framebufferProvider.Dispose();
             _graphicsPipelineProvider.Dispose();
             _pipelineLayoutProvider.Dispose();
@@ -87,6 +91,7 @@ namespace Aliquip
             _pipelineLayoutProvider.RecreatePipelineLayout();
             _graphicsPipelineProvider.RecreateGraphicsPipeline();
             _framebufferProvider.RecreateFramebuffers();
+            _graphicsCommandBufferProvider.Recreate();
         }
 
         public void OnCompleted()

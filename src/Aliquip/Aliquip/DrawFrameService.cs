@@ -26,12 +26,13 @@ namespace Aliquip
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly IPresentQueueProvider _presentQueueProvider;
         private readonly ISwapchainRecreationService _recreationService;
+        private readonly ICommandBufferFactory _commandBufferFactory;
+        private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
         private readonly Fence[] _inFlightFences;
         private readonly Fence[] _imagesInFlight;
-        private readonly CommandBuffer[] _graphicsCommandBuffers;
         private int _currentFrame = 0;
 
         public unsafe DrawFrameService
@@ -45,9 +46,7 @@ namespace Aliquip
             IPresentQueueProvider presentQueueProvider,
             ISwapchainRecreationService recreationService,
             ICommandBufferFactory commandBufferFactory,
-            IRenderPassProvider renderPassProvider,
-            IFramebufferProvider framebufferProvider,
-            IGraphicsPipelineProvider graphicsPipelineProvider
+            IGraphicsCommandBufferProvider graphicsCommandBufferProvider
         )
         {
             _windowProvider = windowProvider;
@@ -58,7 +57,8 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
             _presentQueueProvider = presentQueueProvider;
             _recreationService = recreationService;
-            IGraphicsPipelineProvider graphicsPipelineProvider1 = graphicsPipelineProvider;
+            _commandBufferFactory = commandBufferFactory;
+            _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];
@@ -86,35 +86,6 @@ namespace Aliquip
                         (_logicalDeviceProvider.LogicalDevice, &fenceCreateInfo, null, out _inFlightFences[i])
                     .ThrowCode();
             }
-
-            _graphicsCommandBuffers = commandBufferFactory.CreateCommandBuffers
-            (
-                swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null, 
-                (commandBuffer, i) =>
-                {
-                    var clearColor = new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f));
-
-                    var renderPassInfo = new RenderPassBeginInfo
-                    (
-                        renderPass: renderPassProvider.RenderPass, framebuffer: framebufferProvider.Framebuffers[i],
-                        renderArea: new Rect2D(new Offset2D(0, 0), _swapchainProvider.SwapchainExtent),
-                        clearValueCount: 1, pClearValues: &clearColor
-                    );
-
-                    _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.Inline);
-
-                    _vk.CmdBindPipeline
-                        (commandBuffer, PipelineBindPoint.Graphics, graphicsPipelineProvider1.GraphicsPipeline);
-
-                    var vertexBuffers = stackalloc[] {graphicsPipelineProvider1.VertexBuffer};
-                    var offsets = stackalloc[] {(ulong) 0};
-                    _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-                    _vk.CmdDraw(commandBuffer, 3, 1, 0, 0);
-
-                    _vk.CmdEndRenderPass(commandBuffer);
-                }
-            );
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -154,25 +125,22 @@ namespace Aliquip
             var waitSemaphores = stackalloc[] {_imageAvailableSemaphores[_currentFrame]};
             var waitStages = stackalloc[] {PipelineStageFlags.PipelineStageColorAttachmentOutputBit};
             var signalSemaphores = stackalloc[] {_renderFinishedSemaphores[_currentFrame]};
-            fixed (CommandBuffer* pCommandBuffers = _graphicsCommandBuffers)
-            {
-                var submitInfo = new SubmitInfo
-                (
-                    waitSemaphoreCount: 1,
-                    pWaitSemaphores: waitSemaphores,
-                    pWaitDstStageMask:waitStages,
-                    commandBufferCount: 1,
-                    pCommandBuffers: pCommandBuffers + imageIndex,
-                    signalSemaphoreCount: 1,
-                    pSignalSemaphores: signalSemaphores
-                );
+            var submitInfo = new SubmitInfo
+            (
+                waitSemaphoreCount: 1,
+                pWaitSemaphores: waitSemaphores,
+                pWaitDstStageMask:waitStages,
+                commandBufferCount: 1,
+                pCommandBuffers: _graphicsCommandBufferProvider[(int)imageIndex],
+                signalSemaphoreCount: 1,
+                pSignalSemaphores: signalSemaphores
+            );
 
-                _vk.ResetFences(_logicalDeviceProvider.LogicalDevice, 1, _inFlightFences[_currentFrame]).ThrowCode();
+            _vk.ResetFences(_logicalDeviceProvider.LogicalDevice, 1, _inFlightFences[_currentFrame]).ThrowCode();
 
-                _vk.QueueSubmit(_graphicsQueueProvider.GraphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]).ThrowCode();
-            }
+            _vk.QueueSubmit(_graphicsQueueProvider.GraphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]).ThrowCode();
 
-            var swapchains = stackalloc[] {_swapchainProvider.Swapchain};
+                var swapchains = stackalloc[] {_swapchainProvider.Swapchain};
             var presentInfo = new PresentInfoKHR
             (
                 waitSemaphoreCount: 1,
