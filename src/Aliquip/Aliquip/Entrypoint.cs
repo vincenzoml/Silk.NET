@@ -6,6 +6,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Silk.NET.Input;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Silk.NET.Windowing;
@@ -72,6 +73,7 @@ namespace Aliquip
                 .AddSingleton<IDescriptorPoolProvider, DescriptorPoolProvider>()
                 .AddSingleton<IDescriptorSetProvider, DescriptorSetProvider>()
                 .AddSingleton<ICameraProvider, CameraProvider>()
+                .AddSingleton(x => x.GetRequiredService<IWindowProvider>().Window.CreateInput())
                 ;
         }
     }
