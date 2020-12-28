@@ -71,6 +71,7 @@ namespace Aliquip
                 .AddSingleton<IDescriptorSetLayoutProvider, DescriptorSetLayoutProvider>()
                 .AddSingleton<IDescriptorPoolProvider, DescriptorPoolProvider>()
                 .AddSingleton<IDescriptorSetProvider, DescriptorSetProvider>()
+                .AddSingleton<ICameraProvider, CameraProvider>()
                 ;
         }
     }

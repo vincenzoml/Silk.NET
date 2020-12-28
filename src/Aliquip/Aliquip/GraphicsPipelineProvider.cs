@@ -91,6 +91,7 @@ namespace Aliquip
         private readonly ITransferQueueProvider _transferQueueProvider;
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly IConfiguration _configuration;
+        private readonly ICameraProvider _cameraProvider;
 
         private Buffer _buffer;
         private DeviceMemory _bufferMemory;
@@ -104,7 +105,7 @@ namespace Aliquip
         public uint IndexCount => (uint) indices.Length;
         public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
             IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider, IBufferFactory bufferFactory,
-            IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory, IConfiguration configuration)
+            IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory, IConfiguration configuration, ICameraProvider cameraProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
@@ -117,6 +118,7 @@ namespace Aliquip
             _transferQueueProvider = transferQueueProvider;
             _commandBufferFactory = commandBufferFactory;
             _configuration = configuration;
+            _cameraProvider = cameraProvider;
 
             Recreate();
         }
@@ -323,16 +325,11 @@ namespace Aliquip
         public unsafe void UpdateUBO(uint currentImage, double delta)
         {
             var timeDiff = DateTime.UtcNow - _start;
-            
-            if (!int.TryParse(_configuration["FieldOfView"], out var intFov))
-                intFov = 45;
-            var fov = intFov * MathF.PI / 180f;
-            
+
             var ubo = new UniformBufferObject(
                 model: Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
-                view: Matrix4X4.CreateLookAt(new(2f, 2f, 2f), new(0, 0, 0), Vector3D<float>.UnitZ),
-                projection: Matrix4X4.CreatePerspectiveFieldOfView(fov, (float)_swapchainProvider.SwapchainExtent.Width / (float)_swapchainProvider.SwapchainExtent.Height, 
-                    0.1f, 10f)
+                view: _cameraProvider.ViewMatrix,
+                projection: _cameraProvider.ProjectionMatrix
             );
             // Vulkan has the inverse Y
             ubo.Projection.M22 *= -1;

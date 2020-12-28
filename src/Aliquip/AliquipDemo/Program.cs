@@ -16,7 +16,9 @@ namespace AliquipDemo
             using var host = Host.CreateDefaultBuilder(args)
                 .UseSerilog
                 (
-                    (a, b) => b.MinimumLevel.Verbose()
+                    (a, b) => b
+                        .MinimumLevel.Verbose()
+                        .ReadFrom.Configuration(a.Configuration)
                         .Enrich.FromLogContext()
                         .WriteTo.Console()
                         .WriteTo.File("./log.txt")
