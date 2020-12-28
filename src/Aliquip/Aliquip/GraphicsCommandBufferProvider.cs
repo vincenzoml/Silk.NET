@@ -67,13 +67,7 @@ namespace Aliquip
 
                     _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.Inline);
 
-                    _vk.CmdBindPipeline
-                        (commandBuffer, PipelineBindPoint.Graphics, _graphicsPipelineProvider.GraphicsPipeline);
-
-                    var vertexBuffers = stackalloc[] {_graphicsPipelineProvider.VertexBuffer};
-                    var offsets = stackalloc[] {(ulong) 0};
-                    _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-                    _vk.CmdBindIndexBuffer(commandBuffer, _graphicsPipelineProvider.IndexBuffer, 0, IndexType.Uint16);
+                    _graphicsPipelineProvider.Bind(commandBuffer);
 
                     _vk.CmdDrawIndexed(commandBuffer, _graphicsPipelineProvider.IndexCount, 1, 0, 0, 0);
 

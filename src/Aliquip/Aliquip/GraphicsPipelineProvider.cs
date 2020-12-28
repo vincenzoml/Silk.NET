@@ -129,6 +129,17 @@ namespace Aliquip
             
             _commandBufferFactory.FreeCommandBuffers(cbs, _transferQueueProvider.TransferQueueIndex);
         }
+
+        public unsafe void Bind(CommandBuffer commandBuffer)
+        {
+            _vk.CmdBindPipeline
+                (commandBuffer, PipelineBindPoint.Graphics, GraphicsPipeline);
+
+            var vertexBuffers = stackalloc[] {VertexBuffer};
+            var offsets = stackalloc[] {(ulong) 0};
+            _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            _vk.CmdBindIndexBuffer(commandBuffer, IndexBuffer, 0, IndexType.Uint16);
+        }
         
         public unsafe void RecreateGraphicsPipeline()
         {
