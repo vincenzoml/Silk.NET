@@ -25,10 +25,10 @@ namespace Aliquip
             _renderPassProvider = renderPassProvider;
             _imageViewProvider = imageViewProvider;
             
-            RecreateFramebuffers();
+            Recreate();
         }
 
-        public unsafe void RecreateFramebuffers()
+        public unsafe void Recreate()
         {
             Framebuffers = new Framebuffer[_swapchainProvider.SwapchainImages.Length];
             

@@ -21,10 +21,10 @@ namespace Aliquip
             _swapchainProvider = swapchainProvider;
             _logicalDeviceProvider = logicalDeviceProvider;
 
-            RecreateImageViews();
+            Recreate();
         }
         
-        public unsafe void RecreateImageViews()
+        public unsafe void Recreate()
         {
             ImageViews = new ImageView[_swapchainProvider.SwapchainImages.Length];
 

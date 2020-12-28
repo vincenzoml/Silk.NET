@@ -20,10 +20,10 @@ namespace Aliquip
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _swapchainProvider = swapchainProvider;
-            RecreateRenderPass();
+            Recreate();
         }
 
-        public unsafe void RecreateRenderPass()
+        public unsafe void Recreate()
         {
             var colorAttachment = new AttachmentDescription
             (

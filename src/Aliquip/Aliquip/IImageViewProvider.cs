@@ -11,6 +11,6 @@ namespace Aliquip
     public interface IImageViewProvider : IDisposable
     {
         ImageView[] ImageViews { get; }
-        void RecreateImageViews();
+        void Recreate();
     }
 }

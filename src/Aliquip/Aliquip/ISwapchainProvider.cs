@@ -15,6 +15,6 @@ namespace Aliquip
         Image[] SwapchainImages { get; }
         Format SwapchainFormat { get; }
         Extent2D SwapchainExtent { get; }
-        void RecreateSwapchain(Vector2D<int>? newSize);
+        void Recreate(Vector2D<int>? newSize);
     }
 }

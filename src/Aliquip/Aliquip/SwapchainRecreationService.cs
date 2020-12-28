@@ -27,6 +27,8 @@ namespace Aliquip
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
+        private readonly IDescriptorPoolProvider _descriptorPoolProvider;
+        private readonly IDescriptorSetProvider _descriptorSetProvider;
         private IDisposable? _subscription;
 
         public SwapchainRecreationService
@@ -41,7 +43,9 @@ namespace Aliquip
             IPipelineLayoutProvider pipelineLayoutProvider,
             Vk vk,
             ILogicalDeviceProvider logicalDeviceProvider,
-            IGraphicsCommandBufferProvider graphicsCommandBufferProvider
+            IGraphicsCommandBufferProvider graphicsCommandBufferProvider,
+            IDescriptorPoolProvider descriptorPoolProvider,
+            IDescriptorSetProvider descriptorSetProvider
         )
         {
             _windowProvider = windowProvider;
@@ -55,6 +59,8 @@ namespace Aliquip
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
+            _descriptorPoolProvider = descriptorPoolProvider;
+            _descriptorSetProvider = descriptorSetProvider;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -79,18 +85,22 @@ namespace Aliquip
 
             _graphicsCommandBufferProvider.Dispose();
             _framebufferProvider.Dispose();
+            _descriptorSetProvider.Dispose();
+            _descriptorPoolProvider.Dispose();
             _graphicsPipelineProvider.Dispose();
             _pipelineLayoutProvider.Dispose();
             _renderPassProvider.Dispose();
             _imageViewProvider.Dispose();
             _swapchainProvider.Dispose();
             
-            _swapchainProvider.RecreateSwapchain(newSize);
-            _imageViewProvider.RecreateImageViews();
-            _renderPassProvider.RecreateRenderPass();
-            _pipelineLayoutProvider.RecreatePipelineLayout();
-            _graphicsPipelineProvider.RecreateGraphicsPipeline();
-            _framebufferProvider.RecreateFramebuffers();
+            _swapchainProvider.Recreate(newSize);
+            _imageViewProvider.Recreate();
+            _renderPassProvider.Recreate();
+            _pipelineLayoutProvider.Recreate();
+            _graphicsPipelineProvider.Recreate();
+            _descriptorPoolProvider.Recreate();
+            _descriptorSetProvider.Recreate();
+            _framebufferProvider.Recreate();
             _graphicsCommandBufferProvider.Recreate();
         }
 

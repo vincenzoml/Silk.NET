@@ -8,9 +8,9 @@ using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
-    public interface IPipelineLayoutProvider : IDisposable
+    public interface IDescriptorSetProvider : IDisposable
     {
-        PipelineLayout PipelineLayout { get; }
+        DescriptorSet[] DescriptorSets { get; }
         void Recreate();
     }
 }

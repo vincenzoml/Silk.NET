@@ -5,8 +5,10 @@
 
 using System;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
@@ -88,17 +90,21 @@ namespace Aliquip
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly ITransferQueueProvider _transferQueueProvider;
         private readonly ICommandBufferFactory _commandBufferFactory;
+        private readonly IConfiguration _configuration;
 
         private Buffer _buffer;
         private DeviceMemory _bufferMemory;
         private ulong _vertexOffset;
         private ulong _indexOffset;
         private Pipeline _graphicsPipeline;
+        private Buffer _uniformBuffer;
+        private DeviceMemory _uniformBufferMemory;
+        private ulong[] _uniformOffsets;
 
         public uint IndexCount => (uint) indices.Length;
         public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
             IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider, IBufferFactory bufferFactory,
-            IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory)
+            IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory, IConfiguration configuration)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
@@ -110,11 +116,12 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
             _transferQueueProvider = transferQueueProvider;
             _commandBufferFactory = commandBufferFactory;
+            _configuration = configuration;
 
-            RecreateGraphicsPipeline();
+            Recreate();
         }
 
-        private unsafe void CopyDataToBuffer<T>(Span<T> src, Buffer dstBuffer, ulong dstOffset) where T : unmanaged
+        private unsafe void CopyDataToBufferViaStaging<T>(Span<T> src, Buffer dstBuffer, ulong dstOffset) where T : unmanaged
         {
             var bufferSize = (ulong)(sizeof(T) * src.Length);
             
@@ -158,7 +165,7 @@ namespace Aliquip
             _vk.CmdBindIndexBuffer(commandBuffer, _buffer, _indexOffset, IndexType.Uint16);
         }
         
-        public unsafe void RecreateGraphicsPipeline()
+        public unsafe void Recreate()
         {
             (_buffer, _bufferMemory) = _bufferFactory.CreateBuffer
             (
@@ -172,9 +179,28 @@ namespace Aliquip
             _vertexOffset = 0;
             _indexOffset = (ulong) (sizeof(Vertex) * vertices.Length);
             
-            CopyDataToBuffer<Vertex>(vertices, _buffer, _vertexOffset);
-            CopyDataToBuffer<ushort>(indices, _buffer, _indexOffset);
+            CopyDataToBufferViaStaging<Vertex>(vertices, _buffer, _vertexOffset);
+            CopyDataToBufferViaStaging<ushort>(indices, _buffer, _indexOffset);
 
+            void CreateUniformBuffers()
+            {
+                _uniformOffsets = new ulong[_swapchainProvider.SwapchainImages.Length];
+                for (int i = 0; i < _uniformOffsets.Length; i++)
+                    _uniformOffsets[i] = (ulong) (sizeof(UniformBufferObject) * i);
+
+                var totalSize = (ulong) (sizeof(UniformBufferObject) * _uniformOffsets.Length);
+
+                (_uniformBuffer, _uniformBufferMemory) = _bufferFactory.CreateBuffer
+                (
+                    totalSize, BufferUsageFlags.BufferUsageUniformBufferBit,
+                    MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
+                    MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
+                    stackalloc[] {_graphicsQueueProvider.GraphicsQueueIndex}
+                );
+            }
+            
+            CreateUniformBuffers();
+            
             ShaderModule CreateShaderModule(string path)
             {
                 var fileContents = _resourceProvider[path];
@@ -245,7 +271,7 @@ namespace Aliquip
                     var rasterizer = new PipelineRasterizationStateCreateInfo
                     (
                         depthClampEnable: false, rasterizerDiscardEnable: false, polygonMode: PolygonMode.Fill,
-                        lineWidth: 1f, cullMode: CullModeFlags.CullModeBackBit, frontFace: FrontFace.Clockwise,
+                        lineWidth: 1f, cullMode: CullModeFlags.CullModeBackBit, frontFace: FrontFace.CounterClockwise,
                         depthBiasEnable: false
                     );
 
@@ -293,10 +319,41 @@ namespace Aliquip
             _vk.DestroyShaderModule(_logicalDeviceProvider.LogicalDevice, fragModule, null);
         }
 
+        private DateTime _start = DateTime.UtcNow;
+        public unsafe void UpdateUBO(uint currentImage, double delta)
+        {
+            var timeDiff = DateTime.UtcNow - _start;
+            
+            if (!int.TryParse(_configuration["FieldOfView"], out var intFov))
+                intFov = 45;
+            var fov = intFov * MathF.PI / 180f;
+            
+            var ubo = new UniformBufferObject(
+                model: Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                view: Matrix4X4.CreateLookAt(new(2f, 2f, 2f), new(0, 0, 0), Vector3D<float>.UnitZ),
+                projection: Matrix4X4.CreatePerspectiveFieldOfView(fov, (float)_swapchainProvider.SwapchainExtent.Width / (float)_swapchainProvider.SwapchainExtent.Height, 
+                    0.1f, 10f)
+            );
+            // Vulkan has the inverse Y
+            ubo.Projection.M22 *= -1;
+
+            void* data = default;
+            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, _uniformBufferMemory, _uniformOffsets[currentImage], (ulong) sizeof(UniformBufferObject), 0, ref data);
+            *((UniformBufferObject*)data) = ubo;
+            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, _uniformBufferMemory);
+        }
+
+        public unsafe DescriptorBufferInfo GetDescriptorBufferInfo(int index)
+        {
+            return new DescriptorBufferInfo(_uniformBuffer, _uniformOffsets[index], (ulong) sizeof(UniformBufferObject));
+        }
+
         public unsafe void Dispose()
         {
             _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, _buffer, null);
             _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, _bufferMemory, null);
+            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, _uniformBuffer, null);
+            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, _uniformBufferMemory, null);
             _vk.DestroyPipeline(_logicalDeviceProvider.LogicalDevice, _graphicsPipeline, null);
         }
     }

@@ -28,6 +28,7 @@ namespace Aliquip
         private readonly ISwapchainRecreationService _recreationService;
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
+        private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
@@ -46,7 +47,8 @@ namespace Aliquip
             IPresentQueueProvider presentQueueProvider,
             ISwapchainRecreationService recreationService,
             ICommandBufferFactory commandBufferFactory,
-            IGraphicsCommandBufferProvider graphicsCommandBufferProvider
+            IGraphicsCommandBufferProvider graphicsCommandBufferProvider,
+            IGraphicsPipelineProvider graphicsPipelineProvider
         )
         {
             _windowProvider = windowProvider;
@@ -59,6 +61,7 @@ namespace Aliquip
             _recreationService = recreationService;
             _commandBufferFactory = commandBufferFactory;
             _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
+            _graphicsPipelineProvider = graphicsPipelineProvider;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];
@@ -125,6 +128,7 @@ namespace Aliquip
             var waitSemaphores = stackalloc[] {_imageAvailableSemaphores[_currentFrame]};
             var waitStages = stackalloc[] {PipelineStageFlags.PipelineStageColorAttachmentOutputBit};
             var signalSemaphores = stackalloc[] {_renderFinishedSemaphores[_currentFrame]};
+            _graphicsPipelineProvider.UpdateUBO(imageIndex, value.EventArgs);
             var submitInfo = new SubmitInfo
             (
                 waitSemaphoreCount: 1,

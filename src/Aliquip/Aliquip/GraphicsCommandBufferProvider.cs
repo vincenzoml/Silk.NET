@@ -16,6 +16,8 @@ namespace Aliquip
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IFramebufferProvider _framebufferProvider;
         private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
+        private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
+        private readonly IDescriptorSetProvider _descriptorSetProvider;
         private CommandBuffer[]? _array;
 
         public unsafe CommandBuffer* this[int index]
@@ -35,7 +37,9 @@ namespace Aliquip
             IGraphicsQueueProvider graphicsQueueProvider,
             IRenderPassProvider renderPassProvider,
             IFramebufferProvider framebufferProvider,
-            IGraphicsPipelineProvider graphicsPipelineProvider
+            IGraphicsPipelineProvider graphicsPipelineProvider,
+            IPipelineLayoutProvider pipelineLayoutProvider,
+            IDescriptorSetProvider descriptorSetProvider
         )
         {
             _vk = vk;
@@ -45,6 +49,8 @@ namespace Aliquip
             _renderPassProvider = renderPassProvider;
             _framebufferProvider = framebufferProvider;
             _graphicsPipelineProvider = graphicsPipelineProvider;
+            _pipelineLayoutProvider = pipelineLayoutProvider;
+            _descriptorSetProvider = descriptorSetProvider;
 
             Recreate();
         }
@@ -68,6 +74,11 @@ namespace Aliquip
                     _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.Inline);
 
                     _graphicsPipelineProvider.Bind(commandBuffer);
+                    _vk.CmdBindDescriptorSets
+                    (
+                        commandBuffer, PipelineBindPoint.Graphics, _pipelineLayoutProvider.PipelineLayout, 0, 1,
+                        _descriptorSetProvider.DescriptorSets[i], 0, null
+                    );
 
                     _vk.CmdDrawIndexed(commandBuffer, _graphicsPipelineProvider.IndexCount, 1, 0, 0, 0);
 

@@ -11,6 +11,6 @@ namespace Aliquip
     public interface IFramebufferProvider : IDisposable
     {
         Framebuffer[] Framebuffers { get; }
-        void RecreateFramebuffers();
+        void Recreate();
     }
 }

@@ -3,14 +3,12 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
-using System;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
-    public interface IPipelineLayoutProvider : IDisposable
+    public interface IDescriptorSetLayoutProvider
     {
-        PipelineLayout PipelineLayout { get; }
-        void Recreate();
+        DescriptorSetLayout DescriptorSetLayout { get; }
     }
 }

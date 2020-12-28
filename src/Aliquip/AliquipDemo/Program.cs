@@ -17,8 +17,6 @@ namespace AliquipDemo
                 .UseSerilog
                 (
                     (a, b) => b.MinimumLevel.Verbose()
-                        .MinimumLevel.Override("Vulkan.DebugMessenger", LogEventLevel.Information)
-                        .MinimumLevel.Override("Vulkan.DebugMessenger.General", LogEventLevel.Warning)
                         .Enrich.FromLogContext()
                         .WriteTo.Console()
                         .WriteTo.File("./log.txt")

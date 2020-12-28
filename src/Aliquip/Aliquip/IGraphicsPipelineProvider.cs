@@ -12,7 +12,9 @@ namespace Aliquip
     public interface IGraphicsPipelineProvider : IDisposable
     {
         uint IndexCount { get; }
-        void RecreateGraphicsPipeline();
+        void Recreate();
         void Bind(CommandBuffer commandBuffer);
+        void UpdateUBO(uint currentImage, double delta);
+        DescriptorBufferInfo GetDescriptorBufferInfo(int index);
     }
 }

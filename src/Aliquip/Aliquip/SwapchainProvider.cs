@@ -120,10 +120,10 @@ namespace Aliquip
             logger.LogDebug("Selected present mode: {presentMode}", _presentMode);
             logger.LogDebug("Image count: {imageCount}", _imageCount);
 
-            RecreateSwapchain(null);
+            Recreate(null);
         }
         
-        public unsafe void RecreateSwapchain(Vector2D<int>? newSize)
+        public unsafe void Recreate(Vector2D<int>? newSize)
         {            
             Extent2D ChooseSwapExtend(SurfaceCapabilitiesKHR capabilities)
             {

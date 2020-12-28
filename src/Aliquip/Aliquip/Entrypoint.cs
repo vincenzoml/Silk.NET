@@ -68,6 +68,9 @@ namespace Aliquip
                 .AddSingleton<ICommandBufferFactory, CommandBufferFactory>()
                 .AddSingleton<IBufferFactory, BufferFactory>()
                 .AddSingleton<IGraphicsCommandBufferProvider, GraphicsCommandBufferProvider>()
+                .AddSingleton<IDescriptorSetLayoutProvider, DescriptorSetLayoutProvider>()
+                .AddSingleton<IDescriptorPoolProvider, DescriptorPoolProvider>()
+                .AddSingleton<IDescriptorSetProvider, DescriptorSetProvider>()
                 ;
         }
     }

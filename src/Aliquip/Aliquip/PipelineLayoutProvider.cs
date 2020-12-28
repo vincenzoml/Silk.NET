@@ -12,19 +12,22 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IDescriptorSetLayoutProvider _descriptorSetLayoutProvider;
         public PipelineLayout PipelineLayout { get; private set; }
 
-        public PipelineLayoutProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider)
+        public PipelineLayoutProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IDescriptorSetLayoutProvider descriptorSetLayoutProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _descriptorSetLayoutProvider = descriptorSetLayoutProvider;
 
-            RecreatePipelineLayout();
+            Recreate();
         }
         
-        public unsafe void RecreatePipelineLayout()
+        public unsafe void Recreate()
         {
-            var createInfo = new PipelineLayoutCreateInfo(setLayoutCount: 0, pushConstantRangeCount: 0);
+            var setLayouts = stackalloc[] { _descriptorSetLayoutProvider.DescriptorSetLayout };
+            var createInfo = new PipelineLayoutCreateInfo(setLayoutCount: 1, pSetLayouts: setLayouts, pushConstantRangeCount: 0);
             _vk.CreatePipelineLayout(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var pipelineLayout).ThrowCode();
             PipelineLayout = pipelineLayout;
         }

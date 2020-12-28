@@ -11,6 +11,6 @@ namespace Aliquip
     public interface IRenderPassProvider : IDisposable
     {
         RenderPass RenderPass { get; }
-        void RecreateRenderPass();
+        void Recreate();
     }
 }
