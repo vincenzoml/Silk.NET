@@ -13,6 +13,8 @@ namespace Aliquip
     {
         Pipeline GraphicsPipeline { get; }
         Buffer VertexBuffer { get; }
+        Buffer IndexBuffer { get; }
+        uint IndexCount { get; }
         void RecreateGraphicsPipeline();
     }
 }
