@@ -79,12 +79,17 @@ namespace Aliquip
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IResourceProvider _resourceProvider;
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
+        private readonly IBufferFactory _bufferFactory;
+        private readonly IGraphicsQueueProvider _graphicsQueueProvider;
+        private readonly ITransferQueueProvider _transferQueueProvider;
+        private readonly ICommandBufferFactory _commandBufferFactory;
         public Buffer VertexBuffer { get; private set; }
         private DeviceMemory _vertexBufferMemory;
         public Pipeline GraphicsPipeline { get; private set; }
 
         public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
-            IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider, IPhysicalDeviceProvider physicalDeviceProvider)
+            IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider, IPhysicalDeviceProvider physicalDeviceProvider, IBufferFactory bufferFactory,
+            IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
@@ -93,53 +98,59 @@ namespace Aliquip
             _renderPassProvider = renderPassProvider;
             _resourceProvider = resourceProvider;
             _physicalDeviceProvider = physicalDeviceProvider;
+            _bufferFactory = bufferFactory;
+            _graphicsQueueProvider = graphicsQueueProvider;
+            _transferQueueProvider = transferQueueProvider;
+            _commandBufferFactory = commandBufferFactory;
 
             RecreateGraphicsPipeline();
         }
 
+        private unsafe void CopyBuffer(Buffer srcBuffer, Buffer dstBuffer, ulong size)
+        {
+            var cbs = _commandBufferFactory.CreateCommandBuffers(1, _transferQueueProvider.TransferQueueIndex, new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.CommandBufferUsageOneTimeSubmitBit),
+                (commandBuffer, _) =>
+                {
+                    var region = new BufferCopy(0, 0, size);
+                    _vk.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &region);
+                });
+
+            var c = cbs[0];
+            var submitInfo = new SubmitInfo(commandBufferCount: 1, pCommandBuffers: &c);
+            _vk.QueueSubmit(_transferQueueProvider.TransferQueue, 1, submitInfo, default);
+            _vk.QueueWaitIdle(_transferQueueProvider.TransferQueue);
+            
+            _commandBufferFactory.FreeCommandBuffers(cbs, _transferQueueProvider.TransferQueueIndex);
+        }
+        
         public unsafe void RecreateGraphicsPipeline()
         {
-            // TODO: Extract buffer to separate service
-            var bufferInfo = new BufferCreateInfo(size: (ulong)(sizeof(Vertex) * vertices.Length), usage: BufferUsageFlags.BufferUsageVertexBufferBit, sharingMode: SharingMode.Exclusive);
-
-            _vk.CreateBuffer(_logicalDeviceProvider.LogicalDevice, &bufferInfo, null, out var vertexBuffer).ThrowCode();
-            VertexBuffer = vertexBuffer;
-
-            _vk.GetBufferMemoryRequirements(_logicalDeviceProvider.LogicalDevice, VertexBuffer, out var memoryRequirements);
-            
-            uint FindMemoryType(uint typeFilter, MemoryPropertyFlags properties)
-            {
-                _vk.GetPhysicalDeviceMemoryProperties(_physicalDeviceProvider.Device, out var memoryProperties);
-
-                for (int i = 0; i < memoryProperties.MemoryTypeCount; i++)
-                {
-                    if ((typeFilter & (1 << i)) != 0 && ((memoryProperties.MemoryTypes[i].PropertyFlags & properties) == properties))
-                        return (uint)i;
-                }
-
-                throw new Exception("Failed to find suitable memory type!");
-            }
-
-            var allocInfo = new MemoryAllocateInfo
+            var bufferSize = (ulong) (sizeof(Vertex) * vertices.Length);
+            var (stagingBuffer, stagingBufferMemory) = _bufferFactory.CreateBuffer
             (
-                allocationSize: memoryRequirements.Size,
-                memoryTypeIndex: FindMemoryType
-                (
-                    memoryRequirements.MemoryTypeBits,
-                    MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit
-                )
+                bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
+                MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
+                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
             );
-
-            // maybe use vkFlushMappedMemoryRanges / vkInvalidateMappedMemoryRanges?
-            _vk.AllocateMemory(_logicalDeviceProvider.LogicalDevice, &allocInfo, null, out _vertexBufferMemory).ThrowCode();
-            _vk.BindBufferMemory(_logicalDeviceProvider.LogicalDevice, VertexBuffer, _vertexBufferMemory, 0);
+            
             void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, _vertexBufferMemory, 0, bufferInfo.Size, 0, ref data);
+            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, ref data);
             var span = new Span<Vertex>(data, vertices.Length);
             vertices.AsSpan().CopyTo(span);
-            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, _vertexBufferMemory);
-            
-            
+            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
+
+            (VertexBuffer, _vertexBufferMemory) = _bufferFactory.CreateBuffer
+            (
+                bufferSize, BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
+                MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
+                stackalloc uint[] {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
+            );
+
+            CopyBuffer(stagingBuffer, VertexBuffer, bufferSize);
+
+            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, stagingBuffer, null);
+            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, null);
+
             ShaderModule CreateShaderModule(string path)
             {
                 var fileContents = _resourceProvider[path];

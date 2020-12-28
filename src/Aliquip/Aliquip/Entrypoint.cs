@@ -44,6 +44,7 @@ namespace Aliquip
                 .AddSingleton(provider => (ILogicalDeviceProvider)provider.GetRequiredService<LogicalDeviceProvider>())
                 .AddSingleton(provider => (IGraphicsQueueProvider)provider.GetRequiredService<LogicalDeviceProvider>())
                 .AddSingleton(provider => (IPresentQueueProvider)provider.GetRequiredService<LogicalDeviceProvider>())
+                .AddSingleton(provider => (ITransferQueueProvider)provider.GetRequiredService<LogicalDeviceProvider>())
                 .AddSingleton((provider) =>
                     {
                         provider.GetRequiredService<Vk>()
