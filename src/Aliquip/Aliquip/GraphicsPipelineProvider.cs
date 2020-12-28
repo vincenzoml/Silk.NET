@@ -88,13 +88,14 @@ namespace Aliquip
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly ITransferQueueProvider _transferQueueProvider;
         private readonly ICommandBufferFactory _commandBufferFactory;
-        public Buffer VertexBuffer { get; private set; }
-        public Pipeline GraphicsPipeline { get; private set; }
-        private DeviceMemory _vertexBufferMemory;
-        public Buffer IndexBuffer { get; private set; }
-        public uint IndexCount => (uint) indices.Length;
-        private DeviceMemory _indexBufferMemory;
 
+        private Buffer _buffer;
+        private DeviceMemory _bufferMemory;
+        private ulong _vertexOffset;
+        private ulong _indexOffset;
+        private Pipeline _graphicsPipeline;
+
+        public uint IndexCount => (uint) indices.Length;
         public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
             IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider, IBufferFactory bufferFactory,
             IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory)
@@ -113,13 +114,29 @@ namespace Aliquip
             RecreateGraphicsPipeline();
         }
 
-        private unsafe void CopyBuffer(Buffer srcBuffer, Buffer dstBuffer, ulong size)
+        private unsafe void CopyDataToBuffer<T>(Span<T> src, Buffer dstBuffer, ulong dstOffset) where T : unmanaged
         {
+            var bufferSize = (ulong)(sizeof(T) * src.Length);
+            
+            var (stagingBuffer, stagingBufferMemory) = _bufferFactory.CreateBuffer
+            (
+                bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
+                MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
+                MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
+                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
+            );
+
+            void* data = default;
+            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, ref data);
+            var span = new Span<T>(data, src.Length);
+            src.CopyTo(span);
+            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
+            
             var cbs = _commandBufferFactory.CreateCommandBuffers(1, _transferQueueProvider.TransferQueueIndex, new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.CommandBufferUsageOneTimeSubmitBit),
                 (commandBuffer, _) =>
                 {
-                    var region = new BufferCopy(0, 0, size);
-                    _vk.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &region);
+                    var region = new BufferCopy(0, dstOffset, bufferSize);
+                    _vk.CmdCopyBuffer(commandBuffer, stagingBuffer, dstBuffer, 1, &region);
                 });
 
             var c = cbs[0];
@@ -133,83 +150,30 @@ namespace Aliquip
         public unsafe void Bind(CommandBuffer commandBuffer)
         {
             _vk.CmdBindPipeline
-                (commandBuffer, PipelineBindPoint.Graphics, GraphicsPipeline);
+                (commandBuffer, PipelineBindPoint.Graphics, _graphicsPipeline);
 
-            var vertexBuffers = stackalloc[] {VertexBuffer};
-            var offsets = stackalloc[] {(ulong) 0};
+            var vertexBuffers = stackalloc[] {_buffer};
+            var offsets = stackalloc[] {_vertexOffset};
             _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-            _vk.CmdBindIndexBuffer(commandBuffer, IndexBuffer, 0, IndexType.Uint16);
+            _vk.CmdBindIndexBuffer(commandBuffer, _buffer, _indexOffset, IndexType.Uint16);
         }
         
         public unsafe void RecreateGraphicsPipeline()
         {
-            void CreateVertexBuffer()
-            {
-                var bufferSize = (ulong) (sizeof(Vertex) * vertices.Length);
-                var (stagingBuffer, stagingBufferMemory) = _bufferFactory.CreateBuffer
-                (
-                    bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
-                    MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
-                    MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                    stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
-                );
+            (_buffer, _bufferMemory) = _bufferFactory.CreateBuffer
+            (
+                (ulong) (sizeof(Vertex) * vertices.Length + sizeof(ushort) * indices.Length),
+                BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
+                MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
+                stackalloc uint[]
+                    {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
+            );
 
-                void* data = default;
-                _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, ref data);
-                var span = new Span<Vertex>(data, vertices.Length);
-                vertices.AsSpan().CopyTo(span);
-                _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
-
-                (VertexBuffer, _vertexBufferMemory) = _bufferFactory.CreateBuffer
-                (
-                    bufferSize,
-                    BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
-                    MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
-                    stackalloc uint[]
-                        {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
-                );
-
-                CopyBuffer(stagingBuffer, VertexBuffer, bufferSize);
-
-                _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, stagingBuffer, null);
-                _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, null);
-            }
-
-            void CreateIndexBuffer()
-            {
-                var bufferSize = (ulong) (sizeof(ushort) * indices.Length);
-                
-                var (stagingBuffer, stagingBufferMemory) = _bufferFactory.CreateBuffer
-                (
-                    bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
-                    MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
-                    MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                    stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
-                );
-
-                void* data = default;
-                _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, ref data);
-                var span = new Span<ushort>(data, indices.Length);
-                indices.AsSpan().CopyTo(span);
-                _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
-
-                (IndexBuffer, _indexBufferMemory) = _bufferFactory.CreateBuffer
-                (
-                    bufferSize,
-                    BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
-                    MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
-                    stackalloc uint[]
-                        {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
-                );
-
-                CopyBuffer(stagingBuffer, IndexBuffer, bufferSize);
-
-                _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, stagingBuffer, null);
-                _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, null);
-            }
-
-            CreateVertexBuffer();
-            CreateIndexBuffer();
+            _vertexOffset = 0;
+            _indexOffset = (ulong) (sizeof(Vertex) * vertices.Length);
+            
+            CopyDataToBuffer<Vertex>(vertices, _buffer, _vertexOffset);
+            CopyDataToBuffer<ushort>(indices, _buffer, _indexOffset);
 
             ShaderModule CreateShaderModule(string path)
             {
@@ -321,7 +285,7 @@ namespace Aliquip
                             out var graphicsPipeline
                         )
                         .ThrowCode();
-                    GraphicsPipeline = graphicsPipeline;
+                    _graphicsPipeline = graphicsPipeline;
                 }
             }
             
@@ -331,11 +295,9 @@ namespace Aliquip
 
         public unsafe void Dispose()
         {
-            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, VertexBuffer, null);
-            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, _vertexBufferMemory, null);
-            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, IndexBuffer, null);
-            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, _indexBufferMemory, null);
-            _vk.DestroyPipeline(_logicalDeviceProvider.LogicalDevice, GraphicsPipeline, null);
+            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, _buffer, null);
+            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, _bufferMemory, null);
+            _vk.DestroyPipeline(_logicalDeviceProvider.LogicalDevice, _graphicsPipeline, null);
         }
     }
 }
