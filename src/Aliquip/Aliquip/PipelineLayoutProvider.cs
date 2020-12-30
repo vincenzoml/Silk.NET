@@ -23,12 +23,15 @@ namespace Aliquip
 
             Recreate();
         }
-        
+
         public unsafe void Recreate()
         {
-            var setLayouts = stackalloc[] { _descriptorSetLayoutProvider.DescriptorSetLayout };
-            var createInfo = new PipelineLayoutCreateInfo(setLayoutCount: 1, pSetLayouts: setLayouts, pushConstantRangeCount: 0);
-            _vk.CreatePipelineLayout(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var pipelineLayout).ThrowCode();
+            var setLayouts = _descriptorSetLayoutProvider.DescriptorSetLayout;
+            var createInfo = new PipelineLayoutCreateInfo
+                (setLayoutCount: 1, pSetLayouts: &setLayouts, pushConstantRangeCount: 0);
+            _vk.CreatePipelineLayout
+                    (_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var pipelineLayout)
+                .ThrowCode();
             PipelineLayout = pipelineLayout;
         }
 

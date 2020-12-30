@@ -21,6 +21,24 @@ namespace Aliquip
             _logicalDeviceProvider = logicalDeviceProvider;
         }
 
+        public unsafe void RunSingleTime(uint queueFamilyIndex, Queue queueFamily, Action<CommandBuffer> record)
+        {
+
+            var cbs = CreateCommandBuffers
+            (
+                1, queueFamilyIndex,
+                new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.CommandBufferUsageOneTimeSubmitBit),
+                (commandBuffer, _) => record(commandBuffer)
+            );
+
+            var c = cbs[0];
+            var submitInfo = new SubmitInfo(commandBufferCount: 1, pCommandBuffers: &c);
+            _vk.QueueSubmit(queueFamily, 1, submitInfo, default);
+            _vk.QueueWaitIdle(queueFamily); // TODO: run in background (async/await? :eyes:)
+            
+            FreeCommandBuffers(cbs, queueFamilyIndex);
+        }
+
         public unsafe CommandBuffer[] CreateCommandBuffers(int amount, uint queueFamilyIndex, CommandBufferBeginInfo? commandBufferBeginInfo, Action<CommandBuffer, int>? record)
         {
             var commandBuffers = GC.AllocateUninitializedArray<CommandBuffer>(amount, true);

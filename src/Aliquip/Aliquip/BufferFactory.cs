@@ -30,7 +30,7 @@ namespace Aliquip
                 var bufferInfo = new BufferCreateInfo
                 (
                     size: size, usage: usage,
-                    sharingMode: queueFamilyIndices.Length > 1 ? SharingMode.Concurrent : SharingMode.Exclusive,
+                    sharingMode: queueFamilyIndices.Length > 1 ? SharingMode.Concurrent : SharingMode.Exclusive, // TODO: Use barriers to transfer ownership instead.
                     queueFamilyIndexCount: (uint) queueFamilyIndices.Length, pQueueFamilyIndices: pQueueFamilyIndices
                 );
                 _vk.CreateBuffer(_logicalDeviceProvider.LogicalDevice, bufferInfo, null, out buffer).ThrowCode();

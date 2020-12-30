@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Aliquip;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,9 +12,43 @@ namespace AliquipDemo
 {
     class Program
     {
+        static async Task RunAsync(IHost host, CancellationToken token = default)
+        {
+            Exception _ex = null;
+            
+            try
+            {
+                await host.StartAsync(token).ConfigureAwait(false);
+
+                await host.WaitForShutdownAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _ex = ex;
+            }
+            finally
+            {
+                if (_ex is not null)
+                {
+                    throw _ex;
+                }
+                else
+                {
+                    if (host is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        host.Dispose();
+                    }
+                }
+            }
+        }
+        
         static async Task Main(string[] args)
         {
-            using var host = Host.CreateDefaultBuilder(args)
+            var host = Host.CreateDefaultBuilder(args)
                 .UseSerilog
                 (
                     (a, b) => b
@@ -27,13 +62,16 @@ namespace AliquipDemo
                 .UseConsoleLifetime()
                 .Build();
 
-            var task = host.RunAsync();
+            var task = RunAsync(host);
             if (task.IsFaulted)
-                task.GetAwaiter().GetResult();
+            {
+                task.GetAwaiter().GetResult();   
+            }
 
             var window = host.Services.GetRequiredService<IWindowProvider>().Window;
             task = task.ContinueWith((x) => window.Close());
-            
+
+            window.UpdatesPerSecond = Double.MaxValue;
             window.Run
             (
                 () =>
@@ -52,6 +90,7 @@ namespace AliquipDemo
 
             await host.StopAsync();
             await task;
+            host.Dispose(); // don't use using, we don't want to swallow exceptions
         }
     }
 }

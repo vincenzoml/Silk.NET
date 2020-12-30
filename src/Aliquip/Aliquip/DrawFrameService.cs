@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Buffer = Silk.NET.Vulkan.Buffer;
@@ -133,13 +134,13 @@ namespace Aliquip
             (
                 waitSemaphoreCount: 1,
                 pWaitSemaphores: waitSemaphores,
-                pWaitDstStageMask:waitStages,
+                pWaitDstStageMask: waitStages,
                 commandBufferCount: 1,
                 pCommandBuffers: _graphicsCommandBufferProvider[(int)imageIndex],
                 signalSemaphoreCount: 1,
                 pSignalSemaphores: signalSemaphores
             );
-
+            
             _vk.ResetFences(_logicalDeviceProvider.LogicalDevice, 1, _inFlightFences[_currentFrame]).ThrowCode();
 
             _vk.QueueSubmit(_graphicsQueueProvider.GraphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]).ThrowCode();

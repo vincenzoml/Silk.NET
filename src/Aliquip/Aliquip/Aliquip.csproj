@@ -10,6 +10,7 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
       <PackageReference Include="System.Reactive" Version="5.0.0" />
     </ItemGroup>
 
@@ -28,6 +29,10 @@
       <EmbeddedResource Include="shaders\frag.spv" />
       <None Remove="shaders\vert.spv" />
       <EmbeddedResource Include="shaders\vert.spv" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="textures\*.*" />
     </ItemGroup>
 
 </Project>

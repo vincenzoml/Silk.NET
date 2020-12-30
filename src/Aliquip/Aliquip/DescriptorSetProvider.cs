@@ -16,6 +16,7 @@ namespace Aliquip
         private readonly IDescriptorPoolProvider _descriptorPoolProvider;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
+        private readonly ITextureFactory _textureFactory;
         public DescriptorSet[] DescriptorSets { get; private set; }
 
         public DescriptorSetProvider
@@ -24,7 +25,8 @@ namespace Aliquip
             IDescriptorSetLayoutProvider descriptorSetLayoutProvider,
             ISwapchainProvider swapchainProvider,
             IDescriptorPoolProvider descriptorPoolProvider, ILogicalDeviceProvider logicalDeviceProvider,
-            IGraphicsPipelineProvider graphicsPipelineProvider
+            IGraphicsPipelineProvider graphicsPipelineProvider,
+            ITextureFactory textureFactory
         )
         {
             _vk = vk;
@@ -33,7 +35,8 @@ namespace Aliquip
             _descriptorPoolProvider = descriptorPoolProvider;
             _logicalDeviceProvider = logicalDeviceProvider;
             _graphicsPipelineProvider = graphicsPipelineProvider;
-            
+            _textureFactory = textureFactory;
+
             Recreate();
         }
 
@@ -54,16 +57,31 @@ namespace Aliquip
             fixed (DescriptorSet* pDescriptorSets = DescriptorSets)
                 _vk.AllocateDescriptorSets(_logicalDeviceProvider.LogicalDevice, allocInfo, pDescriptorSets);
 
+            var image = _textureFactory["texture.jpg"];
             for (int i = 0; i < count; i++)
             {
                 var bufferInfo = _graphicsPipelineProvider.GetDescriptorBufferInfo(i);
-                var descriptorWrite = new WriteDescriptorSet
+                var imageInfo = new DescriptorImageInfo
                 (
-                    dstSet: DescriptorSets[i], dstBinding: 0, dstArrayElement: 0,
-                    descriptorType: DescriptorType.UniformBuffer, descriptorCount: 1, pBufferInfo: &bufferInfo
+                    imageLayout: ImageLayout.ShaderReadOnlyOptimal, imageView: image.ImageView, sampler: image.Sampler
                 );
+                Span<WriteDescriptorSet> descriptorWrites = stackalloc[]
+                {
+                    new WriteDescriptorSet
+                    (
+                        dstSet: DescriptorSets[i], dstBinding: 0, dstArrayElement: 0,
+                        descriptorType: DescriptorType.UniformBuffer, descriptorCount: 1, pBufferInfo: &bufferInfo
+                    ),
+                    new WriteDescriptorSet
+                    (
+                        dstSet: DescriptorSets[i], dstBinding: 1, dstArrayElement: 0,
+                        descriptorType: DescriptorType.CombinedImageSampler, descriptorCount: 1,
+                        pImageInfo: &imageInfo
+                    )
+                };
 
-                _vk.UpdateDescriptorSets(_logicalDeviceProvider.LogicalDevice, 1, descriptorWrite, 0, null);
+                fixed(WriteDescriptorSet* p = descriptorWrites)
+                    _vk.UpdateDescriptorSets(_logicalDeviceProvider.LogicalDevice, (uint) descriptorWrites.Length, p, 0, null);
             }
         }
         

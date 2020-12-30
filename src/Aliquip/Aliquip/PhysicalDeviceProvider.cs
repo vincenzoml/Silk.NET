@@ -83,7 +83,7 @@ namespace Aliquip
                 bool CheckDeviceExtensionSupport(PhysicalDevice device, out int extensionRating)
                 {
                     extensionRating = 0;
-
+                    
                     uint extensionCount;
                     _vk.EnumerateDeviceExtensionProperties(device, default(byte*), &extensionCount, null);
 
@@ -109,7 +109,9 @@ namespace Aliquip
                 _vk.GetPhysicalDeviceProperties(device, &deviceProperties);
                 _vk.GetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-                int score = 0;
+                int score = 5;
+
+                if (!deviceFeatures.SamplerAnisotropy) return 0;
 
                 if (!queueFamilyProvider.FindQueueFamilyIndices(device).IsComplete()) return 0;
 

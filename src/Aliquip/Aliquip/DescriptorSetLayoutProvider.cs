@@ -24,8 +24,16 @@ namespace Aliquip
                 binding: 0, descriptorType: DescriptorType.UniformBuffer, descriptorCount: 1,
                 stageFlags: ShaderStageFlags.ShaderStageVertexBit, pImmutableSamplers: null
             );
+            
+            var samplerLayoutBinding = new DescriptorSetLayoutBinding
+            (
+                binding: 1, descriptorType: DescriptorType.CombinedImageSampler, descriptorCount: 1,
+                stageFlags: ShaderStageFlags.ShaderStageFragmentBit, pImmutableSamplers: null
+            );
 
-            var layoutInfo = new DescriptorSetLayoutCreateInfo(bindingCount: 1, pBindings: &uboLayoutBinding);
+            var bindings = stackalloc[] {uboLayoutBinding, samplerLayoutBinding};
+
+            var layoutInfo = new DescriptorSetLayoutCreateInfo(bindingCount: 2, pBindings: bindings);
             _vk.CreateDescriptorSetLayout(_logicalDeviceProvider.LogicalDevice, &layoutInfo, null, out var descriptorSetLayout).ThrowCode();
             DescriptorSetLayout = descriptorSetLayout;
         }

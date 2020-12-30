@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.Extensions.KHR;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Aliquip
@@ -26,11 +27,14 @@ namespace Aliquip
             public Vector2D<float> Position;
             [FieldOffset(sizeof(float) * 2)]
             public Vector3D<float> Color;
+            [FieldOffset(sizeof(float) * 5)] 
+            public Vector2D<float> TextureCoordinates;
 
-            public Vertex(Vector2D<float> position, Vector3D<float> color)
+            public Vertex(Vector2D<float> position, Vector3D<float> color, Vector2D<float> textureCoordinates)
             {
                 Position = position;
                 Color = color;
+                TextureCoordinates = textureCoordinates;
             }
 
             public static unsafe VertexInputBindingDescription BindingDescription
@@ -50,7 +54,7 @@ namespace Aliquip
             {
                 get
                 {
-                    var attributeDescriptions = new VertexInputAttributeDescription[2];
+                    var attributeDescriptions = new VertexInputAttributeDescription[3];
 
                     attributeDescriptions[0].Binding = 0;
                     attributeDescriptions[0].Location = 0;
@@ -61,18 +65,23 @@ namespace Aliquip
                     attributeDescriptions[1].Location = 1;
                     attributeDescriptions[1].Format = Format.R32G32B32Sfloat;
                     attributeDescriptions[1].Offset = sizeof(float) * 2; // offset of Color
+                    
+                    attributeDescriptions[2].Binding = 0;
+                    attributeDescriptions[2].Location = 2;
+                    attributeDescriptions[2].Format = Format.R32G32Sfloat;
+                    attributeDescriptions[2].Offset = sizeof(float) * 5; // offset of TextureCoordinate
 
                     return attributeDescriptions;
                 }
             }
         }
 
-        private static readonly Vertex[] vertices = 
+        private static readonly Vertex[] vertices =
         {
-            new(new(-0.5f, -0.5f), new(1.0f, 0.0f, 0.0f)),
-            new(new(0.5f, -0.5f), new(0.0f, 1.0f, 0.0f)),
-            new(new(0.5f, 0.5f), new(0.0f, 0.0f, 1.0f)),
-            new(new(-0.5f, 0.5f), new(1.0f, 1.0f, 1.0f)),
+            new(new(-0.5f, -0.5f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
+            new(new(0.5f, -0.5f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
+            new(new(0.5f, 0.5f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
+            new(new(-0.5f, 0.5f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
         };
 
         private static readonly ushort[] indices =
@@ -140,20 +149,13 @@ namespace Aliquip
             var span = new Span<T>(data, src.Length);
             src.CopyTo(span);
             _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
-            
-            var cbs = _commandBufferFactory.CreateCommandBuffers(1, _transferQueueProvider.TransferQueueIndex, new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.CommandBufferUsageOneTimeSubmitBit),
-                (commandBuffer, _) =>
+
+            _commandBufferFactory.RunSingleTime(_transferQueueProvider.TransferQueueIndex, _transferQueueProvider.TransferQueue,
+                (commandBuffer) =>
                 {
                     var region = new BufferCopy(0, dstOffset, bufferSize);
-                    _vk.CmdCopyBuffer(commandBuffer, stagingBuffer, dstBuffer, 1, &region);
+                    _vk.CmdCopyBuffer(commandBuffer, stagingBuffer, dstBuffer, 1, &region);   
                 });
-
-            var c = cbs[0];
-            var submitInfo = new SubmitInfo(commandBufferCount: 1, pCommandBuffers: &c);
-            _vk.QueueSubmit(_transferQueueProvider.TransferQueue, 1, submitInfo, default);
-            _vk.QueueWaitIdle(_transferQueueProvider.TransferQueue);
-            
-            _commandBufferFactory.FreeCommandBuffers(cbs, _transferQueueProvider.TransferQueueIndex);
         }
 
         public unsafe void Bind(CommandBuffer commandBuffer)

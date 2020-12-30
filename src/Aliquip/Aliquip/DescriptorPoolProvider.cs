@@ -26,10 +26,17 @@ namespace Aliquip
 
         public unsafe void Recreate()
         {
-            var poolSize = new DescriptorPoolSize
-                (DescriptorType.UniformBuffer, (uint) _swapchainProvider.SwapchainImages.Length);
-            var poolInfo = new DescriptorPoolCreateInfo
-                (poolSizeCount: 1, pPoolSizes: &poolSize, maxSets: (uint) _swapchainProvider.SwapchainImages.Length);
+            Span<DescriptorPoolSize> poolSizes = stackalloc []
+            {
+                new DescriptorPoolSize(DescriptorType.UniformBuffer, (uint) _swapchainProvider.SwapchainImages.Length),
+                new DescriptorPoolSize(DescriptorType.CombinedImageSampler, (uint) _swapchainProvider.SwapchainImages.Length)
+            };
+            DescriptorPoolCreateInfo poolInfo;
+            fixed (DescriptorPoolSize* pPoolSizes = poolSizes)
+                poolInfo = new DescriptorPoolCreateInfo
+                (
+                    poolSizeCount: (uint)poolSizes.Length, pPoolSizes: pPoolSizes, maxSets: (uint) _swapchainProvider.SwapchainImages.Length
+                );
 
             _vk.CreateDescriptorPool(_logicalDeviceProvider.LogicalDevice, &poolInfo, null, out var descriptorPool).ThrowCode();
             DescriptorPool = descriptorPool;

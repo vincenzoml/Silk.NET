@@ -50,6 +50,7 @@ namespace Aliquip
             }
 
             PhysicalDeviceFeatures deviceFeatures = new PhysicalDeviceFeatures();
+            deviceFeatures.SamplerAnisotropy = true;
             DeviceCreateInfo deviceCreateInfo = new DeviceCreateInfo
             (
                 pQueueCreateInfos: queueCreateInfos,
