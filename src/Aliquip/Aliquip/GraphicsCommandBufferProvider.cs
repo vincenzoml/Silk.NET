@@ -18,8 +18,12 @@ namespace Aliquip
         private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
         private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
         private readonly IDescriptorSetProvider _descriptorSetProvider;
+        private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private CommandBuffer[]? _array;
-
+#if DEBUG
+        public QueryPool TimeQueryPool { get; }
+#endif
+        
         public unsafe CommandBuffer* this[int index]
         {
             get
@@ -29,7 +33,7 @@ namespace Aliquip
             }   
         }
 
-        public GraphicsCommandBufferProvider
+        public unsafe GraphicsCommandBufferProvider
         (
             Vk vk,
             ICommandBufferFactory commandBufferFactory,
@@ -39,7 +43,8 @@ namespace Aliquip
             IFramebufferProvider framebufferProvider,
             IGraphicsPipelineProvider graphicsPipelineProvider,
             IPipelineLayoutProvider pipelineLayoutProvider,
-            IDescriptorSetProvider descriptorSetProvider
+            IDescriptorSetProvider descriptorSetProvider,
+            ILogicalDeviceProvider logicalDeviceProvider
         )
         {
             _vk = vk;
@@ -51,7 +56,14 @@ namespace Aliquip
             _graphicsPipelineProvider = graphicsPipelineProvider;
             _pipelineLayoutProvider = pipelineLayoutProvider;
             _descriptorSetProvider = descriptorSetProvider;
+            _logicalDeviceProvider = logicalDeviceProvider;
 
+#if DEBUG
+            var timeQueryCreateInfo = new QueryPoolCreateInfo(queryType: QueryType.Timestamp, queryCount: 1);
+            _vk.CreateQueryPool(_logicalDeviceProvider.LogicalDevice, timeQueryCreateInfo, null, out var timeQueryPool);
+            TimeQueryPool = timeQueryPool;
+#endif
+            
             Recreate();
         }
 
@@ -62,6 +74,9 @@ namespace Aliquip
                 _swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null, 
                 (commandBuffer, i) =>
                 {
+#if DEBUG
+                    _vk.CmdResetQueryPool(commandBuffer, TimeQueryPool, 0, 1);
+#endif
                     var clearColors = stackalloc []
                     {
                         new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f)),
@@ -87,12 +102,19 @@ namespace Aliquip
                     _vk.CmdDrawIndexed(commandBuffer, _graphicsPipelineProvider.IndexCount, 1, 0, 0, 0);
 
                     _vk.CmdEndRenderPass(commandBuffer);
+#if DEBUG
+                    _vk.CmdWriteTimestamp(commandBuffer, PipelineStageFlags.PipelineStageBottomOfPipeBit, TimeQueryPool, 0);
+#endif
                 }
             );
         }
         
-        public void Dispose()
+        public unsafe void Dispose()
         {
+#if DEBUG
+            _vk.DestroyQueryPool(_logicalDeviceProvider.LogicalDevice, TimeQueryPool, null);
+#endif
+            
             if (_array != null)
             {
                 _commandBufferFactory.FreeCommandBuffers(_array, _graphicsQueueProvider.GraphicsQueueIndex);

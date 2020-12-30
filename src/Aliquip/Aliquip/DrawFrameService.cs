@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
@@ -30,12 +31,17 @@ namespace Aliquip
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
         private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
+        private readonly ILogger _logger;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
         private readonly Fence[] _inFlightFences;
         private readonly Fence[] _imagesInFlight;
         private int _currentFrame = 0;
+#if DEBUG
+        private readonly float _nanosecondsPerTimestampStep;
+        private uint _lastTime;
+#endif
 
         public unsafe DrawFrameService
         (
@@ -49,7 +55,9 @@ namespace Aliquip
             ISwapchainRecreationService recreationService,
             ICommandBufferFactory commandBufferFactory,
             IGraphicsCommandBufferProvider graphicsCommandBufferProvider,
-            IGraphicsPipelineProvider graphicsPipelineProvider
+            IGraphicsPipelineProvider graphicsPipelineProvider,
+            IPhysicalDeviceProvider physicalDeviceProvider,
+            ILogger<DrawFrameService> logger
         )
         {
             _windowProvider = windowProvider;
@@ -63,6 +71,7 @@ namespace Aliquip
             _commandBufferFactory = commandBufferFactory;
             _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
             _graphicsPipelineProvider = graphicsPipelineProvider;
+            _logger = logger;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];
@@ -90,6 +99,9 @@ namespace Aliquip
                         (_logicalDeviceProvider.LogicalDevice, &fenceCreateInfo, null, out _inFlightFences[i])
                     .ThrowCode();
             }
+
+            _vk.GetPhysicalDeviceProperties(physicalDeviceProvider.Device, out var physicalDeviceProperties);
+            _nanosecondsPerTimestampStep = physicalDeviceProperties.Limits.TimestampPeriod;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -123,6 +135,19 @@ namespace Aliquip
                 var v = _imagesInFlight[imageIndex];
                 _vk.WaitForFences(_logicalDeviceProvider.LogicalDevice, 1, v, true, ulong.MaxValue).ThrowCode();
             }
+            
+#if DEBUG
+            {
+                var pool = _graphicsCommandBufferProvider.TimeQueryPool;
+                var queryResult = stackalloc uint[1];
+                _vk.GetQueryPoolResults(_logicalDeviceProvider.LogicalDevice, pool, 0, 1, (UIntPtr) (sizeof(int) * 1), queryResult, 0, 0).ThrowCode();
+                var diff = queryResult[0] - _lastTime;
+                _lastTime = queryResult[0];
+                var time = diff * _nanosecondsPerTimestampStep;
+                var timespan = TimeSpan.FromMilliseconds((diff * ((double) time)) / 1000000);
+                _logger.LogDebug("Time: {time}", timespan);
+            }
+#endif
 
             _imagesInFlight[imageIndex] = _inFlightFences[_currentFrame];
 
@@ -145,7 +170,7 @@ namespace Aliquip
 
             _vk.QueueSubmit(_graphicsQueueProvider.GraphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]).ThrowCode();
 
-                var swapchains = stackalloc[] {_swapchainProvider.Swapchain};
+            var swapchains = stackalloc[] {_swapchainProvider.Swapchain};
             var presentInfo = new PresentInfoKHR
             (
                 waitSemaphoreCount: 1,

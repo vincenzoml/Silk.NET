@@ -12,5 +12,8 @@ namespace Aliquip
     {
         unsafe CommandBuffer* this[int index] { get; }
         void Recreate();
+#if DEBUG
+        QueryPool TimeQueryPool { get; }
+#endif
     }
 }
