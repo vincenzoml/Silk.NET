@@ -26,8 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="shaders\frag.spv" />
-        <EmbeddedResource Include="shaders\vert.spv" />
+        <EmbeddedResource Include="shaders\*.spv" />
         <EmbeddedResource Include="textures\*.*" />
         <EmbeddedResource Include="models\*.*" />
     </ItemGroup>
