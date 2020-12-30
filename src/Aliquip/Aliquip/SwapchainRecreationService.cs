@@ -30,6 +30,7 @@ namespace Aliquip
         private readonly IDescriptorPoolProvider _descriptorPoolProvider;
         private readonly IDescriptorSetProvider _descriptorSetProvider;
         private readonly IDepthImageProvider _depthImageProvider;
+        private readonly IColorImageProvider _colorImageProvider;
         private IDisposable? _subscription;
 
         public SwapchainRecreationService
@@ -47,7 +48,8 @@ namespace Aliquip
             IGraphicsCommandBufferProvider graphicsCommandBufferProvider,
             IDescriptorPoolProvider descriptorPoolProvider,
             IDescriptorSetProvider descriptorSetProvider,
-            IDepthImageProvider depthImageProvider
+            IDepthImageProvider depthImageProvider,
+            IColorImageProvider colorImageProvider
         )
         {
             _windowProvider = windowProvider;
@@ -64,6 +66,7 @@ namespace Aliquip
             _descriptorPoolProvider = descriptorPoolProvider;
             _descriptorSetProvider = descriptorSetProvider;
             _depthImageProvider = depthImageProvider;
+            _colorImageProvider = colorImageProvider;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -91,6 +94,7 @@ namespace Aliquip
             _descriptorSetProvider.Dispose();
             _descriptorPoolProvider.Dispose();
             _depthImageProvider.Dispose();
+            _colorImageProvider.Dispose();
             _graphicsPipelineProvider.Dispose();
             _pipelineLayoutProvider.Dispose();
             _renderPassProvider.Dispose();
@@ -102,6 +106,7 @@ namespace Aliquip
             _renderPassProvider.Recreate();
             _pipelineLayoutProvider.Recreate();
             _graphicsPipelineProvider.Recreate();
+            _colorImageProvider.Recreate();
             _depthImageProvider.Recreate();
             _descriptorPoolProvider.Recreate();
             _descriptorSetProvider.Recreate();

@@ -28,7 +28,8 @@ namespace Aliquip
             IQueueFamilyProvider queueFamilyProvider,
             ISwapchainSupportProvider swapchainSupportProvider,
             IFormatRater formatRater,
-            IColorspaceRater colorspaceRater
+            IColorspaceRater colorspaceRater,
+            IMsaaProvider msaaProvider
         )
         {
             _vk = vk;
@@ -76,6 +77,7 @@ namespace Aliquip
                 "Picked device: {Name} | {Type}", SilkMarshal.PtrToString((IntPtr) deviceProperties.DeviceName),
                 deviceProperties.DeviceType
             );
+            _logger.LogInformation("Using MSAAx{amount}", (int)msaaProvider.MsaaSamples(device));
             Device = device;
 
             int RateDeviceSuitability(PhysicalDevice device)
@@ -121,6 +123,8 @@ namespace Aliquip
                 if (!CheckDeviceExtensionSupport(device, out var extensionRating)) return 0;
 
                 score += extensionRating;
+
+                score += ((int)msaaProvider.MsaaSamples(device)) * 2;
 
                 var swapChainSupport = swapchainSupportProvider.QuerySwapchainSupport(device);
                 if (swapChainSupport.Formats.Length == 0 || swapChainSupport.PresentModes.Length == 0) return 0;

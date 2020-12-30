@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using ObjLoader.Loader.Loaders;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -52,7 +53,7 @@ namespace Aliquip
             }
         }
 
-        public ModelProvider(IResourceProvider resourceProvider)
+        public ModelProvider(IResourceProvider resourceProvider, ILogger<ModelProvider> logger)
         {
             var objLoaderFactory = new ObjLoaderFactory();
             // var objLoader = objLoaderFactory.Create(new ResourceMaterialLoader(resourceProvider));
@@ -93,6 +94,7 @@ namespace Aliquip
 
             Vertices = vertices.ToArray();
             Indices = indices.ToArray();
+            logger.LogInformation("Loaded Model. {vertices} vertices and {indices} indices.", vertices.Count, indices.Count);
         }
     }
 }

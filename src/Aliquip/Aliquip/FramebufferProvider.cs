@@ -16,9 +16,12 @@ namespace Aliquip
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IImageViewProvider _imageViewProvider;
         private readonly IDepthImageProvider _depthImageProvider;
+        private readonly IColorImageProvider _colorImageProvider;
+        private readonly IMsaaProvider _msaaProvider;
+        private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         public Framebuffer[] Framebuffers { get; private set; }
 
-        public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider, IDepthImageProvider depthImageProvider)
+        public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider, IDepthImageProvider depthImageProvider, IColorImageProvider colorImageProvider, IMsaaProvider msaaProvider, IPhysicalDeviceProvider physicalDeviceProvider)
         {
             _vk = vk;
             _deviceProvider = deviceProvider;
@@ -26,6 +29,9 @@ namespace Aliquip
             _renderPassProvider = renderPassProvider;
             _imageViewProvider = imageViewProvider;
             _depthImageProvider = depthImageProvider;
+            _colorImageProvider = colorImageProvider;
+            _msaaProvider = msaaProvider;
+            _physicalDeviceProvider = physicalDeviceProvider;
 
             Recreate();
         }
@@ -36,17 +42,37 @@ namespace Aliquip
             
             for (int i = 0; i < Framebuffers.Length; i++)
             {
-                var attachments = stackalloc [] { _imageViewProvider.ImageViews[i], _depthImageProvider.Texture.ImageView };
+                FramebufferCreateInfo createInfo;
+                if (_msaaProvider.MsaaSamples(_physicalDeviceProvider.Device) != SampleCountFlags.SampleCount1Bit)
+                {
+                    var attachments = stackalloc[]
+                    {
+                        _colorImageProvider.ColorImage!.ImageView, _depthImageProvider.Texture.ImageView,
+                        _imageViewProvider.ImageViews[i]
+                    };
 
-                var createInfo = new FramebufferCreateInfo
-                (
-                    renderPass: _renderPassProvider.RenderPass,
-                    attachmentCount: 2,
-                    pAttachments: attachments,
-                    width: _swapchainProvider.SwapchainExtent.Width,
-                    height: _swapchainProvider.SwapchainExtent.Height,
-                    layers: 1
-                );
+                    createInfo = new FramebufferCreateInfo
+                    (
+                        renderPass: _renderPassProvider.RenderPass, attachmentCount: 3, pAttachments: attachments,
+                        width: _swapchainProvider.SwapchainExtent.Width,
+                        height: _swapchainProvider.SwapchainExtent.Height, layers: 1
+                    );
+                }
+                else
+                {
+                    var attachments = stackalloc[]
+                    {
+                        _imageViewProvider.ImageViews[i],
+                        _depthImageProvider.Texture.ImageView
+                    };
+
+                    createInfo = new FramebufferCreateInfo
+                    (
+                        renderPass: _renderPassProvider.RenderPass, attachmentCount: 2, pAttachments: attachments,
+                        width: _swapchainProvider.SwapchainExtent.Width,
+                        height: _swapchainProvider.SwapchainExtent.Height, layers: 1
+                    );
+                }
 
                 _vk.CreateFramebuffer(_deviceProvider.LogicalDevice, &createInfo, null, out Framebuffers[i]).ThrowCode();
             }

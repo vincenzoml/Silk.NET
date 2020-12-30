@@ -77,6 +77,9 @@ namespace Aliquip
                 .AddSingleton<ITextureFactory, TextureFactory>()
                 .AddSingleton<IDepthImageProvider, DepthImageProvider>()
                 .AddSingleton<IModelProvider, ModelProvider>()
+                .AddSingleton<IMsaaProvider, MsaaProvider>()
+                .AddSingleton<ISampleShadingProvider, SampleShadingProvider>()
+                .AddSingleton<IColorImageProvider, ColorImageProvider>()
                 ;
         }
     }

@@ -24,7 +24,7 @@ namespace Aliquip
         public Queue TransferQueue { get; }
         public uint TransferQueueIndex { get; }
 
-        public unsafe LogicalDeviceProvider(IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vk vk)
+        public unsafe LogicalDeviceProvider(IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vk vk, ISampleShadingProvider sampleShadingProvider)
         {
             _physicalDeviceProvider = physicalDeviceProvider;
             _vk = vk;
@@ -51,6 +51,7 @@ namespace Aliquip
 
             PhysicalDeviceFeatures deviceFeatures = new PhysicalDeviceFeatures();
             deviceFeatures.SamplerAnisotropy = true;
+            deviceFeatures.SampleRateShading = sampleShadingProvider.UseSampleShading;
 
             var physicalDeviceSeparateDepthStencilLayoutsFeatures =
                 new PhysicalDeviceSeparateDepthStencilLayoutsFeatures(separateDepthStencilLayouts: true);

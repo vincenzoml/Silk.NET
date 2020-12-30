@@ -35,8 +35,12 @@ namespace Aliquip
         public ImageView ImageView { get; }
         public Sampler Sampler { get; }
 
-        public unsafe Texture(uint width, uint height,
+        public unsafe Texture
+        (
+            uint width,
+            uint height,
             Format format,
+            SampleCountFlags numSamples,
             Vk vk,
             ICommandBufferFactory commandBufferFactory,
             ITransferQueueProvider transferQueueProvider,
@@ -47,7 +51,8 @@ namespace Aliquip
             bool createSampler,
             bool useMipmaps,
             ImageAspectFlags aspectFlags,
-            ImageUsageFlags imageUsageFlags)
+            ImageUsageFlags imageUsageFlags
+        )
         {
             _vk = vk;
             _commandBufferFactory = commandBufferFactory;
@@ -79,7 +84,7 @@ namespace Aliquip
                 initialLayout: ImageLayout.Undefined,
                 sharingMode: SharingMode.Exclusive,
                 usage: imageUsageFlags,
-                samples: SampleCountFlags.SampleCount1Bit
+                samples: numSamples
             );
 
             _vk.CreateImage(_logicalDeviceProvider.LogicalDevice, imageInfo, null, out var image).ThrowCode();

@@ -30,7 +30,7 @@ namespace Aliquip
                 if (_cache.TryGetValue(name, out var t))
                     return t;
                 
-                t = CreateImage(SixLabors.ImageSharp.Image.Load(_resourceProvider["textures." + name]), true, true, ImageAspectFlags.ImageAspectColorBit);
+                t = CreateImage(SixLabors.ImageSharp.Image.Load(_resourceProvider["textures." + name]), true, true, SampleCountFlags.SampleCount1Bit, ImageAspectFlags.ImageAspectColorBit);
                 _cache[name] = t;
                 return t;
             }
@@ -58,10 +58,10 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
         }
 
-        public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, bool useMipmaps, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
+        public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, bool useMipmaps, SampleCountFlags numSamples, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
         {
             var texture = new Texture(
-                (uint)src.Width, (uint)src.Height, Format.R8G8B8A8Srgb, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
+                (uint)src.Width, (uint)src.Height, Format.R8G8B8A8Srgb, numSamples, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
                 createSampler, useMipmaps, aspectFlags, imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit | ImageUsageFlags.ImageUsageTransferSrcBit
             );
             
@@ -100,10 +100,10 @@ namespace Aliquip
         }
         
         public Texture CreateImage
-            (uint width, uint height, Format format, bool createSampler, bool useMipmaps, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags)
+            (uint width, uint height, Format format, bool createSampler, bool useMipmaps, SampleCountFlags numSamples, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags)
         {
             return new(
-                width, height, format, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
+                width, height, format, numSamples, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
                 createSampler,  useMipmaps, aspectFlags, imageUsageFlags
             );
         }

@@ -17,16 +17,18 @@ namespace Aliquip
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly ITextureFactory _textureFactory;
         private readonly ISwapchainProvider _swapchainProvider;
+        private readonly IMsaaProvider _msaaProvider;
         public Texture Texture { get; private set; }
 
-        public DepthImageProvider(Vk vk, IPhysicalDeviceProvider physicalDeviceProvider, ILogicalDeviceProvider logicalDeviceProvider, ITextureFactory textureFactory, ISwapchainProvider swapchainProvider)
+        public DepthImageProvider(Vk vk, IPhysicalDeviceProvider physicalDeviceProvider, ILogicalDeviceProvider logicalDeviceProvider, ITextureFactory textureFactory, ISwapchainProvider swapchainProvider, IMsaaProvider msaaProvider)
         {
             _vk = vk;
             _physicalDeviceProvider = physicalDeviceProvider;
             _logicalDeviceProvider = logicalDeviceProvider;
             _textureFactory = textureFactory;
             _swapchainProvider = swapchainProvider;
-            
+            _msaaProvider = msaaProvider;
+
             Recreate();
         }
 
@@ -61,6 +63,7 @@ namespace Aliquip
             Texture = _textureFactory.CreateImage
             (
                 _swapchainProvider.SwapchainExtent.Width, _swapchainProvider.SwapchainExtent.Height, depthFormat, false, false,
+                _msaaProvider.MsaaSamples(_physicalDeviceProvider.Device),
                 ImageAspectFlags.ImageAspectDepthBit, ImageUsageFlags.ImageUsageDepthStencilAttachmentBit
             );
             

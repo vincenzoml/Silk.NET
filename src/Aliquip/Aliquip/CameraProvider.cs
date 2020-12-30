@@ -39,11 +39,11 @@ namespace Aliquip
             _inputContext = inputContext;
             _windowProvider = windowProvider;
 
-            if (!int.TryParse(_configuration["FieldOfView"], out var intFov))
+            if (!int.TryParse(_configuration["Field Of View"], out var intFov))
                 intFov = 45;
             _fov = intFov * MathF.PI / 180f;
             
-            if (!float.TryParse(_configuration["CameraSpeed"], out _speed))
+            if (!float.TryParse(_configuration["Camera Speed"], out _speed))
                 _speed = .1f;
 
             _position = new(2f, 2f, 2f);

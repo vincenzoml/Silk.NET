@@ -31,6 +31,9 @@ namespace Aliquip
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly ICameraProvider _cameraProvider;
         private readonly IModelProvider _modelProvider;
+        private readonly IMsaaProvider _msaaProvider;
+        private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
+        private readonly ISampleShadingProvider _sampleShadingProvider;
 
         private Buffer _buffer;
         private DeviceMemory _bufferMemory;
@@ -56,7 +59,10 @@ namespace Aliquip
             ITransferQueueProvider transferQueueProvider,
             ICommandBufferFactory commandBufferFactory,
             ICameraProvider cameraProvider,
-            IModelProvider modelProvider
+            IModelProvider modelProvider,
+            IMsaaProvider msaaProvider,
+            IPhysicalDeviceProvider physicalDeviceProvider,
+            ISampleShadingProvider sampleShadingProvider
         )
         {
             _vk = vk;
@@ -71,6 +77,9 @@ namespace Aliquip
             _commandBufferFactory = commandBufferFactory;
             _cameraProvider = cameraProvider;
             _modelProvider = modelProvider;
+            _msaaProvider = msaaProvider;
+            _physicalDeviceProvider = physicalDeviceProvider;
+            _sampleShadingProvider = sampleShadingProvider;
 
             Recreate();
         }
@@ -227,7 +236,7 @@ namespace Aliquip
                     );
 
                     var multisampling = new PipelineMultisampleStateCreateInfo
-                        (sampleShadingEnable: false, rasterizationSamples: SampleCountFlags.SampleCount1Bit);
+                        (sampleShadingEnable: _sampleShadingProvider.UseSampleShading, minSampleShading: 0.2f, rasterizationSamples: _msaaProvider.MsaaSamples(_physicalDeviceProvider.Device));
 
                     var colorBlendAttachment = new PipelineColorBlendAttachmentState
                     (
@@ -282,7 +291,7 @@ namespace Aliquip
             var timeDiff = DateTime.UtcNow - _start;
 
             var ubo = new UniformBufferObject(
-                model: Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                model: Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
                 view: _cameraProvider.ViewMatrix,
                 projection: _cameraProvider.ProjectionMatrix
             );
