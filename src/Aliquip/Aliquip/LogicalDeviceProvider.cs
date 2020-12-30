@@ -51,6 +51,10 @@ namespace Aliquip
 
             PhysicalDeviceFeatures deviceFeatures = new PhysicalDeviceFeatures();
             deviceFeatures.SamplerAnisotropy = true;
+
+            var physicalDeviceSeparateDepthStencilLayoutsFeatures =
+                new PhysicalDeviceSeparateDepthStencilLayoutsFeatures(separateDepthStencilLayouts: true);
+
             DeviceCreateInfo deviceCreateInfo = new DeviceCreateInfo
             (
                 pQueueCreateInfos: queueCreateInfos,
@@ -64,6 +68,7 @@ namespace Aliquip
                 // ppEnabledLayerNames: EnableValidationLayers
                 //     ? (byte**) SilkMarshal.StringArrayToPtr(ValidationLayers)
                 //     : default
+                , pNext: &physicalDeviceSeparateDepthStencilLayoutsFeatures
             );
 
             _vk.CreateDevice(physicalDeviceProvider.Device, &deviceCreateInfo, null, out var logicalDevice).ThrowCode();

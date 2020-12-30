@@ -105,13 +105,16 @@ namespace Aliquip
                 }
 
                 PhysicalDeviceProperties deviceProperties;
-                PhysicalDeviceFeatures deviceFeatures;
                 _vk.GetPhysicalDeviceProperties(device, &deviceProperties);
-                _vk.GetPhysicalDeviceFeatures(device, &deviceFeatures);
+                var depthStencilResolveProperties = new PhysicalDeviceSeparateDepthStencilLayoutsFeatures(sType: StructureType.PhysicalDeviceFeatures2);
+                PhysicalDeviceFeatures2 deviceFeatures = new PhysicalDeviceFeatures2(pNext: &depthStencilResolveProperties);
+                _vk.GetPhysicalDeviceFeatures2(device, &deviceFeatures);
 
                 int score = 5;
+                
+                if (!depthStencilResolveProperties.SeparateDepthStencilLayouts) return 0;
 
-                if (!deviceFeatures.SamplerAnisotropy) return 0;
+                if (!deviceFeatures.Features.SamplerAnisotropy) return 0;
 
                 if (!queueFamilyProvider.FindQueueFamilyIndices(device).IsComplete()) return 0;
 

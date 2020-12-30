@@ -13,13 +13,15 @@ namespace Aliquip
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly ISwapchainProvider _swapchainProvider;
+        private readonly IDepthImageProvider _depthImageProvider;
         public RenderPass RenderPass { get; private set; }
 
-        public unsafe RenderPassProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider)
+        public unsafe RenderPassProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider, IDepthImageProvider depthImageProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _swapchainProvider = swapchainProvider;
+            _depthImageProvider = depthImageProvider;
             Recreate();
         }
 
@@ -38,28 +40,41 @@ namespace Aliquip
             );
 
             var colorAttachmentRef = new AttachmentReference(attachment: 0, layout: ImageLayout.ColorAttachmentOptimal);
+            
+            var depthAttachment = new AttachmentDescription
+            (
+                format: _depthImageProvider.Texture.Format, samples: SampleCountFlags.SampleCount1Bit,
+                loadOp: AttachmentLoadOp.Clear, storeOp: AttachmentStoreOp.DontCare,
+                stencilLoadOp: AttachmentLoadOp.DontCare, stencilStoreOp: AttachmentStoreOp.DontCare,
+                initialLayout: ImageLayout.Undefined, finalLayout: ImageLayout.DepthStencilAttachmentOptimal
+            );
+
+            var depthAttachmentRef = new AttachmentReference(attachment: 1, layout: ImageLayout.DepthStencilAttachmentOptimal);
 
             var subpass = new SubpassDescription
             (
                 pipelineBindPoint: PipelineBindPoint.Graphics,
                 colorAttachmentCount: 1,
-                pColorAttachments: &colorAttachmentRef
+                pColorAttachments: &colorAttachmentRef,
+                pDepthStencilAttachment: &depthAttachmentRef
             );
 
             var dependency = new SubpassDependency
             (
                 srcSubpass: Vk.SubpassExternal,
                 dstSubpass: 0,
-                srcStageMask: PipelineStageFlags.PipelineStageColorAttachmentOutputBit,
+                srcStageMask: PipelineStageFlags.PipelineStageColorAttachmentOutputBit | PipelineStageFlags.PipelineStageEarlyFragmentTestsBit,
                 srcAccessMask: 0,
-                dstStageMask: PipelineStageFlags.PipelineStageColorAttachmentOutputBit,
-                dstAccessMask: AccessFlags.AccessColorAttachmentWriteBit | AccessFlags.AccessColorAttachmentReadBit // is read needed?
+                dstStageMask: PipelineStageFlags.PipelineStageColorAttachmentOutputBit | PipelineStageFlags.PipelineStageEarlyFragmentTestsBit,
+                dstAccessMask: AccessFlags.AccessColorAttachmentWriteBit | AccessFlags.AccessDepthStencilAttachmentWriteBit
             );
+
+            var attachments = stackalloc[] {colorAttachment, depthAttachment};
             
             var renderPassInfo = new RenderPassCreateInfo
             (
-                attachmentCount: 1,
-                pAttachments: &colorAttachment,
+                attachmentCount: 2,
+                pAttachments: attachments,
                 subpassCount: 1,
                 pSubpasses: &subpass,
                 dependencyCount: 1,

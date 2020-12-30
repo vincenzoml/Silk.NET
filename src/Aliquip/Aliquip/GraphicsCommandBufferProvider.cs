@@ -62,13 +62,17 @@ namespace Aliquip
                 _swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null, 
                 (commandBuffer, i) =>
                 {
-                    var clearColor = new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f));
+                    var clearColors = stackalloc []
+                    {
+                        new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f)),
+                        new ClearValue(depthStencil: new ClearDepthStencilValue(1, 0))
+                    };
 
                     var renderPassInfo = new RenderPassBeginInfo
                     (
                         renderPass: _renderPassProvider.RenderPass, framebuffer: _framebufferProvider.Framebuffers[i],
                         renderArea: new Rect2D(new Offset2D(0, 0), _swapchainProvider.SwapchainExtent),
-                        clearValueCount: 1, pClearValues: &clearColor
+                        clearValueCount: 2, pClearValues: clearColors
                     );
 
                     _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.Inline);

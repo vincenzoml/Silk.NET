@@ -14,38 +14,21 @@ namespace AliquipDemo
     {
         static async Task RunAsync(IHost host, CancellationToken token = default)
         {
-            Exception _ex = null;
-            
-            try
-            {
-                await host.StartAsync(token).ConfigureAwait(false);
 
-                await host.WaitForShutdownAsync(token).ConfigureAwait(false);
-            }
-            catch (Exception ex)
+            await host.StartAsync(token).ConfigureAwait(false);
+
+            await host.WaitForShutdownAsync(token).ConfigureAwait(false);
+
+            if (host is IAsyncDisposable asyncDisposable)
             {
-                _ex = ex;
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
             }
-            finally
+            else
             {
-                if (_ex is not null)
-                {
-                    throw _ex;
-                }
-                else
-                {
-                    if (host is IAsyncDisposable asyncDisposable)
-                    {
-                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        host.Dispose();
-                    }
-                }
+                host.Dispose();
             }
         }
-        
+
         static async Task Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)

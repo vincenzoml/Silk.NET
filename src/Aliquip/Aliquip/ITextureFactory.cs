@@ -13,6 +13,7 @@ namespace Aliquip
     public interface ITextureFactory
     {
         Texture this[string name] { get; }
-        Texture CreateImage(Image<Rgba32> src);
+        Texture CreateImage(Image<Rgba32> src, bool createSampler, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags);
+        Texture CreateImage(uint width, uint height, Format format, bool createSampler, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags);
     }
 }

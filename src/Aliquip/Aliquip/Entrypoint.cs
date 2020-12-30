@@ -75,6 +75,7 @@ namespace Aliquip
                 .AddSingleton<ICameraProvider, CameraProvider>()
                 .AddSingleton(x => x.GetRequiredService<IWindowProvider>().Window.CreateInput())
                 .AddSingleton<ITextureFactory, TextureFactory>()
+                .AddSingleton<IDepthImageProvider, DepthImageProvider>()
                 ;
         }
     }

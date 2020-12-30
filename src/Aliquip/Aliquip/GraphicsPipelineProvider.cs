@@ -23,18 +23,21 @@ namespace Aliquip
         [StructLayout(LayoutKind.Explicit, Size = sizeof(float) * 5)]
         private struct Vertex
         {
-            [FieldOffset(0)]
-            public Vector2D<float> Position;
-            [FieldOffset(sizeof(float) * 2)]
+            private const int PositionOffset = 0;
+            [FieldOffset(PositionOffset)]
+            public Vector3D<float> Position;
+            private const int ColorOffset = sizeof(float) * 3;
+            [FieldOffset(ColorOffset)]
             public Vector3D<float> Color;
-            [FieldOffset(sizeof(float) * 5)] 
-            public Vector2D<float> TextureCoordinates;
+            private const int TextureCoordinateOffset = sizeof(float) * 6;
+            [FieldOffset(TextureCoordinateOffset)] 
+            public Vector2D<float> TextureCoordinate;
 
-            public Vertex(Vector2D<float> position, Vector3D<float> color, Vector2D<float> textureCoordinates)
+            public Vertex(Vector3D<float> position, Vector3D<float> color, Vector2D<float> textureCoordinate)
             {
                 Position = position;
                 Color = color;
-                TextureCoordinates = textureCoordinates;
+                TextureCoordinate = textureCoordinate;
             }
 
             public static unsafe VertexInputBindingDescription BindingDescription
@@ -58,18 +61,18 @@ namespace Aliquip
 
                     attributeDescriptions[0].Binding = 0;
                     attributeDescriptions[0].Location = 0;
-                    attributeDescriptions[0].Format = Format.R32G32Sfloat;
-                    attributeDescriptions[0].Offset = 0; // offset of Position
+                    attributeDescriptions[0].Format = Format.R32G32B32Sfloat;
+                    attributeDescriptions[0].Offset = PositionOffset;
 
                     attributeDescriptions[1].Binding = 0;
                     attributeDescriptions[1].Location = 1;
                     attributeDescriptions[1].Format = Format.R32G32B32Sfloat;
-                    attributeDescriptions[1].Offset = sizeof(float) * 2; // offset of Color
+                    attributeDescriptions[1].Offset = ColorOffset;
                     
                     attributeDescriptions[2].Binding = 0;
                     attributeDescriptions[2].Location = 2;
                     attributeDescriptions[2].Format = Format.R32G32Sfloat;
-                    attributeDescriptions[2].Offset = sizeof(float) * 5; // offset of TextureCoordinate
+                    attributeDescriptions[2].Offset = TextureCoordinateOffset;
 
                     return attributeDescriptions;
                 }
@@ -78,15 +81,21 @@ namespace Aliquip
 
         private static readonly Vertex[] vertices =
         {
-            new(new(-0.5f, -0.5f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
-            new(new(0.5f, -0.5f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
-            new(new(0.5f, 0.5f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
-            new(new(-0.5f, 0.5f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
+            new(new(-0.5f, -0.5f, 0.0f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
+            new(new(0.5f, -0.5f, 0.0f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
+            new(new(0.5f, 0.5f, 0.0f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
+            new(new(-0.5f, 0.5f, 0.0f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
+            
+            new(new(-0.5f, -0.5f, -0.5f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
+            new(new(0.5f, -0.5f, -0.5f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
+            new(new(0.5f, 0.5f, -0.5f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
+            new(new(-0.5f, 0.5f, -0.5f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
         };
 
         private static readonly ushort[] indices =
         {
-            0, 1, 2, 2, 3, 0
+            0, 1, 2, 2, 3, 0,
+            4, 5, 6, 6, 7, 4
         };
         
         private readonly Vk _vk;
@@ -275,7 +284,7 @@ namespace Aliquip
                     var rasterizer = new PipelineRasterizationStateCreateInfo
                     (
                         depthClampEnable: false, rasterizerDiscardEnable: false, polygonMode: PolygonMode.Fill,
-                        lineWidth: 1f, cullMode: CullModeFlags.CullModeBackBit, frontFace: FrontFace.CounterClockwise,
+                        lineWidth: 1f, cullMode: CullModeFlags.CullModeNone, frontFace: FrontFace.CounterClockwise,
                         depthBiasEnable: false
                     );
 
@@ -300,12 +309,18 @@ namespace Aliquip
                     colorBlending.BlendConstants[2] = 0.0f;
                     colorBlending.BlendConstants[3] = 0.0f;
 
+                    var depthStencilState = new PipelineDepthStencilStateCreateInfo
+                    (
+                        depthTestEnable: true, depthWriteEnable: true, depthCompareOp: CompareOp.Less,
+                        depthBoundsTestEnable: false, stencilTestEnable: false
+                    );
+
                     var pipelineInfo = new GraphicsPipelineCreateInfo
                     (
                         stageCount: 2, pStages: shaderStages, pVertexInputState: &vertexInputInfo,
                         pInputAssemblyState: &inputAssembly, pViewportState: &viewportState,
                         pRasterizationState: &rasterizer, pMultisampleState: &multisampling,
-                        pColorBlendState: &colorBlending, layout: _pipelineLayoutProvider.PipelineLayout,
+                        pColorBlendState: &colorBlending, pDepthStencilState: &depthStencilState, layout: _pipelineLayoutProvider.PipelineLayout,
                         renderPass: _renderPassProvider.RenderPass, subpass: 0, basePipelineHandle: null
                     );
 

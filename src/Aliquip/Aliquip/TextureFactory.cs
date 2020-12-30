@@ -12,7 +12,7 @@ using Image = Silk.NET.Vulkan.Image;
 
 namespace Aliquip
 {
-    internal sealed class TextureFactory : ITextureFactory
+    internal sealed class TextureFactory : ITextureFactory, IDisposable
     {
         private readonly Vk _vk;
         private readonly ITransferQueueProvider _transferQueueProvider;
@@ -30,7 +30,7 @@ namespace Aliquip
                 if (_cache.TryGetValue(name, out var t))
                     return t;
                 
-                t = CreateImage(SixLabors.ImageSharp.Image.Load(_resourceProvider["textures." + name]));
+                t = CreateImage(SixLabors.ImageSharp.Image.Load(_resourceProvider["textures." + name]), true, ImageAspectFlags.ImageAspectColorBit);
                 _cache[name] = t;
                 return t;
             }
@@ -58,11 +58,63 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
         }
 
-        public Texture CreateImage(Image<Rgba32> src)
+        public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
+        {
+            var texture = new Texture(
+                (uint)src.Width, (uint)src.Height, Format.R8G8B8A8Srgb, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
+                createSampler, aspectFlags, imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit
+            );
+            
+            var pixelCount = src.Width * src.Height;
+            var totalImageSize = pixelCount * 4;
+            var (stagingBuffer, stagingMemory) = _bufferFactory.CreateBuffer
+            (
+                (ulong) totalImageSize, BufferUsageFlags.BufferUsageTransferSrcBit,
+                MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
+                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
+            );
+
+            void* data = default;
+            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory, 0, (ulong) totalImageSize, 0, ref data);
+            
+            var s = new Span<Rgba32>(data, pixelCount);
+            if (src.TryGetSinglePixelSpan(out var s2))
+                s2.CopyTo(s);
+            else
+            {
+                for (int r = 0; r < src.Height; r++)
+                {
+                    s2 = src.GetPixelRowSpan(r);
+                    s2.CopyTo(s.Slice(r * pixelCount, src.Width));
+                }
+            }
+
+            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory);
+            
+            texture.TransitionImageLayout(ImageLayout.TransferDstOptimal);
+            texture.CopyBufferToImage(stagingBuffer);
+            texture.TransitionImageLayout(ImageLayout.ShaderReadOnlyOptimal);
+
+            return texture;
+        }
+        
+        public Texture CreateImage
+            (uint width, uint height, Format format, bool createSampler, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags)
         {
             return new(
-                src, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory
+                width, height, format, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
+                createSampler, aspectFlags, imageUsageFlags
             );
+        }
+
+        public void Dispose()
+        {
+            foreach (var texture in _cache)
+            {
+                texture.Value.Dispose();
+            }
+            
+            _cache.Clear();
         }
     }
 }

@@ -15,16 +15,18 @@ namespace Aliquip
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IImageViewProvider _imageViewProvider;
+        private readonly IDepthImageProvider _depthImageProvider;
         public Framebuffer[] Framebuffers { get; private set; }
 
-        public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider)
+        public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider, IDepthImageProvider depthImageProvider)
         {
             _vk = vk;
             _deviceProvider = deviceProvider;
             _swapchainProvider = swapchainProvider;
             _renderPassProvider = renderPassProvider;
             _imageViewProvider = imageViewProvider;
-            
+            _depthImageProvider = depthImageProvider;
+
             Recreate();
         }
 
@@ -34,13 +36,13 @@ namespace Aliquip
             
             for (int i = 0; i < Framebuffers.Length; i++)
             {
-                var attachment = _imageViewProvider.ImageViews[i];
+                var attachments = stackalloc [] { _imageViewProvider.ImageViews[i], _depthImageProvider.Texture.ImageView };
 
                 var createInfo = new FramebufferCreateInfo
                 (
                     renderPass: _renderPassProvider.RenderPass,
-                    attachmentCount: 1,
-                    pAttachments: &attachment,
+                    attachmentCount: 2,
+                    pAttachments: attachments,
                     width: _swapchainProvider.SwapchainExtent.Width,
                     height: _swapchainProvider.SwapchainExtent.Height,
                     layers: 1

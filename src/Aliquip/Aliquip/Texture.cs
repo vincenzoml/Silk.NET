@@ -24,21 +24,26 @@ namespace Aliquip
         private readonly IBufferFactory _bufferFactory;
         private readonly uint _width;
         private readonly uint _height;
+        private readonly ImageAspectFlags _aspectFlags;
         public Image Image { get; }
         public DeviceMemory Memory { get; }
         private ImageLayout _layout = ImageLayout.Undefined;
-        private readonly Format _format = Format.R8G8B8A8Srgb;
+        public Format Format { get; }
         public ImageView ImageView { get; }
         public Sampler Sampler { get; }
 
-        public unsafe Texture(Image<Rgba32> src,
+        public unsafe Texture(uint width, uint height,
+            Format format,
             Vk vk,
             ICommandBufferFactory commandBufferFactory,
             ITransferQueueProvider transferQueueProvider,
             ILogicalDeviceProvider logicalDeviceProvider,
             IPhysicalDeviceProvider physicalDeviceProvider,
             IGraphicsQueueProvider graphicsQueueProvider,
-            IBufferFactory bufferFactory)
+            IBufferFactory bufferFactory,
+            bool createSampler,
+            ImageAspectFlags aspectFlags,
+            ImageUsageFlags imageUsageFlags)
         {
             _vk = vk;
             _commandBufferFactory = commandBufferFactory;
@@ -47,17 +52,19 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _graphicsQueueProvider = graphicsQueueProvider;
             _bufferFactory = bufferFactory;
+            _aspectFlags = aspectFlags;
+            Format = format;
 
             var imageInfo = new ImageCreateInfo
             (
                 imageType: ImageType.ImageType2D,
-                extent: new Extent3D(width: (uint) src.Width, height: (uint) src.Height, depth: 1), mipLevels: 1,
+                extent: new Extent3D(width: width, height: height, depth: 1), mipLevels: 1,
                 arrayLayers: 1,
-                format: Format.R8G8B8A8Srgb,
+                format: Format,
                 tiling: ImageTiling.Optimal,
                 initialLayout: ImageLayout.Undefined,
                 sharingMode: SharingMode.Exclusive,
-                usage: ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit,
+                usage: imageUsageFlags,
                 samples: SampleCountFlags.SampleCount1Bit
             );
 
@@ -88,71 +95,44 @@ namespace Aliquip
 
             _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, 0);
 
-            _width = (uint) src.Width;
-            _height = (uint) src.Height;
+            _width = width;
+            _height = height;
             Image = image;
             Memory = imageMemory;
 
-            var pixelCount = src.Width * src.Height;
-            var totalImageSize = _width * _height * 4;
-            var (stagingBuffer, stagingMemory) = _bufferFactory.CreateBuffer
-            (
-                totalImageSize, BufferUsageFlags.BufferUsageTransferSrcBit,
-                MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
-            );
-
-            void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory, 0, totalImageSize, 0, ref data);
-            
-            var s = new Span<Rgba32>(data, pixelCount);
-            if (src.TryGetSinglePixelSpan(out var s2))
-                s2.CopyTo(s);
-            else
-            {
-                for (int r = 0; r < src.Height; r++)
-                {
-                    s2 = src.GetPixelRowSpan(r);
-                    s2.CopyTo(s.Slice(r * pixelCount, src.Width));
-                }
-            }
-
-            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory);
-            
-            TransitionImageLayout(ImageLayout.TransferDstOptimal);
-            CopyBufferToImage(stagingBuffer);
-            TransitionImageLayout(ImageLayout.ShaderReadOnlyOptimal);
-
             ImageViewCreateInfo viewInfo = new ImageViewCreateInfo
             (
-                image: Image, viewType: ImageViewType.ImageViewType2D, format: _format,
+                image: Image, viewType: ImageViewType.ImageViewType2D, format: Format,
                 subresourceRange: new ImageSubresourceRange
                 (
-                    aspectMask: ImageAspectFlags.ImageAspectColorBit, baseMipLevel: 0, levelCount: 1, baseArrayLayer: 0,
+                    aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: 1, baseArrayLayer: 0,
                     layerCount: 1
                 )
             );
 
             _vk.CreateImageView(_logicalDeviceProvider.LogicalDevice, viewInfo, null, out var imageView).ThrowCode();
             ImageView = imageView;
-            
-            _vk.GetPhysicalDeviceProperties(_physicalDeviceProvider.Device, out var properties);
 
-            var samplerInfo = new SamplerCreateInfo
-            (
-                magFilter: Filter.Linear, minFilter: Filter.Linear, addressModeU: SamplerAddressMode.Repeat,
-                addressModeV: SamplerAddressMode.Repeat, addressModeW: SamplerAddressMode.Repeat,
-                anisotropyEnable: true, maxAnisotropy: properties.Limits.MaxSamplerAnisotropy,
-                borderColor: BorderColor.FloatOpaqueBlack, unnormalizedCoordinates: false, compareEnable: false,
-                compareOp: CompareOp.Never, mipmapMode: SamplerMipmapMode.Linear, mipLodBias: 0.0f, minLod: 0.0f,
-                maxLod: 0.0f
-            );
+            if (createSampler)
+            {
+                _vk.GetPhysicalDeviceProperties(_physicalDeviceProvider.Device, out var properties);
 
-            _vk.CreateSampler(_logicalDeviceProvider.LogicalDevice, samplerInfo, null, out var sampler);
-            Sampler = sampler;
+                var samplerInfo = new SamplerCreateInfo
+                (
+                    magFilter: Filter.Linear, minFilter: Filter.Linear, addressModeU: SamplerAddressMode.Repeat,
+                    addressModeV: SamplerAddressMode.Repeat, addressModeW: SamplerAddressMode.Repeat,
+                    anisotropyEnable: true, maxAnisotropy: properties.Limits.MaxSamplerAnisotropy,
+                    borderColor: BorderColor.FloatOpaqueBlack, unnormalizedCoordinates: false, compareEnable: false,
+                    compareOp: CompareOp.Never, mipmapMode: SamplerMipmapMode.Linear, mipLodBias: 0.0f, minLod: 0.0f,
+                    maxLod: 0.0f
+                );
+
+                _vk.CreateSampler(_logicalDeviceProvider.LogicalDevice, samplerInfo, null, out var sampler);
+                Sampler = sampler;
+            }
         }
         
-        private unsafe void CopyBufferToImage(Buffer src)
+        public unsafe void CopyBufferToImage(Buffer src)
         {
             Debug.Assert(_layout == ImageLayout.TransferDstOptimal);
             _commandBufferFactory.RunSingleTime
@@ -164,7 +144,7 @@ namespace Aliquip
                     (
                         bufferOffset: 0, bufferRowLength: 0, bufferImageHeight: 0,
                         imageSubresource: new ImageSubresourceLayers
-                            (aspectMask: ImageAspectFlags.ImageAspectColorBit, mipLevel: 0, baseArrayLayer: 0, layerCount: 1),
+                            (aspectMask: _aspectFlags, mipLevel: 0, baseArrayLayer: 0, layerCount: 1),
                         imageOffset: new Offset3D(0, 0, 0), imageExtent: new(_width, _height, 1)
                     );
                     
@@ -173,7 +153,7 @@ namespace Aliquip
             );
         }
         
-        private unsafe void TransitionImageLayout(ImageLayout @new)
+        public unsafe void TransitionImageLayout(ImageLayout @new)
         {
             if (_layout == @new)
                 return;
@@ -213,6 +193,18 @@ namespace Aliquip
                     dstFamilyIndex = _graphicsQueueProvider.GraphicsQueueIndex;
                     dstQueue = _graphicsQueueProvider.GraphicsQueue;
                     break;
+                case ImageLayout.DepthStencilAttachmentOptimal when _layout is ImageLayout.Undefined:
+                    srcAccessMask = 0;
+                    dstAccessMask = AccessFlags.AccessDepthStencilAttachmentReadBit | AccessFlags.AccessDepthStencilAttachmentWriteBit;
+
+                    sourceStage = PipelineStageFlags.PipelineStageTopOfPipeBit;
+                    destinationStage = PipelineStageFlags.PipelineStageEarlyFragmentTestsBit;
+
+                    srcFamilyIndex = Vk.QueueFamilyExternal;
+                    srcQueue = default;
+                    dstFamilyIndex = _graphicsQueueProvider.GraphicsQueueIndex;
+                    dstQueue = _graphicsQueueProvider.GraphicsQueue;
+                    break;
                 default:
                     throw new Exception("Could not find transition combination");
             }
@@ -229,7 +221,7 @@ namespace Aliquip
                             dstQueueFamilyIndex: dstFamilyIndex, image: Image,
                             subresourceRange: new ImageSubresourceRange
                             (
-                                aspectMask: ImageAspectFlags.ImageAspectColorBit, baseMipLevel: 0, levelCount: 1,
+                                aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: 1,
                                 baseArrayLayer: 0, layerCount: 1
                             ), srcAccessMask: srcAccessMask, dstAccessMask: srcAccessMask
                         );
@@ -253,7 +245,7 @@ namespace Aliquip
                         dstQueueFamilyIndex: dstFamilyIndex, image: Image,
                         subresourceRange: new ImageSubresourceRange
                         (
-                            aspectMask: ImageAspectFlags.ImageAspectColorBit, baseMipLevel: 0, levelCount: 1,
+                            aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: 1,
                             baseArrayLayer: 0, layerCount: 1
                         ), srcAccessMask: srcAccessMask, dstAccessMask: dstAccessMask
                     );
