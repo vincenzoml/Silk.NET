@@ -25,7 +25,7 @@
       <ProjectReference Include="..\..\Vulkan\Silk.NET.Vulkan\Silk.NET.Vulkan.csproj" />
     </ItemGroup>
 
-    <ItemGroup>      
+    <ItemGroup>
         <EmbeddedResource Include="shaders\frag.spv" />
         <EmbeddedResource Include="shaders\vert.spv" />
         <EmbeddedResource Include="textures\*.*" />

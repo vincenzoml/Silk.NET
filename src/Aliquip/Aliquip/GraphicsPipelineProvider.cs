@@ -119,6 +119,15 @@ namespace Aliquip
             var offsets = stackalloc[] {_vertexOffset};
             _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
             _vk.CmdBindIndexBuffer(commandBuffer, _buffer, _indexOffset, IndexType.Uint32);
+
+            var cameraProjection = _cameraProvider.ProjectionMatrix;
+            // Vulkan has the inverse Y
+            cameraProjection.M22 *= -1;
+            _vk.CmdPushConstants
+            (
+                commandBuffer, _pipelineLayoutProvider.PipelineLayout, ShaderStageFlags.ShaderStageVertexBit, 0,
+                (uint) sizeof(Matrix4X4<float>), ref cameraProjection
+            );
         }
         
         public unsafe void Recreate()
@@ -292,11 +301,8 @@ namespace Aliquip
 
             var ubo = new UniformBufferObject(
                 model: Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
-                view: _cameraProvider.ViewMatrix,
-                projection: _cameraProvider.ProjectionMatrix
+                view: _cameraProvider.ViewMatrix
             );
-            // Vulkan has the inverse Y
-            ubo.Projection.M22 *= -1;
 
             void* data = default;
             _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, _uniformBufferMemory, _uniformOffsets[currentImage], (ulong) sizeof(UniformBufferObject), 0, ref data);

@@ -4,6 +4,7 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
@@ -27,8 +28,10 @@ namespace Aliquip
         public unsafe void Recreate()
         {
             var setLayouts = _descriptorSetLayoutProvider.DescriptorSetLayout;
+            var pushConstant = new PushConstantRange
+                (ShaderStageFlags.ShaderStageVertexBit, 0, (uint) sizeof(Matrix4X4<float>));
             var createInfo = new PipelineLayoutCreateInfo
-                (setLayoutCount: 1, pSetLayouts: &setLayouts, pushConstantRangeCount: 0);
+                (setLayoutCount: 1, pSetLayouts: &setLayouts, pushConstantRangeCount: 1, pPushConstantRanges: &pushConstant);
             _vk.CreatePipelineLayout
                     (_logicalDeviceProvider.LogicalDevice, &createInfo, null, out var pipelineLayout)
                 .ThrowCode();
