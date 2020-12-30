@@ -60,7 +60,7 @@ namespace Aliquip
             var depthFormat = FindDepthFormat();
             Texture = _textureFactory.CreateImage
             (
-                _swapchainProvider.SwapchainExtent.Width, _swapchainProvider.SwapchainExtent.Height, depthFormat, false,
+                _swapchainProvider.SwapchainExtent.Width, _swapchainProvider.SwapchainExtent.Height, depthFormat, false, false,
                 ImageAspectFlags.ImageAspectDepthBit, ImageUsageFlags.ImageUsageDepthStencilAttachmentBit
             );
             

@@ -30,7 +30,7 @@ namespace Aliquip
                 if (_cache.TryGetValue(name, out var t))
                     return t;
                 
-                t = CreateImage(SixLabors.ImageSharp.Image.Load(_resourceProvider["textures." + name]), true, ImageAspectFlags.ImageAspectColorBit);
+                t = CreateImage(SixLabors.ImageSharp.Image.Load(_resourceProvider["textures." + name]), true, true, ImageAspectFlags.ImageAspectColorBit);
                 _cache[name] = t;
                 return t;
             }
@@ -58,11 +58,11 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
         }
 
-        public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
+        public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, bool useMipmaps, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
         {
             var texture = new Texture(
                 (uint)src.Width, (uint)src.Height, Format.R8G8B8A8Srgb, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
-                createSampler, aspectFlags, imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit
+                createSampler, useMipmaps, aspectFlags, imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit | ImageUsageFlags.ImageUsageTransferSrcBit
             );
             
             var pixelCount = src.Width * src.Height;
@@ -93,17 +93,18 @@ namespace Aliquip
             
             texture.TransitionImageLayout(ImageLayout.TransferDstOptimal);
             texture.CopyBufferToImage(stagingBuffer);
-            texture.TransitionImageLayout(ImageLayout.ShaderReadOnlyOptimal);
-
+            // implicitly transitions to ShaderReadOnlyOptimal
+            texture.GenerateMipmaps();
+            
             return texture;
         }
         
         public Texture CreateImage
-            (uint width, uint height, Format format, bool createSampler, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags)
+            (uint width, uint height, Format format, bool createSampler, bool useMipmaps, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags)
         {
             return new(
                 width, height, format, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
-                createSampler, aspectFlags, imageUsageFlags
+                createSampler,  useMipmaps, aspectFlags, imageUsageFlags
             );
         }
 

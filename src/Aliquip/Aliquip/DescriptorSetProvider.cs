@@ -57,7 +57,7 @@ namespace Aliquip
             fixed (DescriptorSet* pDescriptorSets = DescriptorSets)
                 _vk.AllocateDescriptorSets(_logicalDeviceProvider.LogicalDevice, allocInfo, pDescriptorSets);
 
-            var image = _textureFactory["texture.jpg"];
+            var image = _textureFactory["viking_room.png"];
             for (int i = 0; i < count; i++)
             {
                 var bufferInfo = _graphicsPipelineProvider.GetDescriptorBufferInfo(i);

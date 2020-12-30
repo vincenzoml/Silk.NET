@@ -55,6 +55,7 @@ namespace AliquipDemo
             task = task.ContinueWith((x) => window.Close());
 
             window.UpdatesPerSecond = Double.MaxValue;
+            window.FramesPerSecond = Double.MaxValue;
             window.Run
             (
                 () =>

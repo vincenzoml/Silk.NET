@@ -8,7 +8,6 @@ using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
@@ -20,84 +19,6 @@ namespace Aliquip
 {
     internal sealed class GraphicsPipelineProvider : IGraphicsPipelineProvider, IDisposable
     {
-        [StructLayout(LayoutKind.Explicit, Size = sizeof(float) * 5)]
-        private struct Vertex
-        {
-            private const int PositionOffset = 0;
-            [FieldOffset(PositionOffset)]
-            public Vector3D<float> Position;
-            private const int ColorOffset = sizeof(float) * 3;
-            [FieldOffset(ColorOffset)]
-            public Vector3D<float> Color;
-            private const int TextureCoordinateOffset = sizeof(float) * 6;
-            [FieldOffset(TextureCoordinateOffset)] 
-            public Vector2D<float> TextureCoordinate;
-
-            public Vertex(Vector3D<float> position, Vector3D<float> color, Vector2D<float> textureCoordinate)
-            {
-                Position = position;
-                Color = color;
-                TextureCoordinate = textureCoordinate;
-            }
-
-            public static unsafe VertexInputBindingDescription BindingDescription
-            {
-                get
-                {
-                    var bindingDescription = new VertexInputBindingDescription();
-                    bindingDescription.Binding = 0;
-                    bindingDescription.Stride = (uint) sizeof(Vertex);
-                    bindingDescription.InputRate = VertexInputRate.Vertex;
-                    
-                    return bindingDescription;
-                }
-            }
-            
-            public static VertexInputAttributeDescription[] AttributeDescriptions
-            {
-                get
-                {
-                    var attributeDescriptions = new VertexInputAttributeDescription[3];
-
-                    attributeDescriptions[0].Binding = 0;
-                    attributeDescriptions[0].Location = 0;
-                    attributeDescriptions[0].Format = Format.R32G32B32Sfloat;
-                    attributeDescriptions[0].Offset = PositionOffset;
-
-                    attributeDescriptions[1].Binding = 0;
-                    attributeDescriptions[1].Location = 1;
-                    attributeDescriptions[1].Format = Format.R32G32B32Sfloat;
-                    attributeDescriptions[1].Offset = ColorOffset;
-                    
-                    attributeDescriptions[2].Binding = 0;
-                    attributeDescriptions[2].Location = 2;
-                    attributeDescriptions[2].Format = Format.R32G32Sfloat;
-                    attributeDescriptions[2].Offset = TextureCoordinateOffset;
-
-                    return attributeDescriptions;
-                }
-            }
-        }
-
-        private static readonly Vertex[] vertices =
-        {
-            new(new(-0.5f, -0.5f, 0.0f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
-            new(new(0.5f, -0.5f, 0.0f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
-            new(new(0.5f, 0.5f, 0.0f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
-            new(new(-0.5f, 0.5f, 0.0f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
-            
-            new(new(-0.5f, -0.5f, -0.5f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
-            new(new(0.5f, -0.5f, -0.5f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
-            new(new(0.5f, 0.5f, -0.5f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
-            new(new(-0.5f, 0.5f, -0.5f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
-        };
-
-        private static readonly ushort[] indices =
-        {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4
-        };
-        
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly ISwapchainProvider _swapchainProvider;
@@ -108,8 +29,8 @@ namespace Aliquip
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly ITransferQueueProvider _transferQueueProvider;
         private readonly ICommandBufferFactory _commandBufferFactory;
-        private readonly IConfiguration _configuration;
         private readonly ICameraProvider _cameraProvider;
+        private readonly IModelProvider _modelProvider;
 
         private Buffer _buffer;
         private DeviceMemory _bufferMemory;
@@ -120,10 +41,23 @@ namespace Aliquip
         private DeviceMemory _uniformBufferMemory;
         private ulong[] _uniformOffsets;
 
-        public uint IndexCount => (uint) indices.Length;
-        public GraphicsPipelineProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, ISwapchainProvider swapchainProvider,
-            IPipelineLayoutProvider pipelineLayoutProvider, IRenderPassProvider renderPassProvider, IResourceProvider resourceProvider, IBufferFactory bufferFactory,
-            IGraphicsQueueProvider graphicsQueueProvider, ITransferQueueProvider transferQueueProvider, ICommandBufferFactory commandBufferFactory, IConfiguration configuration, ICameraProvider cameraProvider)
+        public uint IndexCount => (uint) _modelProvider.Indices.Length;
+
+        public GraphicsPipelineProvider
+        (
+            Vk vk,
+            ILogicalDeviceProvider logicalDeviceProvider,
+            ISwapchainProvider swapchainProvider,
+            IPipelineLayoutProvider pipelineLayoutProvider,
+            IRenderPassProvider renderPassProvider,
+            IResourceProvider resourceProvider,
+            IBufferFactory bufferFactory,
+            IGraphicsQueueProvider graphicsQueueProvider,
+            ITransferQueueProvider transferQueueProvider,
+            ICommandBufferFactory commandBufferFactory,
+            ICameraProvider cameraProvider,
+            IModelProvider modelProvider
+        )
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
@@ -135,8 +69,8 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
             _transferQueueProvider = transferQueueProvider;
             _commandBufferFactory = commandBufferFactory;
-            _configuration = configuration;
             _cameraProvider = cameraProvider;
+            _modelProvider = modelProvider;
 
             Recreate();
         }
@@ -175,14 +109,14 @@ namespace Aliquip
             var vertexBuffers = stackalloc[] {_buffer};
             var offsets = stackalloc[] {_vertexOffset};
             _vk.CmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-            _vk.CmdBindIndexBuffer(commandBuffer, _buffer, _indexOffset, IndexType.Uint16);
+            _vk.CmdBindIndexBuffer(commandBuffer, _buffer, _indexOffset, IndexType.Uint32);
         }
         
         public unsafe void Recreate()
         {
             (_buffer, _bufferMemory) = _bufferFactory.CreateBuffer
             (
-                (ulong) (sizeof(Vertex) * vertices.Length + sizeof(ushort) * indices.Length),
+                (ulong) (sizeof(Vertex) * _modelProvider.Vertices.Length + sizeof(uint) * _modelProvider.Indices.Length),
                 BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
                 MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
                 stackalloc uint[]
@@ -190,10 +124,10 @@ namespace Aliquip
             );
 
             _vertexOffset = 0;
-            _indexOffset = (ulong) (sizeof(Vertex) * vertices.Length);
+            _indexOffset = (ulong) (sizeof(Vertex) * _modelProvider.Vertices.Length);
             
-            CopyDataToBufferViaStaging<Vertex>(vertices, _buffer, _vertexOffset);
-            CopyDataToBufferViaStaging<ushort>(indices, _buffer, _indexOffset);
+            CopyDataToBufferViaStaging<Vertex>(_modelProvider.Vertices, _buffer, _vertexOffset);
+            CopyDataToBufferViaStaging<uint>(_modelProvider.Indices, _buffer, _indexOffset);
 
             void CreateUniformBuffers()
             {
@@ -254,7 +188,11 @@ namespace Aliquip
                 shaderStages[0] = vertShaderStageInfo;
                 shaderStages[1] = fragShaderStageInfo;
 
-                var bindingDescription = Vertex.BindingDescription;
+                var bindingDescription = new VertexInputBindingDescription();
+                bindingDescription.Binding = 0;
+                bindingDescription.Stride = (uint) sizeof(Vertex);
+                bindingDescription.InputRate = VertexInputRate.Vertex;
+                
                 var attributeDescriptions = Vertex.AttributeDescriptions;
 
                 fixed (VertexInputAttributeDescription* pAttributeDescriptions = attributeDescriptions)

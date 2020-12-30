@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="CjClutter.ObjLoader" Version="1.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
@@ -24,15 +25,11 @@
       <ProjectReference Include="..\..\Vulkan\Silk.NET.Vulkan\Silk.NET.Vulkan.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Remove="shaders\frag.spv" />
-      <EmbeddedResource Include="shaders\frag.spv" />
-      <None Remove="shaders\vert.spv" />
-      <EmbeddedResource Include="shaders\vert.spv" />
-    </ItemGroup>
-    
-    <ItemGroup>
+    <ItemGroup>      
+        <EmbeddedResource Include="shaders\frag.spv" />
+        <EmbeddedResource Include="shaders\vert.spv" />
         <EmbeddedResource Include="textures\*.*" />
+        <EmbeddedResource Include="models\*.*" />
     </ItemGroup>
 
 </Project>

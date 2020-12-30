@@ -5,6 +5,8 @@
 
 using System;
 using System.Diagnostics;
+using System.Numerics;
+using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -25,6 +27,7 @@ namespace Aliquip
         private readonly uint _width;
         private readonly uint _height;
         private readonly ImageAspectFlags _aspectFlags;
+        public uint MipLevels { get; }
         public Image Image { get; }
         public DeviceMemory Memory { get; }
         private ImageLayout _layout = ImageLayout.Undefined;
@@ -42,6 +45,7 @@ namespace Aliquip
             IGraphicsQueueProvider graphicsQueueProvider,
             IBufferFactory bufferFactory,
             bool createSampler,
+            bool useMipmaps,
             ImageAspectFlags aspectFlags,
             ImageUsageFlags imageUsageFlags)
         {
@@ -55,10 +59,20 @@ namespace Aliquip
             _aspectFlags = aspectFlags;
             Format = format;
 
+            if (useMipmaps)
+            {
+                MipLevels = Scalar.Floor((uint)BitOperations.Log2(Scalar.Max(width, height))) + 1;
+            }
+            else
+            {
+                MipLevels = 1;
+            }
+
             var imageInfo = new ImageCreateInfo
             (
                 imageType: ImageType.ImageType2D,
-                extent: new Extent3D(width: width, height: height, depth: 1), mipLevels: 1,
+                extent: new Extent3D(width: width, height: height, depth: 1), 
+                mipLevels: MipLevels,
                 arrayLayers: 1,
                 format: Format,
                 tiling: ImageTiling.Optimal,
@@ -105,7 +119,7 @@ namespace Aliquip
                 image: Image, viewType: ImageViewType.ImageViewType2D, format: Format,
                 subresourceRange: new ImageSubresourceRange
                 (
-                    aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: 1, baseArrayLayer: 0,
+                    aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: MipLevels, baseArrayLayer: 0,
                     layerCount: 1
                 )
             );
@@ -124,7 +138,7 @@ namespace Aliquip
                     anisotropyEnable: true, maxAnisotropy: properties.Limits.MaxSamplerAnisotropy,
                     borderColor: BorderColor.FloatOpaqueBlack, unnormalizedCoordinates: false, compareEnable: false,
                     compareOp: CompareOp.Never, mipmapMode: SamplerMipmapMode.Linear, mipLodBias: 0.0f, minLod: 0.0f,
-                    maxLod: 0.0f
+                    maxLod: MipLevels
                 );
 
                 _vk.CreateSampler(_logicalDeviceProvider.LogicalDevice, samplerInfo, null, out var sampler);
@@ -221,7 +235,7 @@ namespace Aliquip
                             dstQueueFamilyIndex: dstFamilyIndex, image: Image,
                             subresourceRange: new ImageSubresourceRange
                             (
-                                aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: 1,
+                                aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: MipLevels,
                                 baseArrayLayer: 0, layerCount: 1
                             ), srcAccessMask: srcAccessMask, dstAccessMask: srcAccessMask
                         );
@@ -245,7 +259,7 @@ namespace Aliquip
                         dstQueueFamilyIndex: dstFamilyIndex, image: Image,
                         subresourceRange: new ImageSubresourceRange
                         (
-                            aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: 1,
+                            aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: MipLevels,
                             baseArrayLayer: 0, layerCount: 1
                         ), srcAccessMask: srcAccessMask, dstAccessMask: dstAccessMask
                     );
@@ -266,6 +280,140 @@ namespace Aliquip
             _vk.DestroyImageView(_logicalDeviceProvider.LogicalDevice, ImageView, null);
             _vk.DestroyImage(_logicalDeviceProvider.LogicalDevice, Image, null);
             _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, Memory, null);
+        }
+
+        // TODO: Mipmaps should be generated at compile time and loaded.
+        public unsafe void GenerateMipmaps()
+        {
+            // check if image format supports linear blitting
+             _vk.GetPhysicalDeviceFormatProperties(_physicalDeviceProvider.Device, Format, out var formatProperties);
+             
+             if ((formatProperties.OptimalTilingFeatures & FormatFeatureFlags.FormatFeatureSampledImageFilterLinearBit) == 0)
+                 throw new Exception("Texture image format does not support linear blitting!");
+
+            // release ownership from transfer queue to graphics queue
+            _commandBufferFactory.RunSingleTime(_transferQueueProvider.TransferQueueIndex, _transferQueueProvider.TransferQueue,
+                cmd =>
+                {
+                    var releaseBarrier = new ImageMemoryBarrier
+                    (
+                        oldLayout: _layout, newLayout: _layout, srcQueueFamilyIndex: _transferQueueProvider.TransferQueueIndex,
+                        dstQueueFamilyIndex: _graphicsQueueProvider.GraphicsQueueIndex, image: Image,
+                        subresourceRange: new ImageSubresourceRange
+                        (
+                            aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: MipLevels,
+                            baseArrayLayer: 0, layerCount: 1
+                        ), srcAccessMask: AccessFlags.AccessTransferWriteBit, dstAccessMask: AccessFlags.AccessTransferReadBit
+                    );
+                    
+                    _vk.CmdPipelineBarrier(cmd,
+                        PipelineStageFlags.PipelineStageTransferBit, PipelineStageFlags.PipelineStageTransferBit,
+                        0,
+                        0, null,
+                        0, null,
+                        1, &releaseBarrier);
+                });
+            
+            _commandBufferFactory.RunSingleTime
+                (_graphicsQueueProvider.GraphicsQueueIndex, _graphicsQueueProvider.GraphicsQueue, cmd =>
+            {
+                // transfer ownership of all levels at once
+                var releaseBarrier = new ImageMemoryBarrier
+                (
+                    oldLayout: _layout, newLayout: _layout, srcQueueFamilyIndex: _transferQueueProvider.TransferQueueIndex,
+                    dstQueueFamilyIndex: _graphicsQueueProvider.GraphicsQueueIndex, image: Image,
+                    subresourceRange: new ImageSubresourceRange
+                    (
+                        aspectMask: _aspectFlags, baseMipLevel: 0, levelCount: MipLevels,
+                        baseArrayLayer: 0, layerCount: 1
+                    ), srcAccessMask: AccessFlags.AccessTransferWriteBit, dstAccessMask: AccessFlags.AccessTransferReadBit
+                );
+                    
+                _vk.CmdPipelineBarrier(cmd,
+                    PipelineStageFlags.PipelineStageTransferBit, PipelineStageFlags.PipelineStageTransferBit,
+                    0,
+                    0, null,
+                    0, null,
+                    1, &releaseBarrier);
+                
+                
+                var barrier = new ImageMemoryBarrier
+                (
+                    image: Image,
+                    subresourceRange: new ImageSubresourceRange
+                        (aspectMask: _aspectFlags, baseArrayLayer: 0, layerCount: 1, levelCount: 1));
+                
+                var mipWidth = _width;
+                var mipHeight = _height;
+
+                for (int i = 1; i < MipLevels; i++)
+                {
+                    barrier.SubresourceRange.BaseMipLevel = (uint) (i - 1);
+                    barrier.OldLayout = ImageLayout.TransferDstOptimal;
+                    barrier.NewLayout = ImageLayout.TransferSrcOptimal;
+                    barrier.SrcAccessMask = AccessFlags.AccessTransferWriteBit;
+                    barrier.DstAccessMask = AccessFlags.AccessTransferReadBit;
+                    barrier.SrcQueueFamilyIndex = _graphicsQueueProvider.GraphicsQueueIndex;
+                    barrier.DstQueueFamilyIndex = _graphicsQueueProvider.GraphicsQueueIndex;
+                    
+                    _vk.CmdPipelineBarrier
+                    (
+                        cmd, PipelineStageFlags.PipelineStageTransferBit, PipelineStageFlags.PipelineStageTransferBit, 0, 0,
+                        null, 0, null, 1, &barrier
+                    );
+
+                    var blit = new ImageBlit();
+                    blit.SrcOffsets[0] = new Offset3D(0, 0, 0);
+                    blit.SrcOffsets[1] = new Offset3D((int)mipWidth, (int)mipHeight, 1);
+                    blit.SrcSubresource.MipLevel = (uint) (i - 1);
+                    blit.SrcSubresource.AspectMask = _aspectFlags;
+                    blit.SrcSubresource.BaseArrayLayer = 0;
+                    blit.SrcSubresource.LayerCount = 1;
+                    
+                    if (mipWidth > 1) mipWidth /= 2;
+                    if (mipHeight > 1) mipHeight /= 2;
+                    
+                    blit.DstOffsets[0] = new Offset3D(0, 0, 0);
+                    blit.DstOffsets[1] = new Offset3D((int)mipWidth, (int)mipHeight, 1);
+                    blit.DstSubresource.AspectMask = _aspectFlags;
+                    blit.DstSubresource.MipLevel = (uint)i;
+                    blit.DstSubresource.BaseArrayLayer = 0;
+                    blit.DstSubresource.LayerCount = 1;
+                    
+                    _vk.CmdBlitImage(cmd,
+                        Image, ImageLayout.TransferSrcOptimal,
+                        Image, ImageLayout.TransferDstOptimal,
+                        1, &blit,
+                        Filter.Linear);
+                
+                    barrier.SrcQueueFamilyIndex = Vk.QueueFamilyIgnored;
+                    barrier.DstQueueFamilyIndex = Vk.QueueFamilyIgnored;
+                    barrier.OldLayout = ImageLayout.TransferSrcOptimal;
+                    barrier.NewLayout = ImageLayout.ShaderReadOnlyOptimal;
+                    barrier.SrcAccessMask = AccessFlags.AccessTransferReadBit;
+                    barrier.DstAccessMask = AccessFlags.AccessShaderReadBit;
+
+                    _vk.CmdPipelineBarrier
+                    (
+                        cmd, PipelineStageFlags.PipelineStageTransferBit,
+                        PipelineStageFlags.PipelineStageFragmentShaderBit, 0, 0, null, 0, null, 1, &barrier
+                    );
+                }
+                
+                barrier.SubresourceRange.BaseMipLevel = MipLevels - 1;
+                barrier.OldLayout = ImageLayout.TransferDstOptimal;
+                barrier.NewLayout = ImageLayout.ShaderReadOnlyOptimal;
+                barrier.SrcAccessMask = AccessFlags.AccessTransferWriteBit;
+                barrier.DstAccessMask = AccessFlags.AccessShaderReadBit;
+
+                _vk.CmdPipelineBarrier
+                (
+                    cmd, PipelineStageFlags.PipelineStageTransferBit,
+                    PipelineStageFlags.PipelineStageFragmentShaderBit, 0, 0, null, 0, null, 1, &barrier
+                );
+            });
+
+            _layout = ImageLayout.ShaderReadOnlyOptimal;
         }
     }
 }
