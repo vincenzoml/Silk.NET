@@ -1,5 +1,5 @@
 <h1 align="center">
-    <a href="#" <img align="center" src="documentation/readme/wordmark480.png" height="96"></a>
+    <a href="#"><img align="center" src="documentation/readme/wordmark480.png" height="96"></a>
     <br />
 
 [![NuGet Version](https://img.shields.io/nuget/v/Silk.NET)](https://nuget.org/packages/Silk.NET)
