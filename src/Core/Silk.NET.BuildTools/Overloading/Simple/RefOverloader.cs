@@ -11,7 +11,7 @@ namespace Silk.NET.BuildTools.Overloading
 {
     public class RefOverloader : ISimpleParameterOverloader
     {
-        public bool TryGetParameterVariant(Parameter parameter, out Parameter varied, Project core)
+        public bool TryGetParameterVariant(Parameter parameter, out Parameter varied, Project core, Function function)
         {
             if (parameter.Type.IsPointer)
             {

@@ -12,7 +12,7 @@ namespace Silk.NET.BuildTools.Overloading
 {
     public class GroupOverloader : ISimpleParameterOverloader
     {
-        public bool TryGetParameterVariant(Parameter parameter, out Parameter variant, Project core)
+        public bool TryGetParameterVariant(Parameter parameter, out Parameter variant, Project core, Function function)
         {
             if (parameter.Type.OriginalGroup is null || core.Enums.All
                 (x => x.Name != parameter.Type.OriginalGroup)/* || (parameter.Type.OriginalName != "GLenum" &&

@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -179,19 +181,25 @@ namespace Silk.NET.BuildTools.Bind
             {
                 if (!(structField.Count is null))
                 {
+                    var @const = structField.Count.IsConstant
+                        ? profile.Projects.SelectMany(x => x.Value.Classes.SelectMany(y => y.Constants))
+                            .FirstOrDefault(x => x.NativeName == structField.Count.ConstantName)
+                            ?
+                            .Value ?? profile.Projects.SelectMany
+                                (x => x.Value.Enums.SelectMany(y => y.Tokens))
+                            .FirstOrDefault(x => x.NativeName == structField.Count.ConstantName)
+                            ?.Value ??
+                        throw new InvalidDataException("Couldn't find constant referenced")
+                        : null;
+                    var count = structField.Count.IsConstant
+                        ? int.TryParse(@const, out var result) || int.TryParse
+                            (@const, NumberStyles.HexNumber, null, out result) ? result
+                        : 1
+                        : structField.Count.IsStatic
+                            ? structField.Count.StaticCount
+                            : 1;
                     if (!Field.FixedCapableTypes.Contains(structField.Type.Name))
                     {
-                        var count = structField.Count.IsConstant
-                            ? int.Parse
-                            (
-                                profile.Projects.SelectMany(x => x.Value.Classes.SelectMany(y => y.Constants))
-                                    .FirstOrDefault(x => x.NativeName == structField.Count.ConstantName)
-                                    ?
-                                    .Value ?? throw new InvalidDataException("Couldn't find constant referenced")
-                            )
-                            : structField.Count.IsStatic
-                                ? structField.Count.StaticCount
-                                : 1;
                         var typeFixup09072020 = new TypeSignatureBuilder(structField.Type).WithIndirectionLevel
                             (structField.Type.IndirectionLevels - 1).Build();
                         sw.WriteLine($"        {structField.Doc}");
@@ -246,19 +254,6 @@ namespace Silk.NET.BuildTools.Bind
                             sw.WriteLine($"        {structField.Doc}");
                         }
 
-                        var count = structField.Count.IsConstant
-                            ? Utilities.ParseInt
-                            (
-                                profile.Projects.SelectMany(x => x.Value.Classes.SelectMany(y => y.Constants))
-                                    .FirstOrDefault(x => x.NativeName == structField.Count.ConstantName)?
-                                    .Value ??
-                                profile.Projects.SelectMany(x => x.Value.Enums.SelectMany(y => y.Tokens))
-                                    .FirstOrDefault(x => x.NativeName == structField.Count.ConstantName)?
-                                    .Value ?? throw new InvalidDataException("Couldn't find constant referenced")
-                            )
-                            : structField.Count.IsStatic
-                                ? structField.Count.StaticCount
-                                : 1;
                         var typeFixup09072020 = new TypeSignatureBuilder(structField.Type).WithIndirectionLevel
                             //(structField.Type.IndirectionLevels - 1).Build();
                             (0).Build();
@@ -340,6 +335,17 @@ namespace Silk.NET.BuildTools.Bind
             }
 
             sw.WriteLine("    }");
+
+            // don't apply the wrappers to COM
+            if ((@struct.ComBases?.Count ?? 0) == 0)
+            {
+                WritePtrWrapper(sw, @struct, profile);
+                if (@struct.Fields.Any(x => x.Type.IsPointer))
+                {
+                    WriteSafeWrapper(sw, @struct, profile);
+                }
+            }
+
             sw.WriteLine("}");
             sw.Flush();
             sw.Dispose();
@@ -355,6 +361,152 @@ namespace Silk.NET.BuildTools.Bind
             else
             {
                 throw new InvalidOperationException("Struct is not a valid intrinsic");
+            }
+        }
+
+        public static void WritePtrWrapper(StreamWriter sw, Struct s, Profile profile)
+        {
+            sw.WriteLine($"    public unsafe partial struct {s.Name}Ptr : IDisposable");
+            sw.WriteLine("    {");
+            sw.WriteLine($"        public {s.Name}* Value;");
+            sw.WriteLine($"        public static {s.Name}Ptr Allocate() => new {s.Name}Ptr");
+            sw.WriteLine($"        {{");
+            sw.WriteLine($"            Value = ({s.Name}*) SilkMarshal.Allocate(sizeof({s.Name}))");
+            sw.WriteLine($"        }};");
+            var free = new List<string>();
+            WriteWrapperProperties(sw, s, profile, free, "Value->");
+            sw.WriteLine("        public void Free()");
+            sw.WriteLine("        {");
+            foreach (var item in free)
+            {
+                sw.WriteLine($"            SilkMarshal.Free({item});");
+            }
+
+            sw.WriteLine("            SilkMarshal.Free((IntPtr) Value);");
+            sw.WriteLine("        }");
+            sw.WriteLine();
+            sw.WriteLine("        public void Dispose() => Free();");
+            sw.WriteLine("    }");
+        }
+
+        public static void WriteSafeWrapper(StreamWriter sw, Struct s, Profile profile)
+        {
+            sw.WriteLine($"    public unsafe partial struct {s.Name}Safe : IDisposable");
+            sw.WriteLine("    {");
+            sw.WriteLine($"        public {s.Name} Value;");
+            var free = new List<string>();
+            WriteWrapperProperties(sw, s, profile, free, "Value.");
+            sw.WriteLine("        public void Free()");
+            sw.WriteLine("        {");
+            foreach (var item in free)
+            {
+                sw.WriteLine($"            SilkMarshal.Free({item});");
+            }
+
+            sw.WriteLine("        }");
+            sw.WriteLine();
+            sw.WriteLine("        public void Dispose() => Free();");
+            sw.WriteLine("    }");
+        }
+
+        public static void WriteWrapperProperties
+        (
+            StreamWriter sw,
+            Struct s,
+            Profile profile,
+            List<string> free,
+            string accessor
+        )
+        {
+            foreach (var field in s.Fields)
+            {
+                var @const = field.Count is null
+                    ? null
+                    : field.Count.IsConstant
+                        ? profile.Projects.SelectMany(x => x.Value.Classes.SelectMany(y => y.Constants))
+                            .FirstOrDefault(x => x.NativeName == field.Count.ConstantName)
+                            ?
+                            .Value ?? profile.Projects.SelectMany
+                                (x => x.Value.Enums.SelectMany(y => y.Tokens))
+                            .FirstOrDefault(x => x.NativeName == field.Count.ConstantName)
+                            ?.Value ??
+                        throw new InvalidDataException("Couldn't find constant referenced")
+                        : null;
+                var count = field.Count is null
+                    ? 1
+                    : field.Count.IsConstant
+                        ? int.TryParse(@const, out var result) || int.TryParse
+                            (@const, NumberStyles.HexNumber, null, out result) ? result
+                        : 1
+                        : field.Count.IsStatic
+                            ? field.Count.StaticCount
+                            : 1;
+                if (field.Type.ToString() == "char*" || field.Type.ToString() == "byte*" ||
+                    field.Type.ToString() == "GLchar*" || field.Type.ToString() == "GLbyte*" ||
+                    field.Type.ToString() == "GLubyte*")
+                {
+                    sw.WriteLine($"        public string {field.Name}");
+                    sw.WriteLine($"        {{");
+                    sw.WriteLine($"            get => SilkMarshal.PtrToString((IntPtr) {accessor}{field.Name},");
+                    sw.WriteLine($"                                           NativeStringEncoding.UTF8);");
+                    sw.WriteLine($"            set => {accessor}{field.Name} = ({field.Type})");
+                    sw.WriteLine($"                   SilkMarshal.StringToPtr(value, NativeStringEncoding.UTF8);");
+                    sw.WriteLine($"        }}");
+                    free.Add($"(IntPtr) {accessor}{field.Name}");
+                }
+                else if (field.Type.ToString() == "char**" || field.Type.ToString() == "byte**" ||
+                         field.Type.ToString() == "GLchar**" || field.Type.ToString() == "GLbyte**" ||
+                         field.Type.ToString() == "GLubyte**")
+                {
+                    sw.WriteLine($"        public string[] {field.Name}");
+                    sw.WriteLine($"        {{");
+                    sw.WriteLine($"            get => SilkMarshal.PtrToStringArray((IntPtr) {accessor}{field.Name},");
+                    sw.WriteLine($"                                                NativeStringEncoding.UTF8);");
+                    sw.WriteLine($"            set => {accessor}{field.Name} = ({field.Type})");
+                    sw.WriteLine($"                   SilkMarshal.StringArrayToPtr(value, NativeStringEncoding.UTF8);");
+                    sw.WriteLine($"        }}");
+                    free.Add($"(IntPtr) {accessor}{field.Name}");
+                }
+                else if (field.Type.IndirectionLevels == 2 &&
+                         profile.Projects.Any(x => x.Value.Structs.Any(y => y.Name == field.Type.Name)))
+                {
+                    sw.WriteLine($"        public Span<{field.Type.Name}Ptr> {field.Name}");
+                    sw.WriteLine($"            => new Span<{field.Type.Name}Ptr>({accessor}{field.Name}, {count});");
+                }
+                else if (field.Type.IsFunctionPointer || field.Type.IndirectionLevels > 1)
+                {
+                    sw.WriteLine($"        public IntPtr {field.Name}");
+                    sw.WriteLine($"        {{");
+                    sw.WriteLine($"            get => (IntPtr) {accessor}{field.Name};");
+                    sw.WriteLine($"            set => {accessor}{field.Name} = ({field.Type}) value;");
+                    sw.WriteLine($"        }}");
+                }
+                else if (field.Type.IndirectionLevels == 1)
+                {
+                    sw.WriteLine($"        public Span<{field.Type.Name}> {field.Name}");
+                    sw.WriteLine($"        {{");
+                    sw.WriteLine($"            get => new Span<{field.Type.Name}>({accessor}{field.Name}, {count});");
+                    sw.WriteLine($"            set => value.CopyTo({field.Name});");
+                    sw.WriteLine($"        }}");
+                }
+                else if (profile.Projects.Any(x => x.Value.Structs.Any(y => y.Name == field.Type.Name)))
+                {
+                    sw.WriteLine($"        public {field.Type.Name}Safe {field.Name}");
+                    sw.WriteLine($"        {{");
+                    sw.WriteLine($"            get => {accessor}{field.Name};");
+                    sw.WriteLine($"            set => {accessor}{field.Name} = value;");
+                    sw.WriteLine($"        }}");
+                }
+                // TODO Handle PFN structs and generate methods for them if FunctionPointerSignature isn't null
+                else
+                {
+                    sw.WriteLine($"        public {field.Type} {field.Name}");
+                    sw.WriteLine($"        {{");
+                    sw.WriteLine($"            get => {accessor}{field.Name};");
+                    sw.WriteLine($"            set => {accessor}{field.Name} = value;");
+                    sw.WriteLine($"        }}");
+                }
+                sw.WriteLine();
             }
         }
 

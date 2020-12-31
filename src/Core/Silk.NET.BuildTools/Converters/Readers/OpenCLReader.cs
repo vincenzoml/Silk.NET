@@ -967,7 +967,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                 {
                     Name = Naming.Translate(TrimName(GetName(x.Key, out var type), task), task.FunctionPrefix),
                     NativeName = GetName(x.Key, out _),
-                    Type = new Type {Name = type}, Value = x.Value.ToString()
+                    Type = new Type {Name = type}, Value = x.Value
                 }
             );
         }

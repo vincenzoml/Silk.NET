@@ -12,7 +12,7 @@ namespace Silk.NET.BuildTools.Overloading
 {
     public class ClassOverloader : ISimpleParameterOverloader
     {
-        public bool TryGetParameterVariant(Parameter parameter, out Parameter variant, Project core)
+        public bool TryGetParameterVariant(Parameter parameter, out Parameter variant, Project core, Function function)
         {
             Struct s;
             if (parameter.Type.OriginalClass is null || (s = core.Structs.FirstOrDefault

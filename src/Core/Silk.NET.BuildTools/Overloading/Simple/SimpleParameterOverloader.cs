@@ -52,7 +52,7 @@ namespace Silk.NET.BuildTools.Overloading
             {
                 foreach (var overloader in overloaders)
                 {
-                    if (overloader.TryGetParameterVariant(parameter[0], out var variant, core))
+                    if (overloader.TryGetParameterVariant(parameter[0], out var variant, core, original))
                     {
                         parameter.Add(variant);
                     }
