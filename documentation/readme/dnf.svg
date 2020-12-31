@@ -11,8 +11,8 @@
    x="0"
    y="0"
    width="2750"
-   height="1000"
-   viewBox="0, 0, 2750, 1000"
+   height="1120"
+   viewBox="0, 0, 2750, 1120"
    id="svg850"
    sodipodi:docname="dotnetfoundation_v4_horizontal.svg"
    inkscape:version="0.92.3 (2405546, 2018-03-11)">
@@ -129,5 +129,7 @@
        d="m 2503.4261,625.00616 h 19.766 v -76.09893 c 0,-41.83794 23.3897,-62.26276 52.7092,-62.26276 31.2961,0 38.2142,24.04858 38.2142,48.75602 v 89.60567 h 19.766 v -90.59397 c 0,-33.27269 -10.5419,-65.55709 -57.9802,-65.55709 -24.7074,0 -44.144,13.83617 -52.0503,30.63724 h -0.9883 c -0.6589,-2.9649 -0.9883,-15.48334 -1.3178,-26.68404 h -19.7659 c 0,7.90638 1.6471,31.62553 1.6471,42.82624 z"
        style="stroke-width:3.43158984"
        id="path5157" />
+    <!-- edited to add text -->
+	<text x="500" y="1100" fill="black" font-family="Arial, Helvetica, sans-serif" font-size="15%">Proud to be an official project under the benevolent .NET Foundation umbrella.</text>
   </g>
 </svg>
