@@ -62,7 +62,7 @@
 				C76.1,62.5,74.7,62,73.7,61.1z"/>
 		</g>
 	</g>
-    <text x="10.1px" y="140px" fill="url(#XMLID_2_)" font-family="Arial, Helvetica, sans-serif" font-size="40%">Thanks to JetBrains</text>
-    <text x="10.1px" y="145px" fill="url(#XMLID_3_)" font-family="Arial, Helvetica, sans-serif" font-size="30%">for supporting us with licenses for their products!</text>
+    <text x="3%" y="140px" fill="url(#XMLID_2_)" font-family="Arial, Helvetica, sans-serif" font-size="80%">Thanks to JetBrains</text>
+    <text x="3%" y="145px" fill="url(#XMLID_3_)" font-family="Arial, Helvetica, sans-serif" font-size="30%">for supporting us with licenses for their products!</text>
 </g>
 </svg>
