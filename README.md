@@ -17,7 +17,6 @@ Silk.NET works on any .NET Standard 2.0 compliant platform. This includes .NET 5
 <a href="https://www.jetbrains.com/"><img align="right" src="documentation/readme/jetbrains.svg" height="64"></a>
 <br />
 <br />
-<br />
 
 <h1 align="center">Features</h1>
 
