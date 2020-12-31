@@ -1,6 +1,6 @@
-<h1 align="left">
-    <img src="documentation/readme/wordmark480.png" height="96" />
-    <br />
+<img align="center" src="documentation/readme/wordmark480.png" height="96">
+    
+<br />
 
 [![NuGet Version](https://img.shields.io/nuget/v/Silk.NET)](https://nuget.org/packages/Silk.NET)
 [![Preview Feed](https://img.shields.io/badge/nuget-experimental%20feed-yellow)](https://dev.azure.com/UltzOS/Silk.NET/_packaging?_a=feed&feed=Experimental)
