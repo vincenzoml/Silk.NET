@@ -1,4 +1,4 @@
-<div align="center">
+<h1 align="center">
     <img align="center" src="documentation/readme/wordmark480.png" height="96">
     <br />
 
@@ -7,7 +7,7 @@
     [![CI Build](https://github.com/Ultz/Silk.NET/workflows/CI%20Build/badge.svg)](https://dev.azure.com/UltzOS/Silk.NET/_build/latest?definitionId=2&branchName=master)
     [![Join our Discord](https://img.shields.io/badge/chat%20on-discord-7289DA)](https://discord.gg/DTHHXRt)
 
-</div>
+</h1>
 
 Silk.NET is a high-speed, advanced library, providing bindings to popular low-level APIs such as OpenGL and OpenAL. Use Silk.NET to add cross-platform 3D graphics, audio, compute and haptics to your C# application.
 
