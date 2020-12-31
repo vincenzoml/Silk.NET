@@ -19,9 +19,11 @@ Silk.NET works on any .NET Standard 2.0 compliant platform. This includes Xamari
 <br />
 <br />
 
-<div align="center">
-    <sub align="left">LEFT Proud to be an official project under the benevolent .NET Foundation umbrella.</sub>
-    <sub align="right">RIGHT Proud to be an official project under the benevolent .NET Foundation umbrella.</sub>
+<div align="left">
+    <span>LEFT Proud to be an official project under the benevolent .NET Foundation umbrella.</span>
+</div>
+<div align="right">
+    <span>RIGHT Proud to be an official project under the benevolent .NET Foundation umbrella.</span>
 </div>
 
 
