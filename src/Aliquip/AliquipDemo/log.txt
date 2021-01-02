@@ -1,0 +1,24 @@
+2021-01-02 09:52:58.442 +01:00 [DBG] Waiting for window to load
+2021-01-02 09:52:58.560 +01:00 [DBG] Creating instance with 1 layers: "VK_LAYER_KHRONOS_validation".
+2021-01-02 09:52:58.560 +01:00 [DBG] Loading 3 instance extensions: "VK_KHR_surface", "VK_KHR_win32_surface", "VK_EXT_debug_utils".
+2021-01-02 09:52:58.664 +01:00 [INF] Validation Information: [ UNASSIGNED-khronos-validation-createinstance-status-message ] Object 0: handle = 0x16d76685e40, type = VK_OBJECT_TYPE_INSTANCE; | MessageID = 0xd7fa5f44 | Khronos Validation Layer Active:
+    Settings File: None. Default location is C:\Silk.NET\src\Aliquip\AliquipDemo\vk_layer_settings.txt.
+    Current Enables: None.
+    Current Disables: None.
+
+2021-01-02 09:52:58.680 +01:00 [DBG] Selecting physical device
+2021-01-02 09:52:58.716 +01:00 [DBG] Picked device: AMD Radeon RX 5700 XT | "DiscreteGpu"
+2021-01-02 09:52:58.719 +01:00 [INF] Using MSAAx8
+2021-01-02 09:52:58.721 +01:00 [INF] Using sample shading
+2021-01-02 09:52:58.770 +01:00 [DBG] Best possible format: "A2R10G10B10UnormPack32", rating: 1632
+2021-01-02 09:52:58.771 +01:00 [DBG] Selected format: "A2R10G10B10UnormPack32", rating: 1632 (100%)
+2021-01-02 09:52:58.772 +01:00 [DBG] Best possible colorspace: "ColorSpaceSrgbNonlinearKhr", rating: 1000
+2021-01-02 09:52:58.773 +01:00 [DBG] Selected colorspace: "ColorSpaceSrgbNonlinearKhr", rating: 1000, (100%)
+2021-01-02 09:52:58.774 +01:00 [DBG] Selected present mode: "PresentModeFifoRelaxedKhr"
+2021-01-02 09:52:58.775 +01:00 [DBG] Image count: 3
+2021-01-02 09:52:58.805 +01:00 [DBG] Creating swapchain
+2021-01-02 09:52:58.842 +01:00 [INF] Loaded shaders.simple3d.frag.spv
+2021-01-02 09:52:58.843 +01:00 [INF] Loaded shaders.simple3d.vert.spv
+2021-01-02 09:52:58.844 +01:00 [INF] Loaded textures.texture.jpg
+2021-01-02 09:52:58.846 +01:00 [INF] Loaded textures.viking_room.png
+2021-01-02 09:52:58.849 +01:00 [INF] Loaded models.viking_room.obj

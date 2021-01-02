@@ -5,12 +5,23 @@
 
 using System;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.VMA;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Aliquip
 {
     public interface IBufferFactory
     {
-        (Buffer, DeviceMemory) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices);
+        (Buffer, AllocationT, AllocationInfo) CreateBuffer
+        (
+            ulong size,
+            MemoryUsage memoryUsage,
+            BufferUsageFlags usage,
+            MemoryPropertyFlags properties,
+            Span<uint> queueFamilyIndices,
+            AllocationCreateFlagBits createFlags
+        );
+
+        void FreeBuffer(Buffer buffer, AllocationT allocation);
     }
 }

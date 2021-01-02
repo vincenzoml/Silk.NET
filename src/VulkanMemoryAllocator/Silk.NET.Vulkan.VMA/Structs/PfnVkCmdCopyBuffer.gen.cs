@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnCmdCopyBuffer : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<CommandBuffer*, ulong, ulong, uint, BufferCopy*, void> Handle => (delegate* unmanaged[Cdecl]<CommandBuffer*, ulong, ulong, uint, BufferCopy*, void>) _handle;
+        public delegate* unmanaged[Cdecl]<CommandBuffer, Buffer, Buffer, uint, BufferCopy*, void> Handle => (delegate* unmanaged[Cdecl]<CommandBuffer, Buffer, Buffer, uint, BufferCopy*, void>) _handle;
         public PfnCmdCopyBuffer
         (
-            delegate* unmanaged[Cdecl]<CommandBuffer*, ulong, ulong, uint, BufferCopy*, void> ptr
+            delegate* unmanaged[Cdecl]<CommandBuffer, Buffer, Buffer, uint, BufferCopy*, void> ptr
         ) => _handle = ptr;
 
         public PfnCmdCopyBuffer
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnCmdCopyBuffer pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnCmdCopyBuffer(IntPtr pfn)
-            => new PfnCmdCopyBuffer((delegate* unmanaged[Cdecl]<CommandBuffer*, ulong, ulong, uint, BufferCopy*, void>) pfn);
+            => new PfnCmdCopyBuffer((delegate* unmanaged[Cdecl]<CommandBuffer, Buffer, Buffer, uint, BufferCopy*, void>) pfn);
 
         public static implicit operator PfnCmdCopyBuffer(CmdCopyBuffer proc)
             => new PfnCmdCopyBuffer(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator CmdCopyBuffer(PfnCmdCopyBuffer pfn)
             => SilkMarshal.PtrToDelegate<CmdCopyBuffer>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<CommandBuffer*, ulong, ulong, uint, BufferCopy*, void>(PfnCmdCopyBuffer pfn) => pfn.Handle;
-        public static implicit operator PfnCmdCopyBuffer(delegate* unmanaged[Cdecl]<CommandBuffer*, ulong, ulong, uint, BufferCopy*, void> ptr) => new PfnCmdCopyBuffer(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<CommandBuffer, Buffer, Buffer, uint, BufferCopy*, void>(PfnCmdCopyBuffer pfn) => pfn.Handle;
+        public static implicit operator PfnCmdCopyBuffer(delegate* unmanaged[Cdecl]<CommandBuffer, Buffer, Buffer, uint, BufferCopy*, void> ptr) => new PfnCmdCopyBuffer(ptr);
     }
 
-    public unsafe delegate void CmdCopyBuffer(CommandBuffer* arg0, ulong arg1, ulong arg2, uint arg3, BufferCopy* arg4);
+    public unsafe delegate void CmdCopyBuffer(CommandBuffer arg0, Buffer arg1, Buffer arg2, uint arg3, BufferCopy* arg4);
 }
 

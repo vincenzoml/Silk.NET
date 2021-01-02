@@ -33,7 +33,7 @@ namespace Silk.NET.Vulkan.VMA
             uint? maxCpuAllocationsToMove = null,
             ulong? maxGpuBytesToMove = null,
             uint? maxGpuAllocationsToMove = null,
-            CommandBuffer* commandBuffer = null
+            CommandBuffer? commandBuffer = null
         ) : this()
         {
             if (flags is not null)
@@ -88,7 +88,7 @@ namespace Silk.NET.Vulkan.VMA
 
             if (commandBuffer is not null)
             {
-                CommandBuffer = commandBuffer;
+                CommandBuffer = commandBuffer.Value;
             }
         }
 
@@ -146,6 +146,6 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "CommandBuffer _Nullable")]
         [NativeName("Type.Name", "CommandBuffer _Nullable")]
         [NativeName("Name", "commandBuffer")]
-        public CommandBuffer* CommandBuffer;
+        public CommandBuffer CommandBuffer;
     }
 }

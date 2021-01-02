@@ -32,13 +32,13 @@ namespace Silk.NET.Vulkan.VMA
             PfnFlushMappedMemoryRanges? flushMappedMemoryRanges = null,
             PfnFlushMappedMemoryRanges? invalidateMappedMemoryRanges = null,
             PfnBindBufferMemory? bindBufferMemory = null,
-            PfnBindBufferMemory? bindImageMemory = null,
+            PfnBindImageMemory? bindImageMemory = null,
             PfnGetBufferMemoryRequirements? getBufferMemoryRequirements = null,
-            PfnGetBufferMemoryRequirements? getImageMemoryRequirements = null,
+            PfnGetImageMemoryRequirements? getImageMemoryRequirements = null,
             PfnCreateBuffer? createBuffer = null,
-            PfnFreeMemory? destroyBuffer = null,
+            PfnDestroyBuffer? destroyBuffer = null,
             PfnCreateImage? createImage = null,
-            PfnFreeMemory? destroyImage = null,
+            PfnDestroyImage? destroyImage = null,
             PfnCmdCopyBuffer? cmdCopyBuffer = null,
             PfnGetBufferMemoryRequirements2KHR? getBufferMemoryRequirements2KHR = null,
             PfnGetImageMemoryRequirements2KHR? getImageMemoryRequirements2KHR = null,
@@ -207,7 +207,7 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "PFN_BindImageMemory _Nullable")]
         [NativeName("Type.Name", "PFN_BindImageMemory _Nullable")]
         [NativeName("Name", "BindImageMemory")]
-        public PfnBindBufferMemory BindImageMemory;
+        public PfnBindImageMemory BindImageMemory;
 
         [NativeName("Type", "PFN_GetBufferMemoryRequirements _Nullable")]
         [NativeName("Type.Name", "PFN_GetBufferMemoryRequirements _Nullable")]
@@ -217,7 +217,7 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "PFN_GetImageMemoryRequirements _Nullable")]
         [NativeName("Type.Name", "PFN_GetImageMemoryRequirements _Nullable")]
         [NativeName("Name", "GetImageMemoryRequirements")]
-        public PfnGetBufferMemoryRequirements GetImageMemoryRequirements;
+        public PfnGetImageMemoryRequirements GetImageMemoryRequirements;
 
         [NativeName("Type", "PFN_CreateBuffer _Nullable")]
         [NativeName("Type.Name", "PFN_CreateBuffer _Nullable")]
@@ -227,7 +227,7 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "PFN_DestroyBuffer _Nullable")]
         [NativeName("Type.Name", "PFN_DestroyBuffer _Nullable")]
         [NativeName("Name", "DestroyBuffer")]
-        public PfnFreeMemory DestroyBuffer;
+        public PfnDestroyBuffer DestroyBuffer;
 
         [NativeName("Type", "PFN_CreateImage _Nullable")]
         [NativeName("Type.Name", "PFN_CreateImage _Nullable")]
@@ -237,7 +237,7 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "PFN_DestroyImage _Nullable")]
         [NativeName("Type.Name", "PFN_DestroyImage _Nullable")]
         [NativeName("Name", "DestroyImage")]
-        public PfnFreeMemory DestroyImage;
+        public PfnDestroyImage DestroyImage;
 
         [NativeName("Type", "PFN_CmdCopyBuffer _Nullable")]
         [NativeName("Type.Name", "PFN_CmdCopyBuffer _Nullable")]

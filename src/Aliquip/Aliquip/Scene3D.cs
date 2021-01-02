@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.VMA;
 using Silk.NET.Windowing;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
@@ -34,14 +35,16 @@ namespace Aliquip
         private readonly struct ModelBuffer
         {
             public readonly Buffer Buffer;
-            public readonly DeviceMemory Memory;
+            public readonly AllocationT AllocationT;
+            public readonly AllocationInfo AllocationInfo;
             public readonly ulong VertexOffset;
             public readonly ulong IndexOffset;
 
-            public ModelBuffer(Buffer buffer, DeviceMemory memory, ulong vertexOffset, ulong indexOffset)
+            public ModelBuffer(Buffer buffer, AllocationT allocationT, AllocationInfo allocationInfo, ulong vertexOffset, ulong indexOffset)
             {
+                AllocationT = allocationT;
+                AllocationInfo = allocationInfo;
                 Buffer = buffer;
-                Memory = memory;
                 VertexOffset = vertexOffset;
                 IndexOffset = indexOffset;
             }
@@ -72,16 +75,16 @@ namespace Aliquip
         
         private sealed class SceneObjectInfo
         {
-            public Buffer UniformBuffer { get; }
-            public DeviceMemory UniformBufferMemory { get; }
-            public ulong[] UniformBufferOffsets { get; }
+            public Buffer[] UniformBuffer { get; }
+            public AllocationT[] AllocationT { get; }
+            public AllocationInfo[] AllocationInfo { get; }
             public DescriptorSet[] DescriptorSets { get; }
 
-            public SceneObjectInfo(Buffer uniformBuffer, DeviceMemory uniformBufferMemory, ulong[] uniformBufferOffsets, DescriptorSet[] descriptorSets)
+            public SceneObjectInfo(Buffer[] uniformBuffer, AllocationT[] allocationT, AllocationInfo[] allocationInfo, DescriptorSet[] descriptorSets)
             {
                 UniformBuffer = uniformBuffer;
-                UniformBufferMemory = uniformBufferMemory;
-                UniformBufferOffsets = uniformBufferOffsets;
+                AllocationT = allocationT;
+                AllocationInfo = allocationInfo;
                 DescriptorSets = descriptorSets;
             }
         }
@@ -117,6 +120,8 @@ namespace Aliquip
         private readonly IPipelineLayoutFactory _pipelineLayoutFactory;
         private readonly IDescriptorPoolFactory _descriptorPoolFactory;
         private readonly IWindowProvider _windowProvider;
+        private readonly Vma _vma;
+        private readonly IAllocatorProvider _allocatorProvider;
         private Dictionary<IMaterial, MaterialInfo> _materialInfos = new();
         private Dictionary<IModel, ModelBuffer> _modelBuffers = new();
         private Dictionary<ISceneObject, SceneObjectInfo> _objectInfos = new();
@@ -136,7 +141,9 @@ namespace Aliquip
             IDescriptorSetFactory descriptorSetFactory,
             IPipelineLayoutFactory pipelineLayoutFactory,
             IDescriptorPoolFactory descriptorPoolFactory,
-            IWindowProvider windowProvider
+            IWindowProvider windowProvider,
+            Vma vma,
+            IAllocatorProvider allocatorProvider
         )
         {
             _vk = vk;
@@ -152,6 +159,8 @@ namespace Aliquip
             _pipelineLayoutFactory = pipelineLayoutFactory;
             _descriptorPoolFactory = descriptorPoolFactory;
             _windowProvider = windowProvider;
+            _vma = vma;
+            _allocatorProvider = allocatorProvider;
             CommandBufferNeedsRebuild = true;
             _windowProvider.Window.Update += (WindowOnUpdate);
         }
@@ -208,12 +217,16 @@ namespace Aliquip
                     view: _cameraProvider.ViewMatrix
                 );
 
-                void* data = default;
-                // TODO: don't write all the data
-                _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, info.UniformBufferMemory, info.UniformBufferOffsets[0], info.UniformBufferOffsets[^1] + (ulong) sizeof(UniformBufferObject), 0, ref data);
-                foreach (var offset in info.UniformBufferOffsets)
-                    *(UniformBufferObject*)((byte*)data + offset) = ubo;
-                _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, info.UniformBufferMemory);
+                for (int i = 0; i < info.AllocationInfo.Length; i++)
+                {
+                    void* data = default;
+                    var allocator = _allocatorProvider.Allocator;
+                    // TODO: don't write all the data
+                    var allocation = info.AllocationT[i];
+                    _vma.MapMemory(&allocator, ref allocation, ref data);
+                    *(UniformBufferObject*)data = ubo;
+                    _vma.UnmapMemory(&allocator, ref allocation);
+                }
             }
         }
         
@@ -278,8 +291,13 @@ namespace Aliquip
         private unsafe void DisposeObjectInfo(ISceneObject sceneObject)
         {
             var info = _objectInfos[sceneObject];
-            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, info.UniformBuffer, null);
-            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, info.UniformBufferMemory, null);
+            var allocator = _allocatorProvider.Allocator;
+            for (int i = 0; i < info.AllocationInfo.Length; i++)
+            {
+                var allocation = info.AllocationT[i];
+                _vma.DestroyBuffer(&allocator, info.UniformBuffer[i].Handle, &allocation);
+            }
+
             fixed (DescriptorSet* p = info.DescriptorSets)
                 _vk.FreeDescriptorSets
                 (
@@ -294,26 +312,28 @@ namespace Aliquip
             DescriptorSet[] CreateDescriptorSet()
                 => _descriptorSetFactory.CreateDescriptorSets(_materialInfos[sceneObject.Material].DescriptorPool, CommandBufferCount, _materialInfos[sceneObject.Material].DescriptorSetLayout);
             
-            (Buffer UniformBuffer, DeviceMemory UniformBufferMemory, ulong[] UniformOffsets) CreateUniformBuffers()
+            (Buffer UniformBuffer, AllocationT AllocationT, AllocationInfo AllocationInfo) CreateUniformBuffer()
             {
-                var uniformOffsets = new ulong[CommandBufferCount];
-                for (int i = 0; i < uniformOffsets.Length; i++)
-                    uniformOffsets[i] = (ulong) (sizeof(UniformBufferObject) * i);
-            
-                var totalSize = (ulong) (sizeof(UniformBufferObject) * uniformOffsets.Length);
-            
-                var (uniformBuffer, uniformBufferMemory) = _bufferFactory.CreateBuffer
+                var (uniformBuffer, allocationT, allocationInfo) = _bufferFactory.CreateBuffer
                 (
-                    totalSize, BufferUsageFlags.BufferUsageUniformBufferBit,
+                    (ulong) sizeof(UniformBufferObject), MemoryUsage.MemoryUsageGpuOnly, BufferUsageFlags.BufferUsageUniformBufferBit,
                     MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                    stackalloc[] {_graphicsQueueProvider.GraphicsQueueIndex}
+                    stackalloc[] {_graphicsQueueProvider.GraphicsQueueIndex}, 0
                 );
 
-                return (uniformBuffer, uniformBufferMemory, uniformOffsets);
+                return (uniformBuffer, allocationT, allocationInfo);
+            }
+
+            var buffers = new Buffer[CommandBufferCount];
+            var allocations = new AllocationT[CommandBufferCount];
+            var infos = new AllocationInfo[CommandBufferCount];
+
+            for (int i = 0; i < CommandBufferCount; i++)
+            {
+                (buffers[i], allocations[i], infos[i]) = CreateUniformBuffer();
             }
             
-            var uniformBuffers = CreateUniformBuffers();
-            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffer, uniformBuffers.UniformBufferMemory, uniformBuffers.UniformOffsets, CreateDescriptorSet());
+            _objectInfos[sceneObject] = new SceneObjectInfo(buffers, allocations, infos, CreateDescriptorSet());
         }
 
         private unsafe void UpdateDescriptorSet(ISceneObject sceneObject)
@@ -324,7 +344,7 @@ namespace Aliquip
                 var writeDescriptorSetList = new List<WriteDescriptorSet>();
                 
                 var bufferInfo = new DescriptorBufferInfo
-                    (objectInfo.UniformBuffer, objectInfo.UniformBufferOffsets[i], (ulong) sizeof(UniformBufferObject));
+                    (objectInfo.UniformBuffer[i], objectInfo.AllocationInfo[i].Offset, (ulong) sizeof(UniformBufferObject));
 
                 writeDescriptorSetList.Add(new WriteDescriptorSet(dstBinding: 0, dstArrayElement: 0, descriptorType: DescriptorType.UniformBuffer,
                     descriptorCount: 1, dstSet: objectInfo.DescriptorSets[i], pBufferInfo: &bufferInfo));
@@ -366,19 +386,18 @@ namespace Aliquip
         {
             var bufferSize = (ulong)(sizeof(T) * src.Length);
             
-            var (stagingBuffer, stagingBufferMemory) = _bufferFactory.CreateBuffer
+            var (stagingBuffer, allocationT, allocationInfo) = _bufferFactory.CreateBuffer
             (
-                bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
+                bufferSize, MemoryUsage.MemoryUsageCpuToGpu, BufferUsageFlags.BufferUsageTransferSrcBit,
                 MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
                 MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
+                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}, AllocationCreateFlagBits.AllocationCreateMappedBit
             );
 
-            void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, ref data);
-            var span = new Span<T>(data, src.Length);
+            var span = new Span<T>(allocationInfo.PMappedData, src.Length);
             src.CopyTo(span);
-            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
+            var allocator = _allocatorProvider.Allocator;
+            _vma.UnmapMemory(&allocator, &allocationT);
 
             _commandBufferFactory.RunSingleTime(_transferQueueProvider.TransferQueueIndex, _transferQueueProvider.TransferQueue,
                 (commandBuffer) =>
@@ -386,16 +405,19 @@ namespace Aliquip
                     var region = new BufferCopy(0, dstOffset, bufferSize);
                     _vk.CmdCopyBuffer(commandBuffer, stagingBuffer, dstBuffer, 1, &region);   
                 });
+            
+            _vma.DestroyBuffer(&allocator, stagingBuffer.Handle, &allocationT);
         }
         
         private void BuildBuffer(IModel model)
         {
-            var (buffer, bufferMemory) = _bufferFactory.CreateBuffer
+            // TODO: Now that we use VMA, split this allocation.
+            var (buffer, allocationT, allocationInfo) = _bufferFactory.CreateBuffer
             (
-                (ulong) (model.VertexSize * model.VertexCount + sizeof(uint) * model.IndexCount),
+                (ulong) (model.VertexSize * model.VertexCount + sizeof(uint) * model.IndexCount), MemoryUsage.MemoryUsageGpuOnly,
                 BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
                 MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
-                stackalloc uint[] {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
+                stackalloc uint[] {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}, 0
             );
 
             var vertexOffset = (ulong) 0;
@@ -404,7 +426,7 @@ namespace Aliquip
             CopyDataToBufferViaStaging(model.Vertices, buffer, vertexOffset);
             CopyDataToBufferViaStaging(model.Indices, buffer, indexOffset);
 
-            _modelBuffers[model] = new ModelBuffer(buffer, bufferMemory, vertexOffset, indexOffset);
+            _modelBuffers[model] = new ModelBuffer(buffer, allocationT, allocationInfo, vertexOffset, indexOffset);
         }
 
         private unsafe void BuildMaterialInfo(IMaterial material)
@@ -451,10 +473,12 @@ namespace Aliquip
         public unsafe void Dispose()
         {
             _windowProvider.Window.Update -= WindowOnUpdate;
+
+            var allocator = _allocatorProvider.Allocator;
             foreach (var modelBuffer in _modelBuffers.Values)
             {
-                _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, modelBuffer.Buffer, null);
-                _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, modelBuffer.Memory, null);
+                var allocation = modelBuffer.AllocationT;
+                _vma.DestroyBuffer(&allocator, modelBuffer.Buffer.Handle, &allocation);
             }
             _modelBuffers.Clear();
         }

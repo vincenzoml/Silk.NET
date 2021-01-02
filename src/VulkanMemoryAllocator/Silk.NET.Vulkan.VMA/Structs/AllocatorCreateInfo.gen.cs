@@ -24,8 +24,8 @@ namespace Silk.NET.Vulkan.VMA
         public AllocatorCreateInfo
         (
             uint? flags = null,
-            PhysicalDevice* physicalDevice = null,
-            Device* device = null,
+            PhysicalDevice? physicalDevice = null,
+            Device? device = null,
             ulong? preferredLargeHeapBlockSize = null,
             AllocationCallbacks* pAllocationCallbacks = null,
             DeviceMemoryCallbacks* pDeviceMemoryCallbacks = null,
@@ -33,7 +33,7 @@ namespace Silk.NET.Vulkan.VMA
             ulong* pHeapSizeLimit = null,
             VulkanFunctions* pVulkanFunctions = null,
             RecordSettings* pRecordSettings = null,
-            Instance* instance = null,
+            Instance? instance = null,
             uint? vulkanApiVersion = null
         ) : this()
         {
@@ -44,12 +44,12 @@ namespace Silk.NET.Vulkan.VMA
 
             if (physicalDevice is not null)
             {
-                PhysicalDevice = physicalDevice;
+                PhysicalDevice = physicalDevice.Value;
             }
 
             if (device is not null)
             {
-                Device = device;
+                Device = device.Value;
             }
 
             if (preferredLargeHeapBlockSize is not null)
@@ -89,7 +89,7 @@ namespace Silk.NET.Vulkan.VMA
 
             if (instance is not null)
             {
-                Instance = instance;
+                Instance = instance.Value;
             }
 
             if (vulkanApiVersion is not null)
@@ -107,12 +107,12 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "PhysicalDevice _Nonnull")]
         [NativeName("Type.Name", "PhysicalDevice _Nonnull")]
         [NativeName("Name", "physicalDevice")]
-        public PhysicalDevice* PhysicalDevice;
+        public PhysicalDevice PhysicalDevice;
 
         [NativeName("Type", "Device _Nonnull")]
         [NativeName("Type.Name", "Device _Nonnull")]
         [NativeName("Name", "device")]
-        public Device* Device;
+        public Device Device;
 
         [NativeName("Type", "DeviceSize")]
         [NativeName("Type.Name", "DeviceSize")]
@@ -152,7 +152,7 @@ namespace Silk.NET.Vulkan.VMA
         [NativeName("Type", "Instance _Nonnull")]
         [NativeName("Type.Name", "Instance _Nonnull")]
         [NativeName("Name", "instance")]
-        public Instance* Instance;
+        public Instance Instance;
 
         [NativeName("Type", "uint32_t")]
         [NativeName("Type.Name", "uint32_t")]

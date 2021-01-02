@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnGetImageMemoryRequirements2KHR : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void> Handle => (delegate* unmanaged[Cdecl]<Device*, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void> Handle => (delegate* unmanaged[Cdecl]<Device, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void>) _handle;
         public PfnGetImageMemoryRequirements2KHR
         (
-            delegate* unmanaged[Cdecl]<Device*, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void> ptr
+            delegate* unmanaged[Cdecl]<Device, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void> ptr
         ) => _handle = ptr;
 
         public PfnGetImageMemoryRequirements2KHR
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnGetImageMemoryRequirements2KHR pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnGetImageMemoryRequirements2KHR(IntPtr pfn)
-            => new PfnGetImageMemoryRequirements2KHR((delegate* unmanaged[Cdecl]<Device*, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void>) pfn);
+            => new PfnGetImageMemoryRequirements2KHR((delegate* unmanaged[Cdecl]<Device, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void>) pfn);
 
         public static implicit operator PfnGetImageMemoryRequirements2KHR(GetImageMemoryRequirements2KHR proc)
             => new PfnGetImageMemoryRequirements2KHR(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator GetImageMemoryRequirements2KHR(PfnGetImageMemoryRequirements2KHR pfn)
             => SilkMarshal.PtrToDelegate<GetImageMemoryRequirements2KHR>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void>(PfnGetImageMemoryRequirements2KHR pfn) => pfn.Handle;
-        public static implicit operator PfnGetImageMemoryRequirements2KHR(delegate* unmanaged[Cdecl]<Device*, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void> ptr) => new PfnGetImageMemoryRequirements2KHR(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void>(PfnGetImageMemoryRequirements2KHR pfn) => pfn.Handle;
+        public static implicit operator PfnGetImageMemoryRequirements2KHR(delegate* unmanaged[Cdecl]<Device, ImageMemoryRequirementsInfo2*, MemoryRequirements2*, void> ptr) => new PfnGetImageMemoryRequirements2KHR(ptr);
     }
 
-    public unsafe delegate void GetImageMemoryRequirements2KHR(Device* arg0, ImageMemoryRequirementsInfo2* arg1, MemoryRequirements2* arg2);
+    public unsafe delegate void GetImageMemoryRequirements2KHR(Device arg0, ImageMemoryRequirementsInfo2* arg1, MemoryRequirements2* arg2);
 }
 

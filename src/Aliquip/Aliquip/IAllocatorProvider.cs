@@ -3,12 +3,12 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
-using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.VMA;
 
 namespace Aliquip
 {
-    public interface IMemoryFactory
+    public interface IAllocatorProvider
     {
-        DeviceMemory Allocate(ulong size, uint memoryTypeIndex);
+        unsafe AllocatorT Allocator { get; }
     }
 }

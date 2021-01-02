@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Silk.NET.Input;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
+using Silk.NET.Vulkan.VMA;
 using Silk.NET.Windowing;
 
 namespace Aliquip
@@ -82,7 +83,8 @@ namespace Aliquip
                 .AddSingleton<IColorImageProvider, ColorImageProvider>()
                 .AddSingleton<Scene3D>()
                 .AddSingleton(x => (IScene)x.GetRequiredService<Scene3D>())
-                .AddSingleton<IMemoryFactory, MemoryFactory>()
+                .AddSingleton(x => Vma.GetApi())
+                .AddSingleton<IAllocatorProvider, AllocatorProvider>()
                 ;
         }
     }

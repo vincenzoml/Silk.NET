@@ -5,6 +5,7 @@
 
 using System;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.VMA;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Aliquip
@@ -14,51 +15,44 @@ namespace Aliquip
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
-        private readonly IMemoryFactory _memoryFactory;
+        private readonly Vma _vma;
+        private readonly IAllocatorProvider _allocatorProvider;
 
-        public BufferFactory(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IPhysicalDeviceProvider physicalDeviceProvider, IMemoryFactory memoryFactory)
+        public BufferFactory(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vma vma, IAllocatorProvider allocatorProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _physicalDeviceProvider = physicalDeviceProvider;
-            _memoryFactory = memoryFactory;
+            _vma = vma;
+            _allocatorProvider = allocatorProvider;
         }
         
-        public unsafe (Buffer, DeviceMemory) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices)
+        public unsafe (Buffer, AllocationT, AllocationInfo) CreateBuffer(ulong size, MemoryUsage memoryUsage, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices, AllocationCreateFlagBits createFlags)
         {
-            Buffer buffer;
             fixed (uint* pQueueFamilyIndices = queueFamilyIndices)
             {
-                var bufferInfo = new BufferCreateInfo
+                var bufferCreateInfo = new BufferCreateInfo
                 (
                     size: size, usage: usage,
                     sharingMode: queueFamilyIndices.Length > 1 ? SharingMode.Concurrent : SharingMode.Exclusive, // TODO: Use barriers to transfer ownership instead.
                     queueFamilyIndexCount: (uint) queueFamilyIndices.Length, pQueueFamilyIndices: pQueueFamilyIndices
                 );
-                _vk.CreateBuffer(_logicalDeviceProvider.LogicalDevice, bufferInfo, null, out buffer).ThrowCode();
+                var allocator = _allocatorProvider.Allocator;
+                var allocationCreateInfo = new AllocationCreateInfo
+                    ((uint) createFlags, memoryUsage, (uint) properties, 0, 0, null, null);
+                ulong bufferHandle = default;
+                AllocationT* allocation = default;
+                AllocationInfo allocationInfo = default;
+                _vma.CreateBuffer(&allocator, &bufferCreateInfo, &allocationCreateInfo, &bufferHandle, &allocation, &allocationInfo).ThrowCode();
+                var buffer = new Buffer(bufferHandle);
+                return (buffer, *allocation, allocationInfo);
             }
+        }
 
-            _vk.GetBufferMemoryRequirements
-                (_logicalDeviceProvider.LogicalDevice, buffer, out var memoryRequirements);
-            
-            uint FindMemoryType(uint typeFilter, MemoryPropertyFlags properties)
-            {
-                _vk.GetPhysicalDeviceMemoryProperties(_physicalDeviceProvider.Device, out var memoryProperties);
-
-                for (int i = 0; i < memoryProperties.MemoryTypeCount; i++)
-                {
-                    if ((typeFilter & (1 << i)) != 0 && ((memoryProperties.MemoryTypes[i].PropertyFlags & properties) == properties))
-                        return (uint)i;
-                }
-
-                throw new Exception("Cannot find suitable Memory Type");
-            }
-
-            var memory = _memoryFactory.Allocate
-                (memoryRequirements.Size, FindMemoryType(memoryRequirements.MemoryTypeBits, properties));
-            _vk.BindBufferMemory(_logicalDeviceProvider.LogicalDevice, buffer, memory, 0);
-
-            return (buffer, memory);
+        public unsafe void FreeBuffer(Buffer buffer, AllocationT allocation)
+        {
+            var allocator = _allocatorProvider.Allocator;
+            _vma.DestroyBuffer(&allocator, buffer.Handle, ref allocation);
         }
     }
 }

@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnCreateImage : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, ImageCreateInfo*, AllocationCallbacks*, ulong*, Result> Handle => (delegate* unmanaged[Cdecl]<Device*, ImageCreateInfo*, AllocationCallbacks*, ulong*, Result>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, ImageCreateInfo*, AllocationCallbacks*, Image*, Result> Handle => (delegate* unmanaged[Cdecl]<Device, ImageCreateInfo*, AllocationCallbacks*, Image*, Result>) _handle;
         public PfnCreateImage
         (
-            delegate* unmanaged[Cdecl]<Device*, ImageCreateInfo*, AllocationCallbacks*, ulong*, Result> ptr
+            delegate* unmanaged[Cdecl]<Device, ImageCreateInfo*, AllocationCallbacks*, Image*, Result> ptr
         ) => _handle = ptr;
 
         public PfnCreateImage
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnCreateImage pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnCreateImage(IntPtr pfn)
-            => new PfnCreateImage((delegate* unmanaged[Cdecl]<Device*, ImageCreateInfo*, AllocationCallbacks*, ulong*, Result>) pfn);
+            => new PfnCreateImage((delegate* unmanaged[Cdecl]<Device, ImageCreateInfo*, AllocationCallbacks*, Image*, Result>) pfn);
 
         public static implicit operator PfnCreateImage(CreateImage proc)
             => new PfnCreateImage(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator CreateImage(PfnCreateImage pfn)
             => SilkMarshal.PtrToDelegate<CreateImage>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, ImageCreateInfo*, AllocationCallbacks*, ulong*, Result>(PfnCreateImage pfn) => pfn.Handle;
-        public static implicit operator PfnCreateImage(delegate* unmanaged[Cdecl]<Device*, ImageCreateInfo*, AllocationCallbacks*, ulong*, Result> ptr) => new PfnCreateImage(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, ImageCreateInfo*, AllocationCallbacks*, Image*, Result>(PfnCreateImage pfn) => pfn.Handle;
+        public static implicit operator PfnCreateImage(delegate* unmanaged[Cdecl]<Device, ImageCreateInfo*, AllocationCallbacks*, Image*, Result> ptr) => new PfnCreateImage(ptr);
     }
 
-    public unsafe delegate Result CreateImage(Device* arg0, ImageCreateInfo* arg1, AllocationCallbacks* arg2, ulong* arg3);
+    public unsafe delegate Result CreateImage(Device arg0, ImageCreateInfo* arg1, AllocationCallbacks* arg2, Image* arg3);
 }
 

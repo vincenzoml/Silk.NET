@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnMapMemory : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, ulong, ulong, ulong, uint, void**, Result> Handle => (delegate* unmanaged[Cdecl]<Device*, ulong, ulong, ulong, uint, void**, Result>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, DeviceMemory, ulong, ulong, uint, void**, Result> Handle => (delegate* unmanaged[Cdecl]<Device, DeviceMemory, ulong, ulong, uint, void**, Result>) _handle;
         public PfnMapMemory
         (
-            delegate* unmanaged[Cdecl]<Device*, ulong, ulong, ulong, uint, void**, Result> ptr
+            delegate* unmanaged[Cdecl]<Device, DeviceMemory, ulong, ulong, uint, void**, Result> ptr
         ) => _handle = ptr;
 
         public PfnMapMemory
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnMapMemory pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnMapMemory(IntPtr pfn)
-            => new PfnMapMemory((delegate* unmanaged[Cdecl]<Device*, ulong, ulong, ulong, uint, void**, Result>) pfn);
+            => new PfnMapMemory((delegate* unmanaged[Cdecl]<Device, DeviceMemory, ulong, ulong, uint, void**, Result>) pfn);
 
         public static implicit operator PfnMapMemory(MapMemory proc)
             => new PfnMapMemory(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator MapMemory(PfnMapMemory pfn)
             => SilkMarshal.PtrToDelegate<MapMemory>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, ulong, ulong, ulong, uint, void**, Result>(PfnMapMemory pfn) => pfn.Handle;
-        public static implicit operator PfnMapMemory(delegate* unmanaged[Cdecl]<Device*, ulong, ulong, ulong, uint, void**, Result> ptr) => new PfnMapMemory(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, DeviceMemory, ulong, ulong, uint, void**, Result>(PfnMapMemory pfn) => pfn.Handle;
+        public static implicit operator PfnMapMemory(delegate* unmanaged[Cdecl]<Device, DeviceMemory, ulong, ulong, uint, void**, Result> ptr) => new PfnMapMemory(ptr);
     }
 
-    public unsafe delegate Result MapMemory(Device* arg0, ulong arg1, ulong arg2, ulong arg3, uint arg4, void** arg5);
+    public unsafe delegate Result MapMemory(Device arg0, DeviceMemory arg1, ulong arg2, ulong arg3, uint arg4, void** arg5);
 }
 

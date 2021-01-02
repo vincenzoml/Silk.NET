@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.VMA;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Buffer = Silk.NET.Vulkan.Buffer;
@@ -24,13 +25,15 @@ namespace Aliquip
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly IBufferFactory _bufferFactory;
-        private readonly IMemoryFactory _memoryFactory;
+        private readonly IAllocatorProvider _allocatorProvider;
+        private readonly Vma _vma;
         private readonly uint _width;
         private readonly uint _height;
         private readonly ImageAspectFlags _aspectFlags;
+        private unsafe AllocationT* _imageAllocation;
+        private readonly AllocationInfo _imageAllocationInfo;
         public uint MipLevels { get; }
         public Image Image { get; }
-        public DeviceMemory Memory { get; }
         private ImageLayout _layout = ImageLayout.Undefined;
         public Format Format { get; }
         public ImageView ImageView { get; }
@@ -49,7 +52,8 @@ namespace Aliquip
             IPhysicalDeviceProvider physicalDeviceProvider,
             IGraphicsQueueProvider graphicsQueueProvider,
             IBufferFactory bufferFactory,
-            IMemoryFactory memoryFactory,
+            IAllocatorProvider allocatorProvider,
+            Vma vma,
             bool createSampler,
             bool useMipmaps,
             ImageAspectFlags aspectFlags,
@@ -63,9 +67,12 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _graphicsQueueProvider = graphicsQueueProvider;
             _bufferFactory = bufferFactory;
-            _memoryFactory = memoryFactory;
+            _allocatorProvider = allocatorProvider;
+            _vma = vma;
             _aspectFlags = aspectFlags;
             Format = format;
+            _width = width;
+            _height = height;
 
             if (useMipmaps)
             {
@@ -90,33 +97,15 @@ namespace Aliquip
                 samples: numSamples
             );
 
-            _vk.CreateImage(_logicalDeviceProvider.LogicalDevice, imageInfo, null, out var image).ThrowCode();
-            _vk.GetImageMemoryRequirements(_logicalDeviceProvider.LogicalDevice, image, out var memoryRequirements);
-            
-            uint FindMemoryType(uint typeFilter, MemoryPropertyFlags properties)
-            {
-                _vk.GetPhysicalDeviceMemoryProperties(_physicalDeviceProvider.Device, out var memoryProperties);
-
-                for (int i = 0; i < memoryProperties.MemoryTypeCount; i++)
-                {
-                    if ((typeFilter & (1 << i)) != 0 && ((memoryProperties.MemoryTypes[i].PropertyFlags & properties) == properties))
-                        return (uint)i;
-                }
-
-                throw new Exception("Cannot find suitable Memory Type");
-            }
-
-            var imageMemory = _memoryFactory.Allocate
-            (
-                memoryRequirements.Size,
-                FindMemoryType(memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit)
-            );
-            _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, 0);
-
-            _width = width;
-            _height = height;
-            Image = image;
-            Memory = imageMemory;
+            var allocator = _allocatorProvider.Allocator;
+            var allocationCreateInfo = new AllocationCreateInfo(0, MemoryUsage.MemoryUsageGpuOnly, 0, 0, 0, null, null);
+            ulong imageHandle = default;
+            AllocationT* allocation = default;
+            AllocationInfo resAllocationInfo = default;
+            _vma.CreateImage(&allocator, &imageInfo, &allocationCreateInfo, &imageHandle, &allocation, &resAllocationInfo).ThrowCode();
+            Image = new Image(imageHandle);
+            _imageAllocation = allocation;
+            _imageAllocationInfo = resAllocationInfo;
 
             ImageViewCreateInfo viewInfo = new ImageViewCreateInfo
             (
@@ -282,8 +271,8 @@ namespace Aliquip
         public unsafe void Dispose()
         {
             _vk.DestroyImageView(_logicalDeviceProvider.LogicalDevice, ImageView, null);
-            _vk.DestroyImage(_logicalDeviceProvider.LogicalDevice, Image, null);
-            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, Memory, null);
+            var allocator = _allocatorProvider.Allocator;
+            _vma.DestroyImage(&allocator, Image.Handle, _imageAllocation);
         }
 
         // TODO: Mipmaps should be generated at compile time and loaded.

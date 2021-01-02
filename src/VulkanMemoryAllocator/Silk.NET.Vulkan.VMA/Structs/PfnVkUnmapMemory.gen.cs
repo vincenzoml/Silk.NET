@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnUnmapMemory : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, ulong, void> Handle => (delegate* unmanaged[Cdecl]<Device*, ulong, void>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, DeviceMemory, void> Handle => (delegate* unmanaged[Cdecl]<Device, DeviceMemory, void>) _handle;
         public PfnUnmapMemory
         (
-            delegate* unmanaged[Cdecl]<Device*, ulong, void> ptr
+            delegate* unmanaged[Cdecl]<Device, DeviceMemory, void> ptr
         ) => _handle = ptr;
 
         public PfnUnmapMemory
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnUnmapMemory pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnUnmapMemory(IntPtr pfn)
-            => new PfnUnmapMemory((delegate* unmanaged[Cdecl]<Device*, ulong, void>) pfn);
+            => new PfnUnmapMemory((delegate* unmanaged[Cdecl]<Device, DeviceMemory, void>) pfn);
 
         public static implicit operator PfnUnmapMemory(UnmapMemory proc)
             => new PfnUnmapMemory(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator UnmapMemory(PfnUnmapMemory pfn)
             => SilkMarshal.PtrToDelegate<UnmapMemory>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, ulong, void>(PfnUnmapMemory pfn) => pfn.Handle;
-        public static implicit operator PfnUnmapMemory(delegate* unmanaged[Cdecl]<Device*, ulong, void> ptr) => new PfnUnmapMemory(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, DeviceMemory, void>(PfnUnmapMemory pfn) => pfn.Handle;
+        public static implicit operator PfnUnmapMemory(delegate* unmanaged[Cdecl]<Device, DeviceMemory, void> ptr) => new PfnUnmapMemory(ptr);
     }
 
-    public unsafe delegate void UnmapMemory(Device* arg0, ulong arg1);
+    public unsafe delegate void UnmapMemory(Device arg0, DeviceMemory arg1);
 }
 

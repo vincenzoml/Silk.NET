@@ -9,8 +9,12 @@
             "cacheDir": "build/cache",
             "cacheKey": "vma",
             "controlDescriptors": [],
-            "converter": {},
-            "prefix": [ "vma", "vk" ],
+            "converter": {
+				"reader": "vk",
+                "constructor": "vk",
+                "className": "Vma"
+			},
+            "prefix": [ "vma", "Vk" ],
             "clang": {
                 "args": [
                     "--language=c++",
@@ -55,7 +59,12 @@
                 "iOS": "__Internal",
                 "className": "VMALibraryNameContainer"
             },
-			"typeMaps": [],
+			"typeMaps":
+			[
+				{
+                    "$include.commonTypeMap": "build/csharp_typemap.json"
+                }
+			],
 			"rename": { },
 			"exclude": []
         }

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.VMA;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Image = Silk.NET.Vulkan.Image;
@@ -22,7 +23,8 @@ namespace Aliquip
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
-        private readonly IMemoryFactory _memoryFactory;
+        private readonly Vma _vma;
+        private readonly IAllocatorProvider _allocatorProvider;
         private readonly Dictionary<string, Texture> _cache = new();
         public Texture this[string name]
         {
@@ -47,7 +49,8 @@ namespace Aliquip
             IPhysicalDeviceProvider physicalDeviceProvider,
             ICommandBufferFactory commandBufferFactory,
             IGraphicsQueueProvider graphicsQueueProvider,
-            IMemoryFactory memoryFactory
+            Vma vma,
+            IAllocatorProvider allocatorProvider
         )
         {
             _vk = vk;
@@ -58,7 +61,8 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _commandBufferFactory = commandBufferFactory;
             _graphicsQueueProvider = graphicsQueueProvider;
-            _memoryFactory = memoryFactory;
+            _vma = vma;
+            _allocatorProvider = allocatorProvider;
         }
 
         public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, bool useMipmaps, SampleCountFlags numSamples, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
@@ -67,22 +71,21 @@ namespace Aliquip
             (
                 (uint) src.Width, (uint) src.Height, Format.R8G8B8A8Srgb, numSamples, _vk, _commandBufferFactory,
                 _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider,
-                _bufferFactory, _memoryFactory, createSampler, useMipmaps, aspectFlags,
+                _bufferFactory, _allocatorProvider, _vma, createSampler, useMipmaps, aspectFlags,
                 imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit |
                 ImageUsageFlags.ImageUsageTransferSrcBit
             );
             
             var pixelCount = src.Width * src.Height;
             var totalImageSize = pixelCount * 4;
-            var (stagingBuffer, stagingMemory) = _bufferFactory.CreateBuffer
+            var (stagingBuffer, allocation, allocationInfo) = _bufferFactory.CreateBuffer
             (
-                (ulong) totalImageSize, BufferUsageFlags.BufferUsageTransferSrcBit,
+                (ulong) totalImageSize, MemoryUsage.MemoryUsageCpuToGpu, BufferUsageFlags.BufferUsageTransferSrcBit,
                 MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
+                stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}, AllocationCreateFlagBits.AllocationCreateMappedBit
             );
 
-            void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory, 0, (ulong) totalImageSize, 0, ref data);
+            void* data = allocationInfo.PMappedData;
             
             var s = new Span<Rgba32>(data, pixelCount);
             if (src.TryGetSinglePixelSpan(out var s2))
@@ -96,10 +99,12 @@ namespace Aliquip
                 }
             }
 
-            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory);
+            var allocator = _allocatorProvider.Allocator;
+            _vma.UnmapMemory(&allocator, &allocation);
             
             texture.TransitionImageLayout(ImageLayout.TransferDstOptimal);
             texture.CopyBufferToImage(stagingBuffer);
+            _vma.DestroyBuffer(&allocator, stagingBuffer.Handle, &allocation);
             // implicitly transitions to ShaderReadOnlyOptimal
             texture.GenerateMipmaps();
             
@@ -112,7 +117,7 @@ namespace Aliquip
             return new
             (
                 width, height, format, numSamples, _vk, _commandBufferFactory, _transferQueueProvider,
-                _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory, _memoryFactory,
+                _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory, _allocatorProvider, _vma,
                 createSampler, useMipmaps, aspectFlags, imageUsageFlags
             );
         }

@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnGetPhysicalDeviceMemoryProperties : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<PhysicalDevice*, PhysicalDeviceMemoryProperties*, void> Handle => (delegate* unmanaged[Cdecl]<PhysicalDevice*, PhysicalDeviceMemoryProperties*, void>) _handle;
+        public delegate* unmanaged[Cdecl]<PhysicalDevice, PhysicalDeviceMemoryProperties*, void> Handle => (delegate* unmanaged[Cdecl]<PhysicalDevice, PhysicalDeviceMemoryProperties*, void>) _handle;
         public PfnGetPhysicalDeviceMemoryProperties
         (
-            delegate* unmanaged[Cdecl]<PhysicalDevice*, PhysicalDeviceMemoryProperties*, void> ptr
+            delegate* unmanaged[Cdecl]<PhysicalDevice, PhysicalDeviceMemoryProperties*, void> ptr
         ) => _handle = ptr;
 
         public PfnGetPhysicalDeviceMemoryProperties
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnGetPhysicalDeviceMemoryProperties pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnGetPhysicalDeviceMemoryProperties(IntPtr pfn)
-            => new PfnGetPhysicalDeviceMemoryProperties((delegate* unmanaged[Cdecl]<PhysicalDevice*, PhysicalDeviceMemoryProperties*, void>) pfn);
+            => new PfnGetPhysicalDeviceMemoryProperties((delegate* unmanaged[Cdecl]<PhysicalDevice, PhysicalDeviceMemoryProperties*, void>) pfn);
 
         public static implicit operator PfnGetPhysicalDeviceMemoryProperties(GetPhysicalDeviceMemoryProperties proc)
             => new PfnGetPhysicalDeviceMemoryProperties(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator GetPhysicalDeviceMemoryProperties(PfnGetPhysicalDeviceMemoryProperties pfn)
             => SilkMarshal.PtrToDelegate<GetPhysicalDeviceMemoryProperties>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<PhysicalDevice*, PhysicalDeviceMemoryProperties*, void>(PfnGetPhysicalDeviceMemoryProperties pfn) => pfn.Handle;
-        public static implicit operator PfnGetPhysicalDeviceMemoryProperties(delegate* unmanaged[Cdecl]<PhysicalDevice*, PhysicalDeviceMemoryProperties*, void> ptr) => new PfnGetPhysicalDeviceMemoryProperties(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<PhysicalDevice, PhysicalDeviceMemoryProperties*, void>(PfnGetPhysicalDeviceMemoryProperties pfn) => pfn.Handle;
+        public static implicit operator PfnGetPhysicalDeviceMemoryProperties(delegate* unmanaged[Cdecl]<PhysicalDevice, PhysicalDeviceMemoryProperties*, void> ptr) => new PfnGetPhysicalDeviceMemoryProperties(ptr);
     }
 
-    public unsafe delegate void GetPhysicalDeviceMemoryProperties(PhysicalDevice* arg0, PhysicalDeviceMemoryProperties* arg1);
+    public unsafe delegate void GetPhysicalDeviceMemoryProperties(PhysicalDevice arg0, PhysicalDeviceMemoryProperties* arg1);
 }
 

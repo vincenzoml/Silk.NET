@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnCreateBuffer : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, BufferCreateInfo*, AllocationCallbacks*, ulong*, Result> Handle => (delegate* unmanaged[Cdecl]<Device*, BufferCreateInfo*, AllocationCallbacks*, ulong*, Result>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, BufferCreateInfo*, AllocationCallbacks*, Buffer*, Result> Handle => (delegate* unmanaged[Cdecl]<Device, BufferCreateInfo*, AllocationCallbacks*, Buffer*, Result>) _handle;
         public PfnCreateBuffer
         (
-            delegate* unmanaged[Cdecl]<Device*, BufferCreateInfo*, AllocationCallbacks*, ulong*, Result> ptr
+            delegate* unmanaged[Cdecl]<Device, BufferCreateInfo*, AllocationCallbacks*, Buffer*, Result> ptr
         ) => _handle = ptr;
 
         public PfnCreateBuffer
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnCreateBuffer pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnCreateBuffer(IntPtr pfn)
-            => new PfnCreateBuffer((delegate* unmanaged[Cdecl]<Device*, BufferCreateInfo*, AllocationCallbacks*, ulong*, Result>) pfn);
+            => new PfnCreateBuffer((delegate* unmanaged[Cdecl]<Device, BufferCreateInfo*, AllocationCallbacks*, Buffer*, Result>) pfn);
 
         public static implicit operator PfnCreateBuffer(CreateBuffer proc)
             => new PfnCreateBuffer(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator CreateBuffer(PfnCreateBuffer pfn)
             => SilkMarshal.PtrToDelegate<CreateBuffer>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, BufferCreateInfo*, AllocationCallbacks*, ulong*, Result>(PfnCreateBuffer pfn) => pfn.Handle;
-        public static implicit operator PfnCreateBuffer(delegate* unmanaged[Cdecl]<Device*, BufferCreateInfo*, AllocationCallbacks*, ulong*, Result> ptr) => new PfnCreateBuffer(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, BufferCreateInfo*, AllocationCallbacks*, Buffer*, Result>(PfnCreateBuffer pfn) => pfn.Handle;
+        public static implicit operator PfnCreateBuffer(delegate* unmanaged[Cdecl]<Device, BufferCreateInfo*, AllocationCallbacks*, Buffer*, Result> ptr) => new PfnCreateBuffer(ptr);
     }
 
-    public unsafe delegate Result CreateBuffer(Device* arg0, BufferCreateInfo* arg1, AllocationCallbacks* arg2, ulong* arg3);
+    public unsafe delegate Result CreateBuffer(Device arg0, BufferCreateInfo* arg1, AllocationCallbacks* arg2, Buffer* arg3);
 }
 

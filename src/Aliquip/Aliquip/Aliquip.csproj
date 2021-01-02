@@ -18,7 +18,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Input\Silk.NET.Input.Common\Silk.NET.Input.Common.csproj" />
       <ProjectReference Include="..\..\Input\Silk.NET.Input.Glfw\Silk.NET.Input.Glfw.csproj" />
-      <ProjectReference Include="..\..\Input\Silk.NET.Input.Sdl\Silk.NET.Input.Sdl.csproj" />
+      <!--<ProjectReference Include="..\..\Input\Silk.NET.Input.Sdl\Silk.NET.Input.Sdl.csproj" />-->
       <ProjectReference Include="..\..\Maths\Silk.NET.Maths\Silk.NET.Maths.csproj" />
       <ProjectReference Include="..\..\VulkanMemoryAllocator\Silk.NET.Vulkan.VMA\Silk.NET.Vulkan.VMA.csproj" />
       <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.EXT\Silk.NET.Vulkan.Extensions.EXT.csproj" />
@@ -30,6 +30,12 @@
         <EmbeddedResource Include="shaders\**\*.spv" />
         <EmbeddedResource Include="textures\**\*.*" />
         <EmbeddedResource Include="models\**\*.*" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="vma.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

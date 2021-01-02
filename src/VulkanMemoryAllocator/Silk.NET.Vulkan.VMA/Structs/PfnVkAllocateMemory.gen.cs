@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnAllocateMemory : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, MemoryAllocateInfo*, AllocationCallbacks*, ulong*, Result> Handle => (delegate* unmanaged[Cdecl]<Device*, MemoryAllocateInfo*, AllocationCallbacks*, ulong*, Result>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, MemoryAllocateInfo*, AllocationCallbacks*, DeviceMemory*, Result> Handle => (delegate* unmanaged[Cdecl]<Device, MemoryAllocateInfo*, AllocationCallbacks*, DeviceMemory*, Result>) _handle;
         public PfnAllocateMemory
         (
-            delegate* unmanaged[Cdecl]<Device*, MemoryAllocateInfo*, AllocationCallbacks*, ulong*, Result> ptr
+            delegate* unmanaged[Cdecl]<Device, MemoryAllocateInfo*, AllocationCallbacks*, DeviceMemory*, Result> ptr
         ) => _handle = ptr;
 
         public PfnAllocateMemory
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnAllocateMemory pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnAllocateMemory(IntPtr pfn)
-            => new PfnAllocateMemory((delegate* unmanaged[Cdecl]<Device*, MemoryAllocateInfo*, AllocationCallbacks*, ulong*, Result>) pfn);
+            => new PfnAllocateMemory((delegate* unmanaged[Cdecl]<Device, MemoryAllocateInfo*, AllocationCallbacks*, DeviceMemory*, Result>) pfn);
 
         public static implicit operator PfnAllocateMemory(AllocateMemory proc)
             => new PfnAllocateMemory(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator AllocateMemory(PfnAllocateMemory pfn)
             => SilkMarshal.PtrToDelegate<AllocateMemory>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, MemoryAllocateInfo*, AllocationCallbacks*, ulong*, Result>(PfnAllocateMemory pfn) => pfn.Handle;
-        public static implicit operator PfnAllocateMemory(delegate* unmanaged[Cdecl]<Device*, MemoryAllocateInfo*, AllocationCallbacks*, ulong*, Result> ptr) => new PfnAllocateMemory(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, MemoryAllocateInfo*, AllocationCallbacks*, DeviceMemory*, Result>(PfnAllocateMemory pfn) => pfn.Handle;
+        public static implicit operator PfnAllocateMemory(delegate* unmanaged[Cdecl]<Device, MemoryAllocateInfo*, AllocationCallbacks*, DeviceMemory*, Result> ptr) => new PfnAllocateMemory(ptr);
     }
 
-    public unsafe delegate Result AllocateMemory(Device* arg0, MemoryAllocateInfo* arg1, AllocationCallbacks* arg2, ulong* arg3);
+    public unsafe delegate Result AllocateMemory(Device arg0, MemoryAllocateInfo* arg1, AllocationCallbacks* arg2, DeviceMemory* arg3);
 }
 

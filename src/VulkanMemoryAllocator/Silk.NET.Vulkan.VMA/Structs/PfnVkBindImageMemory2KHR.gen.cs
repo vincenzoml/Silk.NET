@@ -21,10 +21,10 @@ namespace Silk.NET.Vulkan.VMA
     public unsafe readonly struct PfnBindImageMemory2KHR : IDisposable
     {
         private readonly void* _handle;
-        public delegate* unmanaged[Cdecl]<Device*, uint, BindImageMemoryInfo*, Result> Handle => (delegate* unmanaged[Cdecl]<Device*, uint, BindImageMemoryInfo*, Result>) _handle;
+        public delegate* unmanaged[Cdecl]<Device, uint, BindImageMemoryInfo*, Result> Handle => (delegate* unmanaged[Cdecl]<Device, uint, BindImageMemoryInfo*, Result>) _handle;
         public PfnBindImageMemory2KHR
         (
-            delegate* unmanaged[Cdecl]<Device*, uint, BindImageMemoryInfo*, Result> ptr
+            delegate* unmanaged[Cdecl]<Device, uint, BindImageMemoryInfo*, Result> ptr
         ) => _handle = ptr;
 
         public PfnBindImageMemory2KHR
@@ -37,7 +37,7 @@ namespace Silk.NET.Vulkan.VMA
 
         public static implicit operator IntPtr(PfnBindImageMemory2KHR pfn) => (IntPtr) pfn.Handle;
         public static explicit operator PfnBindImageMemory2KHR(IntPtr pfn)
-            => new PfnBindImageMemory2KHR((delegate* unmanaged[Cdecl]<Device*, uint, BindImageMemoryInfo*, Result>) pfn);
+            => new PfnBindImageMemory2KHR((delegate* unmanaged[Cdecl]<Device, uint, BindImageMemoryInfo*, Result>) pfn);
 
         public static implicit operator PfnBindImageMemory2KHR(BindImageMemory2KHR proc)
             => new PfnBindImageMemory2KHR(proc);
@@ -45,10 +45,10 @@ namespace Silk.NET.Vulkan.VMA
         public static explicit operator BindImageMemory2KHR(PfnBindImageMemory2KHR pfn)
             => SilkMarshal.PtrToDelegate<BindImageMemory2KHR>(pfn);
 
-        public static implicit operator delegate* unmanaged[Cdecl]<Device*, uint, BindImageMemoryInfo*, Result>(PfnBindImageMemory2KHR pfn) => pfn.Handle;
-        public static implicit operator PfnBindImageMemory2KHR(delegate* unmanaged[Cdecl]<Device*, uint, BindImageMemoryInfo*, Result> ptr) => new PfnBindImageMemory2KHR(ptr);
+        public static implicit operator delegate* unmanaged[Cdecl]<Device, uint, BindImageMemoryInfo*, Result>(PfnBindImageMemory2KHR pfn) => pfn.Handle;
+        public static implicit operator PfnBindImageMemory2KHR(delegate* unmanaged[Cdecl]<Device, uint, BindImageMemoryInfo*, Result> ptr) => new PfnBindImageMemory2KHR(ptr);
     }
 
-    public unsafe delegate Result BindImageMemory2KHR(Device* arg0, uint arg1, BindImageMemoryInfo* arg2);
+    public unsafe delegate Result BindImageMemory2KHR(Device arg0, uint arg1, BindImageMemoryInfo* arg2);
 }
 
