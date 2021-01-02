@@ -174,7 +174,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
 
         private static Dictionary<string, Struct> ConvertStructs(IEnumerable<StructureDefinition> spec, BindTask task)
         {
-            var prefix = task.FunctionPrefix;
+            var prefix = task.FunctionPrefixes;
             var ret = new Dictionary<string, Struct>();
             foreach (var s in spec)
             {
@@ -292,7 +292,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                 Doc = string.Empty,
                                 ExtensionName = api.Name == "feature" ? "Core" : ExtensionName(api.Attribute("name")?.Value, task),
                                 GenericTypeParameters = new List<GenericTypeParameter>(),
-                                Name = Naming.Translate(NameTrimmer.Trim(TrimName(xf.Attribute("name")?.Value, task), task.FunctionPrefix), task.FunctionPrefix),
+                                Name = Naming.Translate(NameTrimmer.Trim(TrimName(xf.Attribute("name")?.Value, task), task.FunctionPrefixes), task.FunctionPrefixes),
                                 NativeName = function,
                                 Parameters = ParseParameters(xf),
                                 ProfileName = name,
@@ -708,14 +708,21 @@ namespace Silk.NET.BuildTools.Converters.Readers
         /// <returns>The name, trimmed.</returns>
         public static string TrimName(string name, BindTask task)
         {
-            if (name.ToUpper().StartsWith($"{task.FunctionPrefix.ToUpper()}_"))
+            foreach (var prefix in task.FunctionPrefixes)
             {
-                return name.Remove(0, task.FunctionPrefix.Length + 1);
+                if (name.ToUpper().StartsWith($"{prefix.ToUpper()}_"))
+                {
+                    name = name.Remove(0, prefix.Length + 1);
+                }
+                else
+                {
+                    name = name.ToLower().StartsWith(prefix.ToLower())
+                        ? name.Remove(0, prefix.Length)
+                        : name;
+                }
             }
 
-            return name.ToLower().StartsWith(task.FunctionPrefix.ToLower())
-                ? name.Remove(0, task.FunctionPrefix.Length)
-                : name;
+            return name;
         }
         
         private static string FunctionParameterType(XElement e)
@@ -911,7 +918,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                     }
                                     : new List<Attribute>(),
                                 Doc = string.Empty,
-                                Name = Naming.Translate(TrimName(token.Value, task), task.FunctionPrefix),
+                                Name = Naming.Translate(TrimName(token.Value, task), task.FunctionPrefixes),
                                 NativeName = token.Value,
                                 Value = allEnums.ContainsKey
                                     (token.Value)
@@ -928,7 +935,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                             ExtensionName = api.Name == "feature"
                                 ? "Core"
                                 : ExtensionName(api.Attribute("name")?.Value, task),
-                            Name = Naming.Translate(TrimName(api.Attribute("name")?.Value, task), task.FunctionPrefix),
+                            Name = Naming.Translate(TrimName(api.Attribute("name")?.Value, task), task.FunctionPrefixes),
                             NativeName = api.Attribute("name")?.Value,
                             ProfileName = name,
                             ProfileVersion = apiVersion,
@@ -965,7 +972,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
             (
                 x => new Constant
                 {
-                    Name = Naming.Translate(TrimName(GetName(x.Key, out var type), task), task.FunctionPrefix),
+                    Name = Naming.Translate(TrimName(GetName(x.Key, out var type), task), task.FunctionPrefixes),
                     NativeName = GetName(x.Key, out _),
                     Type = new Type {Name = type}, Value = x.Value.ToString()
                 }

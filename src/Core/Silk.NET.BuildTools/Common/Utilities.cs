@@ -174,14 +174,15 @@ namespace Silk.NET.BuildTools.Common
         /// <param name="name">The name to check.</param>
         /// <param name="fPrefix">The prefix to append if the name fails the check.</param>
         /// <returns>The string after being validated.</returns>
-        public static string CheckMemberName(this string name, string fPrefix)
+        public static string CheckMemberName(this string name, string[] fPrefixes)
         {
             name = name.Replace("_", null).Replace(" ", null);
             // ReSharper disable StringLiteralTypo
             if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray().Contains(name[0]))
             // ReSharper restore StringLiteralTypo
             {
-                return fPrefix.ToUpper() + name;
+                // the first prefix is the "primary" prefix
+                return fPrefixes[0].ToUpper() + name;
             }
 
             return name;

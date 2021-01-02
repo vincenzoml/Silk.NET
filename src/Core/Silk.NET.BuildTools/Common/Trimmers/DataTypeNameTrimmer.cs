@@ -53,9 +53,9 @@ namespace Silk.NET.BuildTools.Common.Trimmers
         }
 
         /// <inheritdoc />
-        public Function Trim(Function trimmable, string prefix)
+        public Function Trim(Function trimmable, string[] prefixes)
         {
-            trimmable.Name = Trim(trimmable.NativeName, prefix).CheckMemberName(prefix);
+            trimmable.Name = Trim(trimmable.NativeName, prefixes).CheckMemberName(prefixes);
             return trimmable;
         }
 
@@ -76,7 +76,7 @@ namespace Silk.NET.BuildTools.Common.Trimmers
         }
 
         /// <inheritdoc />
-        public string Trim(string name, string _)
+        public string Trim(string name, string[] _)
         {
             var match = Endings.Match(name);
             return name.Remove(match.Index);

@@ -10,7 +10,7 @@
             "cacheKey": "vma",
             "controlDescriptors": [],
             "converter": {},
-            "prefix": "vma",
+            "prefix": [ "vma", "vk" ],
             "clang": {
                 "args": [
                     "--language=c++",

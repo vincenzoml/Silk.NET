@@ -20,6 +20,7 @@
       <ProjectReference Include="..\..\Input\Silk.NET.Input.Glfw\Silk.NET.Input.Glfw.csproj" />
       <ProjectReference Include="..\..\Input\Silk.NET.Input.Sdl\Silk.NET.Input.Sdl.csproj" />
       <ProjectReference Include="..\..\Maths\Silk.NET.Maths\Silk.NET.Maths.csproj" />
+      <ProjectReference Include="..\..\VulkanMemoryAllocator\Silk.NET.Vulkan.VMA\Silk.NET.Vulkan.VMA.csproj" />
       <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.EXT\Silk.NET.Vulkan.Extensions.EXT.csproj" />
       <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.KHR\Silk.NET.Vulkan.Extensions.KHR.csproj" />
       <ProjectReference Include="..\..\Vulkan\Silk.NET.Vulkan\Silk.NET.Vulkan.csproj" />

@@ -112,11 +112,11 @@ namespace Silk.NET.BuildTools.Common.Trimmers
         }
 
         /// <inheritdoc />
-        public Function Trim(Function trimmable, string prefix)
+        public Function Trim(Function trimmable, string[] prefixes)
         {
             var extensionNameIndex = trimmable.NativeName.LastIndexOf
                 (trimmable.ExtensionName, StringComparison.OrdinalIgnoreCase);
-            trimmable.Name = trimmable.NativeName.Remove(extensionNameIndex).CheckMemberName(prefix);
+            trimmable.Name = trimmable.NativeName.Remove(extensionNameIndex).CheckMemberName(prefixes);
             return trimmable;
         }
 
@@ -127,7 +127,7 @@ namespace Silk.NET.BuildTools.Common.Trimmers
         }
 
         /// <inheritdoc />
-        public string Trim(string trimmable, string prefix)
+        public string Trim(string trimmable, string[] prefixes)
         {
             foreach (var vendor in Vendors)
             {

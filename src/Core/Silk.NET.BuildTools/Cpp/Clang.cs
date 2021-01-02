@@ -406,7 +406,7 @@ namespace Silk.NET.BuildTools.Cpp
                 if (decl is EnumDecl)
                 {
                     var enumSpec = enums.FirstOrDefault(x => x.NativeName == anonName);
-                    var name = Naming.TranslateLite(Naming.TrimName(tdDecl.Name, task), task.FunctionPrefix);
+                    var name = Naming.TranslateLite(Naming.TrimName(tdDecl.Name, task), task.FunctionPrefixes);
                     if (task.RenamedNativeNames.TryAdd(anonName, name) && !(enumSpec is null))
                     {
                         enumSpec.Attributes.Add(new Attribute
@@ -421,7 +421,7 @@ namespace Silk.NET.BuildTools.Cpp
                 else if (decl is RecordDecl)
                 {
                     var structSpec = structs.FirstOrDefault(x => x.NativeName == anonName);
-                    var name = Naming.TranslateLite(Naming.TrimName(tdDecl.Name, task), task.FunctionPrefix);
+                    var name = Naming.TranslateLite(Naming.TrimName(tdDecl.Name, task), task.FunctionPrefixes);
                     if (task.RenamedNativeNames.TryAdd(anonName, name) && !(structSpec is null))
                     {
                         structSpec.Name = name;
@@ -782,7 +782,7 @@ namespace Silk.NET.BuildTools.Cpp
                                 // already.
                                 pfns[wrapper].NativeName = typedefType.Decl.Name;
                                 var name = Naming.TranslateVariable
-                                    (Naming.TrimName(pfns[wrapper].NativeName, task), task.FunctionPrefix);
+                                    (Naming.TrimName(pfns[wrapper].NativeName, task), task.FunctionPrefixes);
                                 if (name.ToLower().StartsWith("pfn"))
                                 {
                                     name = name.Substring(3);
@@ -811,7 +811,7 @@ namespace Silk.NET.BuildTools.Cpp
                 x => new Field
                 {
                     Name = Naming.TranslateLite
-                        (Naming.TrimName(x.Name, task), task.FunctionPrefix),
+                        (Naming.TrimName(x.Name, task), task.FunctionPrefixes),
                     NativeName = x.Name,
                     Type = GetType(x.Type, out var count, ref _f, out _),
                     NativeType = x.Type.AsString.Replace("\\", "\\\\"), Count = count,
@@ -914,7 +914,7 @@ namespace Silk.NET.BuildTools.Cpp
                             new Enum
                             {
                                 Name = name ?? Naming.TranslateVariable
-                                    (Naming.TrimName(nativeName, task), task.FunctionPrefix),
+                                    (Naming.TrimName(nativeName, task), task.FunctionPrefixes),
                                 NativeName = nativeName,
                                 ClangMetadata = new[] {enumDecl.Location.ToString()},
                                 Tokens = enumDecl.Enumerators.Where
@@ -923,7 +923,7 @@ namespace Silk.NET.BuildTools.Cpp
                                     (
                                         x => new Token
                                         {
-                                            Name = Naming.Translate(Naming.TrimName(x.Name, task), task.FunctionPrefix),
+                                            Name = Naming.Translate(Naming.TrimName(x.Name, task), task.FunctionPrefixes),
                                             NativeName = x.Name,
                                             Value = x.InitVal.ToString("X")
                                         }
@@ -995,7 +995,7 @@ namespace Silk.NET.BuildTools.Cpp
                             @struct = new Struct
                             {
                                 Name = name ?? Naming.TranslateVariable
-                                    (Naming.TrimName(nativeName, task), task.FunctionPrefix),
+                                    (Naming.TrimName(nativeName, task), task.FunctionPrefixes),
                                 NativeName = nativeName,
                                 ClangMetadata = new[] {recordDecl.Location.ToString()},
                                 Fields = ConvertAll(recordDecl).ToList(),
@@ -1080,7 +1080,7 @@ namespace Silk.NET.BuildTools.Cpp
                             new Function
                             {
                                 Name = name ?? Naming.TranslateLite
-                                    (Naming.TrimName(functionDecl.Name, task), task.FunctionPrefix),
+                                    (Naming.TrimName(functionDecl.Name, task), task.FunctionPrefixes),
                                 NativeName = functionDecl.Name,
                                 Convention = GetCallingConvention
                                 (
@@ -1299,7 +1299,7 @@ namespace Silk.NET.BuildTools.Cpp
                         Convention = GetCallingConvention
                             ((cxxMethodDecl.Type as FunctionType)?.CallConv ?? CXCallingConv.CXCallingConv_C),
                         Name = name ?? Naming.TranslateLite
-                            (Naming.TrimName(cxxMethodDecl.Name, task), task.FunctionPrefix),
+                            (Naming.TrimName(cxxMethodDecl.Name, task), task.FunctionPrefixes),
                         NativeName = cxxMethodDecl.Name,
                         VtblIndex = vtblIndex,
                         ReturnType = GetType(cxxMethodDecl.ReturnType, out _, ref _f, out _),

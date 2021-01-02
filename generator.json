@@ -14,7 +14,7 @@
                 "constructor": "gl",
                 "className": "GL"
             },
-            "prefix": "gl",
+            "prefix": [ "gl" ],
             "clang": {},
             "bakery": {
                 "profileNames": [
@@ -55,7 +55,7 @@
                 "constructor": "gl",
                 "className": "GL"
             },
-            "prefix": "gl",
+            "prefix": [ "gl" ],
             "clang": {},
             "bakery": {
                 "profileNames": [
@@ -96,7 +96,7 @@
                 "constructor": "gl",
                 "className": "GL"
             },
-            "prefix": "gl",
+            "prefix": [ "gl" ],
             "clang": {},
             "bakery": {
                 "profileNames": [
@@ -137,7 +137,7 @@
                 "constructor": "cl",
                 "className": "CL"
             },
-            "prefix": "cl",
+            "prefix": [ "cl" ],
             "clang": {},
             "bakery": {
                 "profileNames": [
@@ -301,7 +301,7 @@
                 "constructor": "vk",
                 "className": "Vk"
             },
-            "prefix": "vk",
+            "prefix": [ "vk" ],
             "clang": {},
             "bakery": {
                 "profileNames": [
@@ -364,7 +364,7 @@
                 "     Remove this once 16.9 Preview 2 has released."
             ],
             "converter": {},
-            "prefix": "ai",
+            "prefix": [ "ai" ],
             "clang": {
                 "args": [
                     "--language=c++",
@@ -480,7 +480,7 @@
                 "constructor": "vk",
                 "className": "XR"
             },
-            "prefix": "xr",
+            "prefix": [ "xr" ],
             "clang": {},
             "bakery": {
                 "profileNames": [
@@ -556,7 +556,7 @@
                 "convert-windows-only"
             ],
             "converter": {},
-            "prefix": "sdl",
+            "prefix": [ "sdl" ],
             "clang": {
                 "args": [
                     "--language=c++",
@@ -746,7 +746,7 @@
                 "convert-windows-only"
             ],
             "converter": {},
-            "prefix": "DXGI",
+            "prefix": [ "DXGI" ],
             "clang": {
                 "args": [
                     "--language=c++",
@@ -1083,7 +1083,7 @@
                 "convert-windows-only",
                 "no-csproj"
             ],
-            "prefix": "Dxc",
+            "prefix": [ "Dxc" ],
             "clang": {
                 "args": [
                     "--language=c++",
@@ -1307,7 +1307,7 @@
             "controlDescriptors": [
                 "convert-windows-only"
             ],
-            "prefix": "XInput",
+            "prefix": [ "XInput" ],
             "clang": {
                 "args": [
                     "--language=c++",

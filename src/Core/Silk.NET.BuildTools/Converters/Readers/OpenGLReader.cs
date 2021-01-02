@@ -152,8 +152,8 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                                 .Trim
                                                 (
                                                     TrimName(xf.Attribute("name")?.Value, task),
-                                                    task.FunctionPrefix
-                                                ), task.FunctionPrefix
+                                                    task.FunctionPrefixes
+                                                ), task.FunctionPrefixes
                                         ),
                                     NativeName = function,
                                     Parameters = ParseParameters(xf),
@@ -549,14 +549,21 @@ namespace Silk.NET.BuildTools.Converters.Readers
         /// <returns>The name, trimmed.</returns>
         public string TrimName(string name, BindTask task)
         {
-            if (name.StartsWith($"{task.FunctionPrefix.ToUpper()}_"))
+            foreach (var prefix in task.FunctionPrefixes)
             {
-                return name.Remove(0, task.FunctionPrefix.Length + 1);
+                if (name.StartsWith($"{prefix.ToUpper()}_"))
+                {
+                    name = name.Remove(0, prefix.Length + 1);
+                }
+                else
+                {
+                    name = name.ToLower().StartsWith(prefix.ToLower())
+                        ? name.Remove(0, prefix.Length)
+                        : name;
+                }
             }
 
-            return name.ToLower().StartsWith(task.FunctionPrefix.ToLower())
-                ? name.Remove(0, task.FunctionPrefix.Length)
-                : name;
+            return name;
         } 
 
         private static string FunctionParameterType(XElement e)
@@ -750,7 +757,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                 Doc = string.Empty,
                                 Name = task.RenamedNativeNames.TryGetValue(token.Value, out var n)
                                     ? n
-                                    : Naming.Translate(TrimName(token.Value, task), task.FunctionPrefix),
+                                    : Naming.Translate(TrimName(token.Value, task), task.FunctionPrefixes),
                                 NativeName = token.Value,
                                 Value = allEnums[token.Value].Item1
                             }
@@ -766,7 +773,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                 : TrimName(api.Attribute("name")?.Value, task),
                             Name = task.RenamedNativeNames.TryGetValue(api.Attribute("name")!.Value, out var n)
                                 ? n
-                                : Naming.Translate(TrimName(api.Attribute("name")?.Value, task), task.FunctionPrefix),
+                                : Naming.Translate(TrimName(api.Attribute("name")?.Value, task), task.FunctionPrefixes),
                             NativeName = api.Attribute("name")?.Value,
                             ProfileName = name,
                             ProfileVersion = apiVersion,
@@ -820,7 +827,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                 Doc = string.Empty,
                                 Name = task.RenamedNativeNames.TryGetValue(@enum.Key, out var n)
                                     ? n
-                                    : Naming.Translate(TrimName(@enum.Key, task), task.FunctionPrefix),
+                                    : Naming.Translate(TrimName(@enum.Key, task), task.FunctionPrefixes),
                                 NativeName = @enum.Key,
                                 Value = @enum.Value.Item1
                             }
@@ -846,7 +853,7 @@ namespace Silk.NET.BuildTools.Converters.Readers
                                     Doc = string.Empty,
                                     Name = task.RenamedNativeNames.TryGetValue(@enum.Key, out var n)
                                         ? n
-                                        : Naming.Translate(TrimName(@enum.Key, task), task.FunctionPrefix),
+                                        : Naming.Translate(TrimName(@enum.Key, task), task.FunctionPrefixes),
                                     NativeName = @enum.Key,
                                     Value = @enum.Value.Item1
                                 }

@@ -27,7 +27,7 @@ namespace Silk.NET.BuildTools.Common
         /// Care should be taken when creating new overrides that the intended function is targeted.
         /// </summary>
         /// <param name="functionEntrypoint">The entrypoint to create variations of.</param>
-        /// <param name="prefix">The entroypoint prefix. prefix.</param>
+        /// <param name="prefixes">The entroypoint prefix. prefix.</param>
         /// <param name="trimExtensionName">Whether or not the extension name should be trimmed.</param>
         /// <param name="trimDataType">Whether or not the data type should be trimmed.</param>
         /// <returns>The name variations, ordered by length, starting with the longest.</returns>
@@ -35,7 +35,7 @@ namespace Silk.NET.BuildTools.Common
         [NotNull]
         [ItemNotNull]
         public static IEnumerable<string> GetNameVariations
-            (string functionEntrypoint, string prefix, bool trimExtensionName = true, bool trimDataType = true)
+            (string functionEntrypoint, string[] prefixes, bool trimExtensionName = true, bool trimDataType = true)
         {
             var extensionTrimmer = new ExtensionNameTrimmer();
             var dataTypeTrimmer = new DataTypeNameTrimmer();
@@ -47,13 +47,13 @@ namespace Silk.NET.BuildTools.Common
 
             if (extensionTrimmer.IsRelevant(currentVariation) && trimExtensionName)
             {
-                currentVariation = extensionTrimmer.Trim(currentVariation, prefix).TrimEnd('_');
+                currentVariation = extensionTrimmer.Trim(currentVariation, prefixes).TrimEnd('_');
                 variations.Add(currentVariation);
             }
 
             if (dataTypeTrimmer.IsRelevant(currentVariation) && trimDataType)
             {
-                variations.Add(dataTypeTrimmer.Trim(currentVariation, prefix));
+                variations.Add(dataTypeTrimmer.Trim(currentVariation, prefixes));
             }
 
             return variations.Distinct().OrderByDescending(v => v.Length);
@@ -63,14 +63,14 @@ namespace Silk.NET.BuildTools.Common
         /// Synchronously trims the given string.
         /// </summary>
         /// <param name="functionName">The string to trim.</param>
-        /// <param name="prefix">The function's prefix.</param>
+        /// <param name="prefixes">The function's prefix.</param>
         /// <param name="trimExtensionName">Whether or not the extension name should be trimmed.</param>
         /// <param name="trimDataType">Whether or not the data type should be trimmed.</param>
         /// <returns>A trimmed string.</returns>
         public static string Trim
-            (string functionName, string prefix, bool trimExtensionName = true, bool trimDataType = true)
+            (string functionName, string[] prefixes, bool trimExtensionName = true, bool trimDataType = true)
         {
-            return GetNameVariations(functionName, prefix, trimExtensionName, trimDataType).Last();
+            return GetNameVariations(functionName, prefixes, trimExtensionName, trimDataType).Last();
         }
     }
 }

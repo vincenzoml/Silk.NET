@@ -62,14 +62,18 @@ namespace Silk.NET.BuildTools.Bind
             {
                 var asSuffix = comBase.Split('.').Last();
                 asSuffix = (asSuffix.StartsWith('I') ? asSuffix.Substring(1) : comBase);
-                asSuffix = asSuffix.StartsWith(task.Task.FunctionPrefix)
-                    ? asSuffix.Substring(task.Task.FunctionPrefix.Length)
-                    : asSuffix;
                 var fromSuffix = @struct.Name.Split('.').Last();
                 fromSuffix = (fromSuffix.StartsWith('I') ? fromSuffix.Substring(1) : comBase);
-                fromSuffix = fromSuffix.StartsWith(task.Task.FunctionPrefix)
-                    ? fromSuffix.Substring(task.Task.FunctionPrefix.Length)
-                    : fromSuffix;
+                foreach (var prefix in task.Task.FunctionPrefixes)
+                {
+                    asSuffix = asSuffix.StartsWith(prefix)
+                        ? asSuffix.Substring(prefix.Length)
+                        : asSuffix;
+                    fromSuffix = fromSuffix.StartsWith(prefix)
+                        ? fromSuffix.Substring(prefix.Length)
+                        : fromSuffix;
+                }
+
                 sw.WriteLine($"        public static implicit operator {comBase}({@struct.Name} val)");
                 sw.WriteLine($"            => Unsafe.As<{@struct.Name}, {comBase}>(ref val);");
                 sw.WriteLine();

@@ -32,7 +32,7 @@ namespace Silk.NET.BuildTools
         [JsonProperty("clang")] public ClangTaskOptions ClangOpts { get; set; }
         [JsonProperty("bakery")] public BakeryOptions BakeryOpts { get; set; }
         [JsonProperty("output")] public OutputOptions OutputOpts { get; set; }
-        [JsonProperty("prefix")] public string FunctionPrefix { get; set; }
+        [JsonProperty("prefix")] public string[] FunctionPrefixes { get; set; }
         [JsonProperty("namespace")] public string Namespace { get; set; }
         [JsonProperty("extensionsNamespace")] public string ExtensionsNamespace { get; set; }
         [JsonProperty("nameContainer")] public NameContainer NameContainer { get; set; }

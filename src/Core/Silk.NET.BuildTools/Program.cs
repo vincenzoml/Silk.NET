@@ -225,7 +225,7 @@ namespace Silk.NET.BuildTools
                         Reader = "gl",
                         Constructor = "gl"
                     },
-                    FunctionPrefix = "gl",
+                    FunctionPrefixes = new [] { "gl" },
                     ExtensionsNamespace = "MyNamespace.ForExtensions",
                     Namespace = "MyNamespace",
                     Mode = ConverterMode.ConvertConstruct,

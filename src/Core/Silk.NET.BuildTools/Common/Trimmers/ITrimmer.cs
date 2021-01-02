@@ -24,9 +24,9 @@ namespace Silk.NET.BuildTools.Common.Trimmers
         /// Trims the given type.
         /// </summary>
         /// <param name="trimmable">The type to trim.</param>
-        /// <param name="prefix">The prefix.</param>
+        /// <param name="prefixes">The prefix.</param>
         [NotNull]
         [Pure]
-        TTrimmable Trim([NotNull] TTrimmable trimmable, string prefix);
+        TTrimmable Trim([NotNull] TTrimmable trimmable, string[] prefixes);
     }
 }

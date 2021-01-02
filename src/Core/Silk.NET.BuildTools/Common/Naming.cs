@@ -56,39 +56,44 @@ namespace Silk.NET.BuildTools.Common
         /// <returns>The trimmed name.</returns>
         public static string TrimName(string name, BindTask task)
         {
-            if (task.FunctionPrefix is null)
+            if (task.FunctionPrefixes is null)
             {
                 return name;
             }
 
             name = name.TrimStart('_');
-            
-            if (name.StartsWith($"{task.FunctionPrefix.ToUpper()}_"))
-            {
-                return name.Remove(0, task.FunctionPrefix.Length + 1);
-            }
 
-            return name.ToUpper().StartsWith(task.FunctionPrefix.ToUpper())
-                ? name.Remove(0, task.FunctionPrefix.Length)
-                : name;
+            foreach (var prefix in task.FunctionPrefixes)
+            {
+                if (name.StartsWith($"{prefix.ToUpper()}_"))
+                {
+                    name = name.Remove(0, prefix.Length + 1);
+                }
+                else
+                {
+                    name = name.ToUpper().StartsWith(prefix.ToUpper()) ? name.Remove(0, prefix.Length) : name;
+                }
+            }
+            
+            return name;
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="prefix"></param>
+        /// <param name="prefixes"></param>
         /// <returns></returns>
-        public static string TranslateVariable(string name, string prefix)
+        public static string TranslateVariable(string name, string[] prefixes)
         {
             var upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var lower = "abcdefghijklmnopqrstuvwxyz";
             if (name.Any(upper.Contains) && name.Any(lower.Contains))
             {
-                return TranslateLite(name, prefix);
+                return TranslateLite(name, prefixes);
             }
 
-            return Translate(name, prefix);
+            return Translate(name, prefixes);
         }
 
         /// <summary>
@@ -98,7 +103,7 @@ namespace Silk.NET.BuildTools.Common
         /// <param name="prefix">The name prefix.</param>
         /// <returns>The translated name.</returns>
         [NotNull]
-        public static string Translate([NotNull] string name, string prefix)
+        public static string Translate([NotNull] string name, string[] prefixes)
         {
             var builder = new StringBuilder(name);
 
@@ -132,11 +137,11 @@ namespace Silk.NET.BuildTools.Common
 
             if (char.IsDigit(builder[0]))
             {
-                builder.Insert(0, prefix);
+                builder.Insert(0, prefixes[0]); // the first prefix is the "primary" prefix
             }
 
             var newName = builder.ToString().Pascalize();
-            return newName.CheckMemberName(prefix).GetAlphanumericOnly();
+            return newName.CheckMemberName(prefixes).GetAlphanumericOnly();
         }
 
         /// <summary>
@@ -144,19 +149,19 @@ namespace Silk.NET.BuildTools.Common
         /// <seealso cref="Translate"/>
         /// </summary>
         /// <param name="name">The name to translate.</param>
-        /// <param name="prefix">The name prefix.</param>
+        /// <param name="prefixes">The name prefix.</param>
         /// <returns>The translated name.</returns>
-        public static string TranslateLite([NotNull] string name, string prefix)
+        public static string TranslateLite([NotNull] string name, string[] prefixes)
         {
             var builder = new StringBuilder(name);
 
             if (char.IsDigit(builder[0]))
             {
-                builder.Insert(0, prefix);
+                builder.Insert(0, prefixes);
             }
 
             var newName = builder.ToString().Pascalize();
-            return newName.CheckMemberName(prefix).GetAlphanumericOnly();
+            return newName.CheckMemberName(prefixes).GetAlphanumericOnly();
         }
 
         public static string GetAlphanumericOnly(this string name)
