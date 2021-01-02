@@ -24,7 +24,7 @@ namespace Aliquip
             _memoryFactory = memoryFactory;
         }
         
-        public unsafe (Buffer, DeviceMemory) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices)
+        public unsafe (Buffer, DeviceMemory, ulong offset) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices)
         {
             Buffer buffer;
             fixed (uint* pQueueFamilyIndices = queueFamilyIndices)
@@ -54,11 +54,11 @@ namespace Aliquip
                 throw new Exception("Cannot find suitable Memory Type");
             }
 
-            var memory = _memoryFactory.Allocate
+            var (memory, offset) = _memoryFactory.Allocate
                 (memoryRequirements.Size, FindMemoryType(memoryRequirements.MemoryTypeBits, properties));
-            _vk.BindBufferMemory(_logicalDeviceProvider.LogicalDevice, buffer, memory, 0);
+            _vk.BindBufferMemory(_logicalDeviceProvider.LogicalDevice, buffer, memory, offset);
 
-            return (buffer, memory);
+            return (buffer, memory, offset);
         }
     }
 }

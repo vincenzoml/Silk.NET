@@ -36,6 +36,8 @@ namespace Aliquip
         public ImageView ImageView { get; }
         public Sampler Sampler { get; }
 
+        public ulong MemoryOffset { get; }
+
         public unsafe Texture
         (
             uint width,
@@ -106,17 +108,18 @@ namespace Aliquip
                 throw new Exception("Cannot find suitable Memory Type");
             }
 
-            var imageMemory = _memoryFactory.Allocate
+            var (imageMemory, memoryOffset) = _memoryFactory.Allocate
             (
                 memoryRequirements.Size,
                 FindMemoryType(memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit)
             );
-            _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, 0);
+            _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, memoryOffset);
 
             _width = width;
             _height = height;
             Image = image;
             Memory = imageMemory;
+            MemoryOffset = memoryOffset;
 
             ImageViewCreateInfo viewInfo = new ImageViewCreateInfo
             (
@@ -149,7 +152,7 @@ namespace Aliquip
                 Sampler = sampler;
             }
         }
-        
+
         public unsafe void CopyBufferToImage(Buffer src)
         {
             Debug.Assert(_layout == ImageLayout.TransferDstOptimal);

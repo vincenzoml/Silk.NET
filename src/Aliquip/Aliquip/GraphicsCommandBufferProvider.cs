@@ -69,7 +69,7 @@ namespace Aliquip
 
 #if DEBUG
             var timeQueryCreateInfo = new QueryPoolCreateInfo(queryType: QueryType.Timestamp, queryCount: 1);
-            _vk.CreateQueryPool(_logicalDeviceProvider.LogicalDevice, timeQueryCreateInfo, null, out var timeQueryPool);
+            _vk.CreateQueryPool(_logicalDeviceProvider.LogicalDevice, timeQueryCreateInfo, null, out var timeQueryPool).ThrowCode();
             TimeQueryPool = timeQueryPool;
 #endif
             

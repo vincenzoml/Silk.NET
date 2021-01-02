@@ -296,18 +296,18 @@ namespace Aliquip
             
             (Buffer UniformBuffer, DeviceMemory UniformBufferMemory, ulong[] UniformOffsets) CreateUniformBuffers()
             {
-                var uniformOffsets = new ulong[CommandBufferCount];
-                for (int i = 0; i < uniformOffsets.Length; i++)
-                    uniformOffsets[i] = (ulong) (sizeof(UniformBufferObject) * i);
+                var totalSize = (ulong) (sizeof(UniformBufferObject) * CommandBufferCount);
             
-                var totalSize = (ulong) (sizeof(UniformBufferObject) * uniformOffsets.Length);
-            
-                var (uniformBuffer, uniformBufferMemory) = _bufferFactory.CreateBuffer
+                var (uniformBuffer, uniformBufferMemory, offset) = _bufferFactory.CreateBuffer
                 (
                     totalSize, BufferUsageFlags.BufferUsageUniformBufferBit,
                     MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
                     stackalloc[] {_graphicsQueueProvider.GraphicsQueueIndex}
                 );
+                
+                var uniformOffsets = new ulong[CommandBufferCount];
+                for (int i = 0; i < uniformOffsets.Length; i++)
+                    uniformOffsets[i] = (ulong) (sizeof(UniformBufferObject) * i);
 
                 return (uniformBuffer, uniformBufferMemory, uniformOffsets);
             }
@@ -366,7 +366,7 @@ namespace Aliquip
         {
             var bufferSize = (ulong)(sizeof(T) * src.Length);
             
-            var (stagingBuffer, stagingBufferMemory) = _bufferFactory.CreateBuffer
+            var (stagingBuffer, stagingBufferMemory, stagingBufferOffset) = _bufferFactory.CreateBuffer
             (
                 bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
                 MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
@@ -375,7 +375,7 @@ namespace Aliquip
             );
 
             void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, ref data);
+            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, stagingBufferOffset, bufferSize, 0, ref data);
             var span = new Span<T>(data, src.Length);
             src.CopyTo(span);
             _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
@@ -390,7 +390,7 @@ namespace Aliquip
         
         private void BuildBuffer(IModel model)
         {
-            var (buffer, bufferMemory) = _bufferFactory.CreateBuffer
+            var (buffer, bufferMemory, bufferOffset) = _bufferFactory.CreateBuffer
             (
                 (ulong) (model.VertexSize * model.VertexCount + sizeof(uint) * model.IndexCount),
                 BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
@@ -398,8 +398,8 @@ namespace Aliquip
                 stackalloc uint[] {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
             );
 
-            var vertexOffset = (ulong) 0;
-            var indexOffset = (ulong) (model.VertexSize * model.VertexCount);
+            var vertexOffset = (ulong) 0 + bufferOffset;
+            var indexOffset = (ulong) (model.VertexSize * model.VertexCount) + bufferOffset;
             
             CopyDataToBufferViaStaging(model.Vertices, buffer, vertexOffset);
             CopyDataToBufferViaStaging(model.Indices, buffer, indexOffset);

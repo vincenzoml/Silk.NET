@@ -11,6 +11,6 @@ namespace Aliquip
 {
     public interface IBufferFactory
     {
-        (Buffer, DeviceMemory) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices);
+        (Buffer, DeviceMemory, ulong offset) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices);
     }
 }

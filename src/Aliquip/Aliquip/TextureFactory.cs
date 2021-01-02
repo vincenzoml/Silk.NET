@@ -74,7 +74,7 @@ namespace Aliquip
             
             var pixelCount = src.Width * src.Height;
             var totalImageSize = pixelCount * 4;
-            var (stagingBuffer, stagingMemory) = _bufferFactory.CreateBuffer
+            var (stagingBuffer, stagingMemory, stagingOffset) = _bufferFactory.CreateBuffer
             (
                 (ulong) totalImageSize, BufferUsageFlags.BufferUsageTransferSrcBit,
                 MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
@@ -82,7 +82,7 @@ namespace Aliquip
             );
 
             void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory, 0, (ulong) totalImageSize, 0, ref data);
+            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingMemory, stagingOffset, (ulong) totalImageSize, 0, ref data);
             
             var s = new Span<Rgba32>(data, pixelCount);
             if (src.TryGetSinglePixelSpan(out var s2))
