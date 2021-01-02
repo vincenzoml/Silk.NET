@@ -1,3 +1,6 @@
 [submodule "build/submodules/SDL-mirror"]
 	path = build/submodules/SDL-mirror
 	url = https://github.com/spurious/SDL-mirror
+[submodule "build/submodules/VulkanMemoryAllocator"]
+	path = build/submodules/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator

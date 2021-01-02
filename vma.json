@@ -1,0 +1,63 @@
+{
+	"tasks": [
+		{
+            "profileName": "VMA",
+            "sources": [
+                "build/submodules/VulkanMemoryAllocator/src/vk_mem_alloc.h",
+            ],
+            "mode": "Clang",
+            "cacheDir": "build/cache",
+            "cacheKey": "vma",
+            "controlDescriptors": [],
+            "converter": {},
+            "prefix": "vma",
+            "clang": {
+                "args": [
+                    "--language=c++",
+                    "--std=c++17",
+                    "-m32",
+                    "-Wno-expansion-to-defined",
+                    "-Wno-ignored-attributes",
+                    "-Wno-ignored-pragma-intrinsic",
+                    "-Wno-nonportable-include-path",
+                    "-Wno-pragma-pack",
+                    "-IC:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/shared",
+                    "-IC:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/um",
+                    "-IC:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/ucrt",
+                    "-IC:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/MSVC/14.28.29333/include",
+                    "-IC:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.28.29333/include",
+                    "-Ibuild/include"
+                ],
+                "traverse": [],
+                "classes": {
+                    "vk_mem_alloc.h": "[Core]Vma"
+                }
+            },
+            "bakery": {
+                "profileNames": [
+                    "vk_mem_alloc"
+                ]
+            },
+            "output": {
+                "mode": "Default",
+                "path": "src/VulkanMemoryAllocator",
+                "licenseFile": "build/LICENSE_HEADER.txt",
+                "props": "build/props/bindings.props"
+            },
+            "namespace": "Silk.NET.Vulkan.VMA",
+            "extensionsNamespace": "Silk.NET.Vulkan.VMA.Extensions",
+            "nameContainer": {
+                "linux-x64": "vma.so",
+                "win-x64": "vma.dll",
+                "win-x86": "vma.dll",
+                "osx-x64": "vma.dylib",
+                "android": "vma.so",
+                "iOS": "__Internal",
+                "className": "VMALibraryNameContainer"
+            },
+			"typeMaps": [],
+			"rename": { },
+			"exclude": []
+        }
+	]
+}
