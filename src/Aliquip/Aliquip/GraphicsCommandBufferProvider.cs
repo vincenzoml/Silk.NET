@@ -15,11 +15,13 @@ namespace Aliquip
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly IRenderPassProvider _renderPassProvider;
         private readonly IFramebufferProvider _framebufferProvider;
-        private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
-        private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
-        private readonly IDescriptorSetProvider _descriptorSetProvider;
+        private readonly IGraphicsPipelineFactory _graphicsPipelineFactory;
+        private readonly IPipelineLayoutFactory _pipelineLayoutFactory;
+        private readonly IDescriptorSetFactory _descriptorSetFactory;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
-        private CommandBuffer[]? _array;
+        private readonly IScene _scene;
+        private CommandBuffer[]? _primaryCommandBuffers;
+        private CommandBuffer[][]? _secondaryCommandBuffers;
 #if DEBUG
         public QueryPool TimeQueryPool { get; }
 #endif
@@ -28,7 +30,12 @@ namespace Aliquip
         {
             get
             {
-                fixed (CommandBuffer* p = _array)
+                if (_scene.CommandBufferNeedsRebuild)
+                {
+                    Recreate();
+                }
+                
+                fixed (CommandBuffer* p = _primaryCommandBuffers)
                     return p + index;
             }   
         }
@@ -41,10 +48,11 @@ namespace Aliquip
             IGraphicsQueueProvider graphicsQueueProvider,
             IRenderPassProvider renderPassProvider,
             IFramebufferProvider framebufferProvider,
-            IGraphicsPipelineProvider graphicsPipelineProvider,
-            IPipelineLayoutProvider pipelineLayoutProvider,
-            IDescriptorSetProvider descriptorSetProvider,
-            ILogicalDeviceProvider logicalDeviceProvider
+            IGraphicsPipelineFactory graphicsPipelineFactory,
+            IPipelineLayoutFactory pipelineLayoutFactory,
+            IDescriptorSetFactory descriptorSetFactory,
+            ILogicalDeviceProvider logicalDeviceProvider,
+            IScene scene
         )
         {
             _vk = vk;
@@ -53,10 +61,11 @@ namespace Aliquip
             _graphicsQueueProvider = graphicsQueueProvider;
             _renderPassProvider = renderPassProvider;
             _framebufferProvider = framebufferProvider;
-            _graphicsPipelineProvider = graphicsPipelineProvider;
-            _pipelineLayoutProvider = pipelineLayoutProvider;
-            _descriptorSetProvider = descriptorSetProvider;
+            _graphicsPipelineFactory = graphicsPipelineFactory;
+            _pipelineLayoutFactory = pipelineLayoutFactory;
+            _descriptorSetFactory = descriptorSetFactory;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _scene = scene;
 
 #if DEBUG
             var timeQueryCreateInfo = new QueryPoolCreateInfo(queryType: QueryType.Timestamp, queryCount: 1);
@@ -69,15 +78,34 @@ namespace Aliquip
 
         public unsafe void Recreate()
         {
-            _array = _commandBufferFactory.CreateCommandBuffers
+            _scene.CommandBufferCount = _swapchainProvider.SwapchainImages.Length;
+            _scene.CommandBufferNeedsRebuild = false;
+            
+            _secondaryCommandBuffers = new CommandBuffer[1][]; // one scene only for now
+            var inheritanceInfo = new CommandBufferInheritanceInfo(renderPass: _renderPassProvider.RenderPass,
+                // TODO: possibly specify framebuffer?
+                pipelineStatistics: (QueryPipelineStatisticFlags) 0);
+            _secondaryCommandBuffers[0] = _commandBufferFactory.CreateCommandBuffers
             (
-                _swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null, 
-                (commandBuffer, i) =>
+                _scene.CommandBufferCount, _graphicsQueueProvider.GraphicsQueueIndex,
+                new CommandBufferBeginInfo
+                (
+                    flags: CommandBufferUsageFlags.CommandBufferUsageRenderPassContinueBit,
+                    pInheritanceInfo: &inheritanceInfo
+                ),
+                CommandBufferLevel.Secondary,
+                _scene.RecordCommandBuffer
+            );
+
+            _primaryCommandBuffers = _commandBufferFactory.CreateCommandBuffers
+            (
+                _swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null,
+                CommandBufferLevel.Primary, (commandBuffer, i) =>
                 {
 #if DEBUG
                     _vk.CmdResetQueryPool(commandBuffer, TimeQueryPool, 0, 1);
 #endif
-                    var clearColors = stackalloc []
+                    var clearColors = stackalloc[]
                     {
                         new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f)),
                         new ClearValue(depthStencil: new ClearDepthStencilValue(1, 0))
@@ -90,20 +118,14 @@ namespace Aliquip
                         clearValueCount: 2, pClearValues: clearColors
                     );
 
-                    _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.Inline);
+                    _vk.CmdBeginRenderPass(commandBuffer, renderPassInfo, SubpassContents.SecondaryCommandBuffers);
 
-                    _graphicsPipelineProvider.Bind(commandBuffer);
-                    _vk.CmdBindDescriptorSets
-                    (
-                        commandBuffer, PipelineBindPoint.Graphics, _pipelineLayoutProvider.PipelineLayout, 0, 1,
-                        _descriptorSetProvider.DescriptorSets[i], 0, null
-                    );
-
-                    _vk.CmdDrawIndexed(commandBuffer, _graphicsPipelineProvider.IndexCount, 1, 0, 0, 0);
+                    _vk.CmdExecuteCommands(commandBuffer, 1, _secondaryCommandBuffers[0][i]);
 
                     _vk.CmdEndRenderPass(commandBuffer);
 #if DEBUG
-                    _vk.CmdWriteTimestamp(commandBuffer, PipelineStageFlags.PipelineStageBottomOfPipeBit, TimeQueryPool, 0);
+                    _vk.CmdWriteTimestamp
+                        (commandBuffer, PipelineStageFlags.PipelineStageBottomOfPipeBit, TimeQueryPool, 0);
 #endif
                 }
             );
@@ -114,11 +136,16 @@ namespace Aliquip
 #if DEBUG
             _vk.DestroyQueryPool(_logicalDeviceProvider.LogicalDevice, TimeQueryPool, null);
 #endif
-            
-            if (_array != null)
+
+            foreach (var secondaryCommandBuffer in _secondaryCommandBuffers)
             {
-                _commandBufferFactory.FreeCommandBuffers(_array, _graphicsQueueProvider.GraphicsQueueIndex);
-                _array = null;
+                _commandBufferFactory.FreeCommandBuffers(secondaryCommandBuffer, _graphicsQueueProvider.GraphicsQueueIndex);
+            }
+            
+            if (_primaryCommandBuffers != null)
+            {
+                _commandBufferFactory.FreeCommandBuffers(_primaryCommandBuffers, _graphicsQueueProvider.GraphicsQueueIndex);
+                _primaryCommandBuffers = null;
             }
         }
     }

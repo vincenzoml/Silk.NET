@@ -28,6 +28,7 @@ namespace Aliquip
             (
                 1, queueFamilyIndex,
                 new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.CommandBufferUsageOneTimeSubmitBit),
+                CommandBufferLevel.Primary,
                 (commandBuffer, _) => record(commandBuffer)
             );
 
@@ -39,13 +40,20 @@ namespace Aliquip
             FreeCommandBuffers(cbs, queueFamilyIndex);
         }
 
-        public unsafe CommandBuffer[] CreateCommandBuffers(int amount, uint queueFamilyIndex, CommandBufferBeginInfo? commandBufferBeginInfo, Action<CommandBuffer, int>? record)
+        public unsafe CommandBuffer[] CreateCommandBuffers
+        (
+            int amount,
+            uint queueFamilyIndex,
+            CommandBufferBeginInfo? commandBufferBeginInfo,
+            CommandBufferLevel level,
+            Action<CommandBuffer, int> record 
+        )
         {
             var commandBuffers = GC.AllocateUninitializedArray<CommandBuffer>(amount, true);
 
             var allocInfo = new CommandBufferAllocateInfo
             (
-                commandPool: _commandPoolProvider[queueFamilyIndex], level: CommandBufferLevel.Primary,
+                commandPool: _commandPoolProvider[queueFamilyIndex], level: level,
                 commandBufferCount: (uint) commandBuffers.Length
             );
 

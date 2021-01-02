@@ -21,16 +21,17 @@ namespace Aliquip
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly IImageViewProvider _imageViewProvider;
         private readonly IRenderPassProvider _renderPassProvider;
-        private readonly IGraphicsPipelineProvider _graphicsPipelineProvider;
+        private readonly IGraphicsPipelineFactory _graphicsPipelineFactory;
         private readonly IFramebufferProvider _framebufferProvider;
-        private readonly IPipelineLayoutProvider _pipelineLayoutProvider;
+        private readonly IPipelineLayoutFactory _pipelineLayoutFactory;
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
-        private readonly IDescriptorPoolProvider _descriptorPoolProvider;
-        private readonly IDescriptorSetProvider _descriptorSetProvider;
+        private readonly IDescriptorPoolFactory _descriptorPoolFactory;
+        private readonly IDescriptorSetFactory _descriptorSetFactory;
         private readonly IDepthImageProvider _depthImageProvider;
         private readonly IColorImageProvider _colorImageProvider;
+        private readonly IScene _scene;
         private IDisposable? _subscription;
 
         public SwapchainRecreationService
@@ -40,16 +41,17 @@ namespace Aliquip
             ISwapchainProvider swapchainProvider,
             IImageViewProvider imageViewProvider,
             IRenderPassProvider renderPassProvider,
-            IGraphicsPipelineProvider graphicsPipelineProvider,
+            IGraphicsPipelineFactory graphicsPipelineFactory,
             IFramebufferProvider framebufferProvider,
-            IPipelineLayoutProvider pipelineLayoutProvider,
+            IPipelineLayoutFactory pipelineLayoutFactory,
             Vk vk,
             ILogicalDeviceProvider logicalDeviceProvider,
             IGraphicsCommandBufferProvider graphicsCommandBufferProvider,
-            IDescriptorPoolProvider descriptorPoolProvider,
-            IDescriptorSetProvider descriptorSetProvider,
+            IDescriptorPoolFactory descriptorPoolFactory,
+            IDescriptorSetFactory descriptorSetFactory,
             IDepthImageProvider depthImageProvider,
-            IColorImageProvider colorImageProvider
+            IColorImageProvider colorImageProvider,
+            IScene scene
         )
         {
             _windowProvider = windowProvider;
@@ -57,16 +59,17 @@ namespace Aliquip
             _swapchainProvider = swapchainProvider;
             _imageViewProvider = imageViewProvider;
             _renderPassProvider = renderPassProvider;
-            _graphicsPipelineProvider = graphicsPipelineProvider;
+            _graphicsPipelineFactory = graphicsPipelineFactory;
             _framebufferProvider = framebufferProvider;
-            _pipelineLayoutProvider = pipelineLayoutProvider;
+            _pipelineLayoutFactory = pipelineLayoutFactory;
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
-            _descriptorPoolProvider = descriptorPoolProvider;
-            _descriptorSetProvider = descriptorSetProvider;
+            _descriptorPoolFactory = descriptorPoolFactory;
+            _descriptorSetFactory = descriptorSetFactory;
             _depthImageProvider = depthImageProvider;
             _colorImageProvider = colorImageProvider;
+            _scene = scene;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -91,12 +94,9 @@ namespace Aliquip
 
             _graphicsCommandBufferProvider.Dispose();
             _framebufferProvider.Dispose();
-            _descriptorSetProvider.Dispose();
-            _descriptorPoolProvider.Dispose();
             _depthImageProvider.Dispose();
             _colorImageProvider.Dispose();
-            _graphicsPipelineProvider.Dispose();
-            _pipelineLayoutProvider.Dispose();
+            _pipelineLayoutFactory.Dispose();
             _renderPassProvider.Dispose();
             _imageViewProvider.Dispose();
             _swapchainProvider.Dispose();
@@ -104,12 +104,8 @@ namespace Aliquip
             _swapchainProvider.Recreate(newSize);
             _imageViewProvider.Recreate();
             _renderPassProvider.Recreate();
-            _pipelineLayoutProvider.Recreate();
-            _graphicsPipelineProvider.Recreate();
             _colorImageProvider.Recreate();
             _depthImageProvider.Recreate();
-            _descriptorPoolProvider.Recreate();
-            _descriptorSetProvider.Recreate();
             _framebufferProvider.Recreate();
             _graphicsCommandBufferProvider.Recreate();
         }

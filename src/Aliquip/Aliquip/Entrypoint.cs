@@ -4,6 +4,7 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Silk.NET.Input;
@@ -57,8 +58,8 @@ namespace Aliquip
                 .AddSingleton<ISwapchainProvider, SwapchainProvider>()
                 .AddSingleton<IImageViewProvider, ImageViewProvider>()
                 .AddSingleton<IRenderPassProvider, RenderPassProvider>()
-                .AddSingleton<IPipelineLayoutProvider, PipelineLayoutProvider>()
-                .AddSingleton<IGraphicsPipelineProvider, GraphicsPipelineProvider>()
+                .AddSingleton<IPipelineLayoutFactory, PipelineLayoutFactory>()
+                .AddSingleton<IGraphicsPipelineFactory, GraphicsPipelineFactory>()
                 .AddSingleton<IFramebufferProvider, FramebufferProvider>()
                 .AddSingleton<ICommandPoolProvider, CommandPoolProvider>()
                 .AddHostedService<DrawFrameService>()
@@ -69,17 +70,19 @@ namespace Aliquip
                 .AddSingleton<ICommandBufferFactory, CommandBufferFactory>()
                 .AddSingleton<IBufferFactory, BufferFactory>()
                 .AddSingleton<IGraphicsCommandBufferProvider, GraphicsCommandBufferProvider>()
-                .AddSingleton<IDescriptorSetLayoutProvider, DescriptorSetLayoutProvider>()
-                .AddSingleton<IDescriptorPoolProvider, DescriptorPoolProvider>()
-                .AddSingleton<IDescriptorSetProvider, DescriptorSetProvider>()
+                .AddSingleton<IDescriptorSetLayoutFactory, DescriptorSetLayoutFactory>()
+                .AddSingleton<IDescriptorPoolFactory, DescriptorPoolFactory>()
+                .AddSingleton<IDescriptorSetFactory, DescriptorSetFactory>()
                 .AddSingleton<ICameraProvider, CameraProvider>()
                 .AddSingleton(x => x.GetRequiredService<IWindowProvider>().Window.CreateInput())
                 .AddSingleton<ITextureFactory, TextureFactory>()
                 .AddSingleton<IDepthImageProvider, DepthImageProvider>()
-                .AddSingleton<IModelProvider, ModelProvider>()
                 .AddSingleton<IMsaaProvider, MsaaProvider>()
                 .AddSingleton<ISampleShadingProvider, SampleShadingProvider>()
                 .AddSingleton<IColorImageProvider, ColorImageProvider>()
+                .AddSingleton<Scene3D>()
+                .AddSingleton(x => (IScene)x.GetRequiredService<Scene3D>())
+                .AddSingleton<IMemoryFactory, MemoryFactory>()
                 ;
         }
     }

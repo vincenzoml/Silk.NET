@@ -4,8 +4,11 @@ using System.Threading.Tasks;
 using Aliquip;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using Silk.NET.Maths;
+using Silk.NET.Vulkan;
 using Silk.NET.Windowing;
 
 namespace AliquipDemo
@@ -53,6 +56,29 @@ namespace AliquipDemo
 
             var window = host.Services.GetRequiredService<IWindowProvider>().Window;
             task = task.ContinueWith((x) => window.Close());
+
+            int i = 0;
+            var scene = host.Services.GetRequiredService<Scene3D>();
+            for (int x = -50; x < 50; x++)
+            {
+                for (int y = -50; y < 50; y++)
+                {
+                    i++;
+                    scene.AddObject
+                    (
+                        new Simple3DFileObject
+                        (
+                            "viking_room", host.Services.GetRequiredService<IResourceProvider>(),
+                            host.Services.GetRequiredService<ILoggerFactory>(),
+                            host.Services.GetRequiredService<ITextureFactory>(), host.Services.GetRequiredService<Vk>(),
+                            host.Services.GetRequiredService<ILogicalDeviceProvider>(),
+                            Matrix4X4.CreateTranslation(x, y, 0f)
+                        )
+                    );
+                }
+            }
+            
+            host.Services.GetRequiredService<ILogger<Program>>().LogInformation("Created {0} models", i);
 
             window.UpdatesPerSecond = Double.MaxValue;
             window.FramesPerSecond = Double.MaxValue;

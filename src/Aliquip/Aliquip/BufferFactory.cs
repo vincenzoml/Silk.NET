@@ -14,12 +14,14 @@ namespace Aliquip
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
+        private readonly IMemoryFactory _memoryFactory;
 
-        public BufferFactory(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IPhysicalDeviceProvider physicalDeviceProvider)
+        public BufferFactory(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IPhysicalDeviceProvider physicalDeviceProvider, IMemoryFactory memoryFactory)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _physicalDeviceProvider = physicalDeviceProvider;
+            _memoryFactory = memoryFactory;
         }
         
         public unsafe (Buffer, DeviceMemory) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices)
@@ -51,9 +53,9 @@ namespace Aliquip
 
                 throw new Exception("Cannot find suitable Memory Type");
             }
-            
-            var allocInfo = new MemoryAllocateInfo(allocationSize: memoryRequirements.Size, memoryTypeIndex: FindMemoryType(memoryRequirements.MemoryTypeBits, properties));
-            _vk.AllocateMemory(_logicalDeviceProvider.LogicalDevice, allocInfo, null, out var memory);
+
+            var memory = _memoryFactory.Allocate
+                (memoryRequirements.Size, FindMemoryType(memoryRequirements.MemoryTypeBits, properties));
             _vk.BindBufferMemory(_logicalDeviceProvider.LogicalDevice, buffer, memory, 0);
 
             return (buffer, memory);

@@ -24,6 +24,7 @@ namespace Aliquip
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly IBufferFactory _bufferFactory;
+        private readonly IMemoryFactory _memoryFactory;
         private readonly uint _width;
         private readonly uint _height;
         private readonly ImageAspectFlags _aspectFlags;
@@ -48,6 +49,7 @@ namespace Aliquip
             IPhysicalDeviceProvider physicalDeviceProvider,
             IGraphicsQueueProvider graphicsQueueProvider,
             IBufferFactory bufferFactory,
+            IMemoryFactory memoryFactory,
             bool createSampler,
             bool useMipmaps,
             ImageAspectFlags aspectFlags,
@@ -61,6 +63,7 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _graphicsQueueProvider = graphicsQueueProvider;
             _bufferFactory = bufferFactory;
+            _memoryFactory = memoryFactory;
             _aspectFlags = aspectFlags;
             Format = format;
 
@@ -103,15 +106,11 @@ namespace Aliquip
                 throw new Exception("Cannot find suitable Memory Type");
             }
 
-            var allocInfo = new MemoryAllocateInfo
+            var imageMemory = _memoryFactory.Allocate
             (
-                allocationSize: memoryRequirements.Size,
-                memoryTypeIndex: FindMemoryType
-                    (memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit)
+                memoryRequirements.Size,
+                FindMemoryType(memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit)
             );
-
-            _vk.AllocateMemory(_logicalDeviceProvider.LogicalDevice, allocInfo, null, out var imageMemory).ThrowCode();
-
             _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, 0);
 
             _width = width;

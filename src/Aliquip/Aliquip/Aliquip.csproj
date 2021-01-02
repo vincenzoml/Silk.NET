@@ -26,9 +26,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="shaders\*.spv" />
-        <EmbeddedResource Include="textures\*.*" />
-        <EmbeddedResource Include="models\*.*" />
+        <EmbeddedResource Include="shaders\**\*.spv" />
+        <EmbeddedResource Include="textures\**\*.*" />
+        <EmbeddedResource Include="models\**\*.*" />
     </ItemGroup>
 
 </Project>

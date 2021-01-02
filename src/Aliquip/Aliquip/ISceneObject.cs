@@ -3,14 +3,14 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
-using System;
-using Silk.NET.Vulkan;
+using Silk.NET.Maths;
 
 namespace Aliquip
 {
-    public interface IDescriptorSetProvider : IDisposable
+    public interface ISceneObject
     {
-        DescriptorSet[] DescriptorSets { get; }
-        void Recreate();
+        IMaterial Material { get; }
+        IModel Model { get; }
+        Matrix4X4<float> WorldToLocal { get; }
     }
 }

@@ -22,6 +22,7 @@ namespace Aliquip
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
+        private readonly IMemoryFactory _memoryFactory;
         private readonly Dictionary<string, Texture> _cache = new();
         public Texture this[string name]
         {
@@ -45,7 +46,8 @@ namespace Aliquip
             IBufferFactory bufferFactory,
             IPhysicalDeviceProvider physicalDeviceProvider,
             ICommandBufferFactory commandBufferFactory,
-            IGraphicsQueueProvider graphicsQueueProvider
+            IGraphicsQueueProvider graphicsQueueProvider,
+            IMemoryFactory memoryFactory
         )
         {
             _vk = vk;
@@ -56,13 +58,18 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _commandBufferFactory = commandBufferFactory;
             _graphicsQueueProvider = graphicsQueueProvider;
+            _memoryFactory = memoryFactory;
         }
 
         public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, bool useMipmaps, SampleCountFlags numSamples, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
         {
-            var texture = new Texture(
-                (uint)src.Width, (uint)src.Height, Format.R8G8B8A8Srgb, numSamples, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
-                createSampler, useMipmaps, aspectFlags, imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit | ImageUsageFlags.ImageUsageTransferSrcBit
+            var texture = new Texture
+            (
+                (uint) src.Width, (uint) src.Height, Format.R8G8B8A8Srgb, numSamples, _vk, _commandBufferFactory,
+                _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider,
+                _bufferFactory, _memoryFactory, createSampler, useMipmaps, aspectFlags,
+                imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit |
+                ImageUsageFlags.ImageUsageTransferSrcBit
             );
             
             var pixelCount = src.Width * src.Height;
@@ -102,9 +109,11 @@ namespace Aliquip
         public Texture CreateImage
             (uint width, uint height, Format format, bool createSampler, bool useMipmaps, SampleCountFlags numSamples, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags)
         {
-            return new(
-                width, height, format, numSamples, _vk, _commandBufferFactory, _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory,
-                createSampler,  useMipmaps, aspectFlags, imageUsageFlags
+            return new
+            (
+                width, height, format, numSamples, _vk, _commandBufferFactory, _transferQueueProvider,
+                _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory, _memoryFactory,
+                createSampler, useMipmaps, aspectFlags, imageUsageFlags
             );
         }
 

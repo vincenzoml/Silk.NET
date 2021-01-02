@@ -15,7 +15,6 @@ namespace TestLib
     [PInvokeOverride(1, "user32.dll")]
     public partial class TestClass2 : NativeApiContainer
     {
-
         [NativeApi(EntryPoint = "MessageBoxA")]
         [Inject(SilkTouchStage.Begin, "System.Console.WriteLine(\"Stage: Begin\");")]
         [Inject(SilkTouchStage.PostInit, "System.Console.WriteLine(\"Stage: PostInit\");")]

@@ -3,14 +3,12 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
-using System;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
-    public interface IDescriptorPoolProvider : IDisposable
+    public interface IDescriptorSetLayoutFactory
     {
-        DescriptorPool DescriptorPool { get; }
-        void Recreate();
+        DescriptorSetLayout CreateDescriptorSetLayout(DescriptorSetLayoutBinding[] bindings);
     }
 }
