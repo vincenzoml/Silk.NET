@@ -19,13 +19,13 @@ namespace Aliquip
     {
         private static readonly Dictionary<string, Simple3DFileModel> _cache = new();
 
-        public static Simple3DFileModel Create(string fileName, IResourceProvider resourceProvider, ILogger<Simple3DFileModel> logger)
+        public static Simple3DFileModel Create(string filePath, ILogger<Simple3DFileModel> logger)
         {
-            if (_cache.TryGetValue(fileName, out var v))
+            if (_cache.TryGetValue(filePath, out var v))
                 return v;
 
-            v = new Simple3DFileModel(fileName, resourceProvider, logger);
-            _cache[fileName] = v;
+            v = new Simple3DFileModel(filePath, logger);
+            _cache[filePath] = v;
             return v;
         }
         
@@ -57,28 +57,12 @@ namespace Aliquip
         //     0, 1, 2, 2, 3, 0,
         //     4, 5, 6, 6, 7, 4
         // };
-        
-        private class ResourceMaterialLoader : IMaterialStreamProvider
-        {
-            private IResourceProvider _resourceProvider;
 
-            public ResourceMaterialLoader(IResourceProvider resourceProvider)
-            {
-                _resourceProvider = resourceProvider;
-            }
-            
-            public Stream Open(string materialFilePath)
-            {
-                return new MemoryStream(_resourceProvider[materialFilePath]);
-            }
-        }
-
-        private Simple3DFileModel(string fileName, IResourceProvider resourceProvider, ILogger<Simple3DFileModel> logger)
+        private Simple3DFileModel(string filePath, ILogger<Simple3DFileModel> logger)
         {
             var objLoaderFactory = new ObjLoaderFactory();
-            // var objLoader = objLoaderFactory.Create(new ResourceMaterialLoader(resourceProvider));
             var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
-            using var stream = new MemoryStream(resourceProvider["models." + fileName + ".obj"]);
+            using var stream = File.OpenRead(filePath);
             var result = objLoader.Load(stream);
 
             var vertices = new List<Vertex>();

@@ -27,7 +27,7 @@ namespace Aliquip
         )
         {
             WorldToLocal = worldToLocal;
-            Model = Simple3DFileModel.Create(fileName, resourceProvider, loggerFactory.CreateLogger<Simple3DFileModel>());
+            Model = Simple3DFileModel.Create(fileName, loggerFactory.CreateLogger<Simple3DFileModel>());
             Material = new Simple3DMaterial(textureFactory[fileName + ".png"], vk, resourceProvider, logicalDeviceProvider);
         }
     }
