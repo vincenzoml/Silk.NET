@@ -3,12 +3,10 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
-using Silk.NET.Vulkan;
-
-namespace Aliquip
+namespace Aliquip.Sandbox
 {
-    public interface IMemoryFactory
+    public enum Primitives
     {
-        (DeviceMemory, ulong) Allocate(ulong size, uint memoryTypeIndex, ulong alignment);
+        Quad
     }
 }

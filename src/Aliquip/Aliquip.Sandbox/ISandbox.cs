@@ -18,5 +18,6 @@ namespace Aliquip.Sandbox
         ILogger<T> GetLogger<T>();
         T GetService<T>();
         T Instantiate<T>(params object[] extraParams);
+        MovableSceneObject AddPrimitive(Primitives primitive);
     }
 }

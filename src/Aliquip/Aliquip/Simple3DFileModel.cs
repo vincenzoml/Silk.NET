@@ -37,26 +37,9 @@ namespace Aliquip
 
         ReadOnlySpan<uint> IModel.Indices => Indices;
 
-        public Vertex[] Vertices { get; } 
-        //     =
-        // {
-        //     new(new(-0.5f, -0.5f, 0.0f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
-        //     new(new(0.5f, -0.5f, 0.0f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
-        //     new(new(0.5f, 0.5f, 0.0f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
-        //     new(new(-0.5f, 0.5f, 0.0f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
-        // 
-        //     new(new(-0.5f, -0.5f, -0.5f), new(1.0f, 0.0f, 0.0f), new(1.0f, 0.0f)),
-        //     new(new(0.5f, -0.5f, -0.5f), new(0.0f, 1.0f, 0.0f), new(0.0f, 0.0f)),
-        //     new(new(0.5f, 0.5f, -0.5f), new(0.0f, 0.0f, 1.0f), new(0.0f, 1.0f)),
-        //     new(new(-0.5f, 0.5f, -0.5f), new(1.0f, 1.0f, 1.0f), new(1.0f, 1.0f)),
-        // };
+        public Vertex[] Vertices { get; }
 
-        public uint[] Indices { get; } 
-        //     =
-        // {
-        //     0, 1, 2, 2, 3, 0,
-        //     4, 5, 6, 6, 7, 4
-        // };
+        public uint[] Indices { get; }
 
         private Simple3DFileModel(string filePath, ILogger<Simple3DFileModel> logger)
         {

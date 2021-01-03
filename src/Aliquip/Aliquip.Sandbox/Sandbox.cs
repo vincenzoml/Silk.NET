@@ -42,6 +42,19 @@ namespace Aliquip.Sandbox
             public T Instantiate<T>(params object[] extraParams)
                 => ActivatorUtilities.CreateInstance<T>(GetService<IServiceProvider>(), extraParams);
 
+            public MovableSceneObject AddPrimitive(Primitives primitive)
+            {
+                switch (primitive)
+                {
+                    case Primitives.Quad:
+                        var q = Instantiate<Quad>();
+                        Scene3D.AddObject(q);
+                        return q;
+                    default:
+                        throw new ArgumentException(nameof(primitive));
+                }
+            }
+
             public void Run()
             {
                 var lifetime = _host.Services.GetRequiredService<IHostApplicationLifetime>();

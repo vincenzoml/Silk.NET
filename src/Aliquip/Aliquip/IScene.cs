@@ -18,5 +18,6 @@ namespace Aliquip
         int CommandBufferCount { get; set; }
         void RecordCommandBuffer(CommandBuffer commandBuffer, int index);
         void AddObject(ISceneObject sceneObject);
+        void OnFrameComplete(uint index);
     }
 }

@@ -32,6 +32,7 @@ namespace Aliquip
         private readonly IGraphicsCommandBufferProvider _graphicsCommandBufferProvider;
         private readonly IGraphicsPipelineFactory _graphicsPipelineFactory;
         private readonly ILogger _logger;
+        private readonly IScene _scene;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
@@ -57,7 +58,8 @@ namespace Aliquip
             IGraphicsCommandBufferProvider graphicsCommandBufferProvider,
             IGraphicsPipelineFactory graphicsPipelineFactory,
             IPhysicalDeviceProvider physicalDeviceProvider,
-            ILogger<DrawFrameService> logger
+            ILogger<DrawFrameService> logger,
+            IScene scene
         )
         {
             _windowProvider = windowProvider;
@@ -72,6 +74,7 @@ namespace Aliquip
             _graphicsCommandBufferProvider = graphicsCommandBufferProvider;
             _graphicsPipelineFactory = graphicsPipelineFactory;
             _logger = logger;
+            _scene = scene;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];
@@ -137,6 +140,7 @@ namespace Aliquip
                 var v = _imagesInFlight[imageIndex];
                 _vk.WaitForFences(_logicalDeviceProvider.LogicalDevice, 1, v, true, ulong.MaxValue).ThrowCode();
             }
+            _imagesInFlight[imageIndex] = _inFlightFences[_currentFrame];
             
 #if DEBUG
             {
@@ -150,8 +154,7 @@ namespace Aliquip
                 _logger.LogDebug("Time: {time}", timespan);
             }
 #endif
-
-            _imagesInFlight[imageIndex] = _inFlightFences[_currentFrame];
+            _scene.OnFrameComplete(imageIndex);
 
             var waitSemaphores = stackalloc[] {_imageAvailableSemaphores[_currentFrame]};
             var waitStages = stackalloc[] {PipelineStageFlags.PipelineStageColorAttachmentOutputBit};

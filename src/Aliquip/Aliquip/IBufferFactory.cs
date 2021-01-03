@@ -5,12 +5,19 @@
 
 using System;
 using Silk.NET.Vulkan;
+using VMASharp;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Aliquip
 {
     public interface IBufferFactory
     {
-        (Buffer, DeviceMemory, ulong offset) CreateBuffer(ulong size, BufferUsageFlags usage, MemoryPropertyFlags properties, Span<uint> queueFamilyIndices);
+        (Buffer, Allocation) CreateBuffer
+        (
+            ulong size,
+            AllocationCreateInfo allocationCreateInfo,
+            BufferUsageFlags usage,
+            Span<uint> queueFamilyIndices
+        );
     }
 }

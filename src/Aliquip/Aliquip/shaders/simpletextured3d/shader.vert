@@ -12,11 +12,13 @@ layout( push_constant ) uniform Camera {
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
-layout(location = 2) in vec2 fragCoord; // unused, but bound to be compatible with single vertex type.
+layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
     gl_Position = cam.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
     fragColor = inColor;
+    fragTexCoord = inTexCoord;
 }

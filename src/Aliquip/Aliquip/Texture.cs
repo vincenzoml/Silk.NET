@@ -10,6 +10,7 @@ using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using VMASharp;
 using Buffer = Silk.NET.Vulkan.Buffer;
 using Image = Silk.NET.Vulkan.Image;
 
@@ -24,19 +25,17 @@ namespace Aliquip
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly IBufferFactory _bufferFactory;
-        private readonly IMemoryFactory _memoryFactory;
+        private readonly VulkanMemoryAllocator _vma;
         private readonly uint _width;
         private readonly uint _height;
         private readonly ImageAspectFlags _aspectFlags;
         public uint MipLevels { get; }
         public Image Image { get; }
-        public DeviceMemory Memory { get; }
         private ImageLayout _layout = ImageLayout.Undefined;
         public Format Format { get; }
         public ImageView ImageView { get; }
         public Sampler Sampler { get; }
-
-        public ulong MemoryOffset { get; }
+        public Allocation ImageAllocation { get; }
 
         public unsafe Texture
         (
@@ -51,7 +50,7 @@ namespace Aliquip
             IPhysicalDeviceProvider physicalDeviceProvider,
             IGraphicsQueueProvider graphicsQueueProvider,
             IBufferFactory bufferFactory,
-            IMemoryFactory memoryFactory,
+            VulkanMemoryAllocator vma,
             bool createSampler,
             bool useMipmaps,
             ImageAspectFlags aspectFlags,
@@ -65,7 +64,7 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _graphicsQueueProvider = graphicsQueueProvider;
             _bufferFactory = bufferFactory;
-            _memoryFactory = memoryFactory;
+            _vma = vma;
             _aspectFlags = aspectFlags;
             Format = format;
 
@@ -92,35 +91,12 @@ namespace Aliquip
                 samples: numSamples
             );
 
-            _vk.CreateImage(_logicalDeviceProvider.LogicalDevice, imageInfo, null, out var image).ThrowCode();
-            _vk.GetImageMemoryRequirements(_logicalDeviceProvider.LogicalDevice, image, out var memoryRequirements);
-            
-            uint FindMemoryType(uint typeFilter, MemoryPropertyFlags properties)
-            {
-                _vk.GetPhysicalDeviceMemoryProperties(_physicalDeviceProvider.Device, out var memoryProperties);
-
-                for (int i = 0; i < memoryProperties.MemoryTypeCount; i++)
-                {
-                    if ((typeFilter & (1 << i)) != 0 && ((memoryProperties.MemoryTypes[i].PropertyFlags & properties) == properties))
-                        return (uint)i;
-                }
-
-                throw new Exception("Cannot find suitable Memory Type");
-            }
-
-            var (imageMemory, memoryOffset) = _memoryFactory.Allocate
-            (
-                memoryRequirements.Size,
-                FindMemoryType(memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit),
-                memoryRequirements.Alignment
-            );
-            _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, memoryOffset);
+            var image = _vma.CreateImage(imageInfo, new AllocationCreateInfo(usage: MemoryUsage.GPU_Only), out var allocation);
 
             _width = width;
             _height = height;
             Image = image;
-            Memory = imageMemory;
-            MemoryOffset = memoryOffset;
+            ImageAllocation = allocation;
 
             ImageViewCreateInfo viewInfo = new ImageViewCreateInfo
             (
@@ -287,7 +263,7 @@ namespace Aliquip
         {
             _vk.DestroyImageView(_logicalDeviceProvider.LogicalDevice, ImageView, null);
             _vk.DestroyImage(_logicalDeviceProvider.LogicalDevice, Image, null);
-            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, Memory, null);
+            _vma.FreeMemory(ImageAllocation);
         }
 
         // TODO: Mipmaps should be generated at compile time and loaded.

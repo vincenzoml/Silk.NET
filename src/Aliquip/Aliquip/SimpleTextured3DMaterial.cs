@@ -11,20 +11,26 @@ using Silk.NET.Vulkan;
 
 namespace Aliquip
 {
-    internal sealed class Simple3DMaterial : IMaterial
+    internal sealed class SimpleTextured3DMaterial : IMaterial
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly Texture _texture;
 
-        private static Simple3DMaterial? _cache;
+        private static Dictionary<Texture, SimpleTextured3DMaterial> _materials = new();
         
-        public static Simple3DMaterial Create
-            (Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        public static SimpleTextured3DMaterial Create
+            (Texture texture, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
         {
-            return _cache ??= new Simple3DMaterial(vk, resourceProvider, logicalDeviceProvider);
+            if (_materials.TryGetValue(texture, out var v))
+                return v;
+
+            v = new SimpleTextured3DMaterial(texture, vk, resourceProvider, logicalDeviceProvider);
+            _materials[texture] = v;
+            return v;
         }
 
-        private Simple3DMaterial(Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        private SimpleTextured3DMaterial(Texture texture, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
@@ -42,22 +48,34 @@ namespace Aliquip
                 }
             }
             
-            VertexShader = CreateShaderModule("shaders.simple3d.vert.spv");
-            FragmentShader = CreateShaderModule("shaders.simple3d.frag.spv");
+            VertexShader = CreateShaderModule("shaders.simpletextured3d.vert.spv");
+            FragmentShader = CreateShaderModule("shaders.simpletextured3d.frag.spv");
+
+            _texture = texture;
         }
 
         public unsafe IEnumerable<(WriteDescriptorSet, DescriptorImageInfo?, DescriptorBufferInfo?, BufferView?)> WriteDescriptorSets
         {
             get
             {
-                return Array.Empty<(WriteDescriptorSet, DescriptorImageInfo?, DescriptorBufferInfo?, BufferView?)>();
+                var imageInfo = new DescriptorImageInfo
+                (
+                    imageLayout: ImageLayout.ShaderReadOnlyOptimal, imageView: _texture.ImageView,
+                    sampler: _texture.Sampler
+                );
+                return new (WriteDescriptorSet, DescriptorImageInfo?, DescriptorBufferInfo?, BufferView?)[]
+                {
+                    (new WriteDescriptorSet(dstBinding: 1, dstArrayElement: 0, descriptorType: DescriptorType.CombinedImageSampler, descriptorCount: 1),
+                        imageInfo, null, null)
+                };
             }
         }
 
         public IEnumerable<DescriptorPoolSize> DescriptorPoolSizes
             => new[]
             {
-                new DescriptorPoolSize(DescriptorType.UniformBuffer)
+                new DescriptorPoolSize(DescriptorType.UniformBuffer),
+                new DescriptorPoolSize(DescriptorType.CombinedImageSampler)
             };
 
         public ShaderModule VertexShader { get; }
@@ -72,12 +90,17 @@ namespace Aliquip
             };
 
         public unsafe DescriptorSetLayoutBinding[] DescriptorSetLayoutBindings
-            => new[]
+            => new DescriptorSetLayoutBinding[]
             {
                 new DescriptorSetLayoutBinding
                 (
                     binding: 0, descriptorType: DescriptorType.UniformBuffer, descriptorCount: 1,
                     stageFlags: ShaderStageFlags.ShaderStageVertexBit, pImmutableSamplers: null
+                ),
+                new DescriptorSetLayoutBinding
+                (
+                    binding: 1, descriptorType: DescriptorType.CombinedImageSampler, descriptorCount: 1,
+                    stageFlags: ShaderStageFlags.ShaderStageFragmentBit, pImmutableSamplers: null
                 )
             };
 

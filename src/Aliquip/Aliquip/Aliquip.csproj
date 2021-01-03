@@ -23,6 +23,7 @@
       <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.EXT\Silk.NET.Vulkan.Extensions.EXT.csproj" />
       <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.KHR\Silk.NET.Vulkan.Extensions.KHR.csproj" />
       <ProjectReference Include="..\..\Vulkan\Silk.NET.Vulkan\Silk.NET.Vulkan.csproj" />
+      <ProjectReference Include="..\VMASharp\VMASharp\VMASharp.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -7,9 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 using Silk.NET.Windowing;
+using VMASharp;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
 namespace Aliquip
@@ -34,14 +36,14 @@ namespace Aliquip
         private readonly struct ModelBuffer
         {
             public readonly Buffer Buffer;
-            public readonly DeviceMemory Memory;
+            public readonly Allocation Allocation;
             public readonly ulong VertexOffset;
             public readonly ulong IndexOffset;
 
-            public ModelBuffer(Buffer buffer, DeviceMemory memory, ulong vertexOffset, ulong indexOffset)
+            public ModelBuffer(Buffer buffer, Allocation allocation, ulong vertexOffset, ulong indexOffset)
             {
                 Buffer = buffer;
-                Memory = memory;
+                Allocation = allocation;
                 VertexOffset = vertexOffset;
                 IndexOffset = indexOffset;
             }
@@ -72,16 +74,16 @@ namespace Aliquip
         
         private sealed class SceneObjectInfo
         {
-            public Buffer UniformBuffer { get; }
-            public DeviceMemory UniformBufferMemory { get; }
-            public ulong[] UniformBufferOffsets { get; }
+            public Buffer[] Buffers { get; }
+            public Allocation[] Allocations { get; }
+            public MappedMemoryRange[] Ranges { get; }
             public DescriptorSet[] DescriptorSets { get; }
 
-            public SceneObjectInfo(Buffer uniformBuffer, DeviceMemory uniformBufferMemory, ulong[] uniformBufferOffsets, DescriptorSet[] descriptorSets)
+            public SceneObjectInfo(Buffer[] buffers, Allocation[] allocations, MappedMemoryRange[] ranges, DescriptorSet[] descriptorSets)
             {
-                UniformBuffer = uniformBuffer;
-                UniformBufferMemory = uniformBufferMemory;
-                UniformBufferOffsets = uniformBufferOffsets;
+                Buffers = buffers;
+                Allocations = allocations;
+                Ranges = ranges;
                 DescriptorSets = descriptorSets;
             }
         }
@@ -117,6 +119,8 @@ namespace Aliquip
         private readonly IPipelineLayoutFactory _pipelineLayoutFactory;
         private readonly IDescriptorPoolFactory _descriptorPoolFactory;
         private readonly IWindowProvider _windowProvider;
+        private readonly ILogger _logger;
+        private readonly VulkanMemoryAllocator _vma;
         private Dictionary<IMaterial, MaterialInfo> _materialInfos = new();
         private Dictionary<IModel, ModelBuffer> _modelBuffers = new();
         private Dictionary<ISceneObject, SceneObjectInfo> _objectInfos = new();
@@ -136,7 +140,9 @@ namespace Aliquip
             IDescriptorSetFactory descriptorSetFactory,
             IPipelineLayoutFactory pipelineLayoutFactory,
             IDescriptorPoolFactory descriptorPoolFactory,
-            IWindowProvider windowProvider
+            IWindowProvider windowProvider,
+            ILogger<Scene3D> logger,
+            VulkanMemoryAllocator vma
         )
         {
             _vk = vk;
@@ -152,13 +158,9 @@ namespace Aliquip
             _pipelineLayoutFactory = pipelineLayoutFactory;
             _descriptorPoolFactory = descriptorPoolFactory;
             _windowProvider = windowProvider;
+            _logger = logger;
+            _vma = vma;
             CommandBufferNeedsRebuild = true;
-            _windowProvider.Window.Update += (WindowOnUpdate);
-        }
-
-        private void WindowOnUpdate(double d)
-        {
-            Update();
         }
 
         public unsafe void RecordCommandBuffer(CommandBuffer commandBuffer, int index)
@@ -199,32 +201,41 @@ namespace Aliquip
             }
         }
 
-        public unsafe void Update()
+        public unsafe void OnFrameComplete(uint index)
         {
+            var arr = GC.AllocateUninitializedArray<MappedMemoryRange>(_objectInfos.Count, true);
+            int i = 0;
             foreach (var (sceneObject, info) in _objectInfos)
             {
-                var ubo = new UniformBufferObject(
-                    model: sceneObject.WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
-                    view: _cameraProvider.ViewMatrix
-                );
-
-                void* data = default;
-                // TODO: don't write all the data
-                _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, info.UniformBufferMemory, info.UniformBufferOffsets[0], info.UniformBufferOffsets[^1] + (ulong) sizeof(UniformBufferObject), 0, ref data);
-                foreach (var offset in info.UniformBufferOffsets)
-                    *(UniformBufferObject*)((byte*)data + offset) = ubo;
-                _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, info.UniformBufferMemory);
+                arr[i++] = UpdateUbo(sceneObject, info, index);
             }
+            fixed(MappedMemoryRange* ranges = arr)
+                _vk.FlushMappedMemoryRanges(_logicalDeviceProvider.LogicalDevice, (uint) arr.Length, ranges).ThrowCode();
         }
-        
-        public void AddObject(ISceneObject sceneObject)
+
+        private unsafe MappedMemoryRange UpdateUbo(ISceneObject sceneObject, SceneObjectInfo info, uint index)
+        {
+            var ubo = new UniformBufferObject
+            (
+                model: sceneObject
+                    .WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                view: _cameraProvider.ViewMatrix
+            );
+
+            var data = info.Allocations[index].MappedData.ToPointer();
+            var range = info.Ranges[index];
+            *(UniformBufferObject*) (byte*) data = ubo;
+            return range;
+        }
+
+        public unsafe void AddObject(ISceneObject sceneObject)
         {
 
             if (_objectInfos.ContainsKey(sceneObject))
                 throw new ArgumentException("Cannot add scene object twice");
             
-            if (_materialInfos.TryGetValue(sceneObject.Material, out var info))
-                info.Objects.Add(sceneObject);
+            if (_materialInfos.TryGetValue(sceneObject.Material, out var materialInfo))
+                materialInfo.Objects.Add(sceneObject);
             else
             {
                 BuildMaterialInfo(sceneObject.Material);
@@ -239,6 +250,23 @@ namespace Aliquip
             BuildObjectInfo(sceneObject);
             
             UpdateDescriptorSet(sceneObject);
+
+            var info = _objectInfos[sceneObject];
+            var ubo = new UniformBufferObject
+            (
+                // model: sceneObject.WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                model: Matrix4X4<float>.Identity,
+                view: _cameraProvider.ViewMatrix
+            );
+
+            for (int i = 0; i < CommandBufferCount; i++)
+            {
+                var data = info.Allocations[i].MappedData.ToPointer();
+                *(UniformBufferObject*) (byte*) data = ubo;
+            }
+            
+            fixed(MappedMemoryRange* ranges = info.Ranges)
+                _vk.FlushMappedMemoryRanges(_logicalDeviceProvider.LogicalDevice, (uint) CommandBufferCount, ranges).ThrowCode();
         }
         
         private unsafe void OnCommandBufferCountChange()
@@ -272,8 +300,12 @@ namespace Aliquip
         private unsafe void DisposeObjectInfo(ISceneObject sceneObject)
         {
             var info = _objectInfos[sceneObject];
-            _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, info.UniformBuffer, null);
-            _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, info.UniformBufferMemory, null);
+            for (int i = 0; i < info.Allocations.Length; i++)
+            {
+                _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, info.Buffers[i], null);
+                _vma.FreeMemory(info.Allocations[i]);
+            }
+
             fixed (DescriptorSet* p = info.DescriptorSets)
                 _vk.FreeDescriptorSets
                 (
@@ -288,26 +320,33 @@ namespace Aliquip
             DescriptorSet[] CreateDescriptorSet()
                 => _descriptorSetFactory.CreateDescriptorSets(_materialInfos[sceneObject.Material].DescriptorPool, CommandBufferCount, _materialInfos[sceneObject.Material].DescriptorSetLayout);
             
-            (Buffer UniformBuffer, DeviceMemory UniformBufferMemory, ulong[] UniformOffsets) CreateUniformBuffers()
+            (Buffer[] UniformBuffers, Allocation[] UniformBufferAllocations, MappedMemoryRange[] Ranges) CreateUniformBuffers()
             {
-                var totalSize = (ulong) (sizeof(UniformBufferObject) * CommandBufferCount);
-            
-                var (uniformBuffer, uniformBufferMemory, offset) = _bufferFactory.CreateBuffer
-                (
-                    totalSize, BufferUsageFlags.BufferUsageUniformBufferBit,
-                    MemoryPropertyFlags.MemoryPropertyHostVisibleBit | MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
-                    stackalloc[] {_graphicsQueueProvider.GraphicsQueueIndex}
-                );
-                
-                var uniformOffsets = new ulong[CommandBufferCount];
-                for (int i = 0; i < uniformOffsets.Length; i++)
-                    uniformOffsets[i] = (ulong) (sizeof(UniformBufferObject) * i);
+                var uniformBuffers = new Buffer[CommandBufferCount];
+                var uniformBufferAllocations = new Allocation[CommandBufferCount];
+                var ranges = new MappedMemoryRange[CommandBufferCount];
+                for (int i = 0; i < CommandBufferCount; i++)
+                {
+                    (uniformBuffers[i], uniformBufferAllocations[i]) = _bufferFactory.CreateBuffer
+                    (
+                        (ulong) sizeof(UniformBufferObject),
+                        new AllocationCreateInfo(AllocationCreateFlags.Mapped, usage: MemoryUsage.CPU_To_GPU),
+                        BufferUsageFlags.BufferUsageUniformBufferBit,
+                        stackalloc[] {_graphicsQueueProvider.GraphicsQueueIndex}
+                    );
+                    ranges[i] = new MappedMemoryRange
+                    (
+                        memory: uniformBufferAllocations[i].DeviceMemory, offset: (ulong)uniformBufferAllocations[i].Offset,
+                        size: (ulong) uniformBufferAllocations[i].Offset
+                    );
+                }
 
-                return (uniformBuffer, uniformBufferMemory, uniformOffsets);
+                return (uniformBuffers, uniformBufferAllocations, ranges);
             }
-            
+
             var uniformBuffers = CreateUniformBuffers();
-            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffer, uniformBuffers.UniformBufferMemory, uniformBuffers.UniformOffsets, CreateDescriptorSet());
+            
+            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffers, uniformBuffers.UniformBufferAllocations, uniformBuffers.Ranges, CreateDescriptorSet());
         }
 
         private unsafe void UpdateDescriptorSet(ISceneObject sceneObject)
@@ -318,7 +357,7 @@ namespace Aliquip
                 var writeDescriptorSetList = new List<WriteDescriptorSet>();
                 
                 var bufferInfo = new DescriptorBufferInfo
-                    (objectInfo.UniformBuffer, objectInfo.UniformBufferOffsets[i], (ulong) sizeof(UniformBufferObject));
+                    (objectInfo.Buffers[i], (ulong) objectInfo.Allocations[i].Offset, (ulong) sizeof(UniformBufferObject));
 
                 writeDescriptorSetList.Add(new WriteDescriptorSet(dstBinding: 0, dstArrayElement: 0, descriptorType: DescriptorType.UniformBuffer,
                     descriptorCount: 1, dstSet: objectInfo.DescriptorSets[i], pBufferInfo: &bufferInfo));
@@ -360,19 +399,15 @@ namespace Aliquip
         {
             var bufferSize = (ulong)(sizeof(T) * src.Length);
             
-            var (stagingBuffer, stagingBufferMemory, stagingBufferOffset) = _bufferFactory.CreateBuffer
+            var (stagingBuffer, stagingBufferAllocation) = _bufferFactory.CreateBuffer
             (
-                bufferSize, BufferUsageFlags.BufferUsageTransferSrcBit,
-                MemoryPropertyFlags.MemoryPropertyHostVisibleBit |
-                MemoryPropertyFlags.MemoryPropertyHostCoherentBit,
+                bufferSize, new AllocationCreateInfo(AllocationCreateFlags.Mapped, usage: MemoryUsage.CPU_Only), BufferUsageFlags.BufferUsageTransferSrcBit,
                 stackalloc[] {_transferQueueProvider.TransferQueueIndex, _graphicsQueueProvider.GraphicsQueueIndex}
             );
 
-            void* data = default;
-            _vk.MapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory, stagingBufferOffset, bufferSize, 0, ref data);
+            void* data = stagingBufferAllocation.MappedData.ToPointer();
             var span = new Span<T>(data, src.Length);
             src.CopyTo(span);
-            _vk.UnmapMemory(_logicalDeviceProvider.LogicalDevice, stagingBufferMemory);
 
             _commandBufferFactory.RunSingleTime(_transferQueueProvider.TransferQueueIndex, _transferQueueProvider.TransferQueue,
                 (commandBuffer) =>
@@ -380,25 +415,27 @@ namespace Aliquip
                     var region = new BufferCopy(0, dstOffset, bufferSize);
                     _vk.CmdCopyBuffer(commandBuffer, stagingBuffer, dstBuffer, 1, &region);   
                 });
+
+            _vma.FreeMemory(stagingBufferAllocation);
         }
         
         private void BuildBuffer(IModel model)
         {
-            var (buffer, bufferMemory, bufferOffset) = _bufferFactory.CreateBuffer
+            // TODO: split this allocation, now that we have proper VMA
+            var (buffer, bufferAllocation) = _bufferFactory.CreateBuffer
             (
                 (ulong) (model.VertexSize * model.VertexCount + sizeof(uint) * model.IndexCount),
-                BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
-                MemoryPropertyFlags.MemoryPropertyDeviceLocalBit,
+                new AllocationCreateInfo(usage: MemoryUsage.GPU_Only),BufferUsageFlags.BufferUsageIndexBufferBit | BufferUsageFlags.BufferUsageVertexBufferBit | BufferUsageFlags.BufferUsageTransferDstBit,
                 stackalloc uint[] {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
             );
 
-            var vertexOffset = (ulong) 0 + bufferOffset;
-            var indexOffset = (ulong) (model.VertexSize * model.VertexCount) + bufferOffset;
+            var vertexOffset = (ulong) 0 + (ulong) bufferAllocation.Offset;
+            var indexOffset = (ulong) (model.VertexSize * model.VertexCount) + (ulong) bufferAllocation.Offset;
             
             CopyDataToBufferViaStaging(model.Vertices, buffer, vertexOffset);
             CopyDataToBufferViaStaging(model.Indices, buffer, indexOffset);
 
-            _modelBuffers[model] = new ModelBuffer(buffer, bufferMemory, vertexOffset, indexOffset);
+            _modelBuffers[model] = new ModelBuffer(buffer, bufferAllocation, vertexOffset, indexOffset);
         }
 
         private unsafe void BuildMaterialInfo(IMaterial material)
@@ -438,11 +475,10 @@ namespace Aliquip
 
         public unsafe void Dispose()
         {
-            _windowProvider.Window.Update -= WindowOnUpdate;
             foreach (var modelBuffer in _modelBuffers.Values)
             {
                 _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, modelBuffer.Buffer, null);
-                _vk.FreeMemory(_logicalDeviceProvider.LogicalDevice, modelBuffer.Memory, null);
+                _vma.FreeMemory(modelBuffer.Allocation);
             }
             _modelBuffers.Clear();
         }
