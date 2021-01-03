@@ -39,9 +39,6 @@ namespace Aliquip
         private readonly Fence[] _inFlightFences;
         private readonly Fence[] _imagesInFlight;
         private int _currentFrame = 0;
-#if DEBUG
-        private readonly float _nanosecondsPerTimestampStep;
-#endif
 
         public unsafe DrawFrameService
         (
@@ -101,11 +98,6 @@ namespace Aliquip
                         (_logicalDeviceProvider.LogicalDevice, &fenceCreateInfo, null, out _inFlightFences[i])
                     .ThrowCode();
             }
-
-            _vk.GetPhysicalDeviceProperties(physicalDeviceProvider.Device, out var physicalDeviceProperties);
-#if DEBUG
-            _nanosecondsPerTimestampStep = physicalDeviceProperties.Limits.TimestampPeriod;
-#endif
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -141,17 +133,6 @@ namespace Aliquip
             }
             _imagesInFlight[imageIndex] = _inFlightFences[_currentFrame];
             
-#if DEBUG
-            {
-                var pool = _graphicsCommandBufferProvider.TimeQueryPool;
-                var queryResult = stackalloc uint[2];
-                _vk.GetQueryPoolResults(_logicalDeviceProvider.LogicalDevice, pool, 0, 2, (UIntPtr) (sizeof(int) * 2), queryResult, 0, 0).ThrowCode();
-                var diff = queryResult[1] - queryResult[0];
-                var time = diff * _nanosecondsPerTimestampStep;
-                var timespan = TimeSpan.FromMilliseconds((diff * ((double) time)) / 1000000);
-                _logger.LogDebug("Time: {time}ms", timespan.TotalMilliseconds);
-            }
-#endif
             _scene.OnFrameComplete(imageIndex);
 
             var waitSemaphores = stackalloc[] {_imageAvailableSemaphores[_currentFrame]};

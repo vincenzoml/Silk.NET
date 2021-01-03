@@ -72,6 +72,14 @@ namespace Aliquip
                 , pNext: &physicalDeviceSeparateDepthStencilLayoutsFeatures
             );
 
+            uint queueFamilyPropertyCount = 0;
+            _vk.GetPhysicalDeviceQueueFamilyProperties
+                (physicalDeviceProvider.Device, ref queueFamilyPropertyCount, null);
+
+            var familyProperties = stackalloc QueueFamilyProperties[(int)queueFamilyPropertyCount];
+            _vk.GetPhysicalDeviceQueueFamilyProperties
+                (physicalDeviceProvider.Device, ref queueFamilyPropertyCount, familyProperties);
+
             _vk.CreateDevice(physicalDeviceProvider.Device, &deviceCreateInfo, null, out var logicalDevice).ThrowCode();
             LogicalDevice = logicalDevice;
             _vk.CurrentDevice = LogicalDevice;

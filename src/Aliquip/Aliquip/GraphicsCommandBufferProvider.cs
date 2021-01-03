@@ -23,7 +23,7 @@ namespace Aliquip
         private CommandBuffer[]? _primaryCommandBuffers;
         private CommandBuffer[][]? _secondaryCommandBuffers;
 #if DEBUG
-        public QueryPool TimeQueryPool { get; }
+        public QueryPool TimeQueryPool { get; set; }
 #endif
         
         public unsafe CommandBuffer* this[int index]
@@ -67,12 +67,6 @@ namespace Aliquip
             _logicalDeviceProvider = logicalDeviceProvider;
             _scene = scene;
 
-#if DEBUG
-            var timeQueryCreateInfo = new QueryPoolCreateInfo(queryType: QueryType.Timestamp, queryCount: 2);
-            _vk.CreateQueryPool(_logicalDeviceProvider.LogicalDevice, timeQueryCreateInfo, null, out var timeQueryPool).ThrowCode();
-            TimeQueryPool = timeQueryPool;
-#endif
-            
             Recreate();
         }
 
@@ -102,11 +96,6 @@ namespace Aliquip
                 _swapchainProvider.SwapchainImages.Length, _graphicsQueueProvider.GraphicsQueueIndex, null,
                 CommandBufferLevel.Primary, (commandBuffer, i) =>
                 {
-#if DEBUG
-                    _vk.CmdResetQueryPool(commandBuffer, TimeQueryPool, 0, 2);
-                    _vk.CmdWriteTimestamp
-                        (commandBuffer, PipelineStageFlags.PipelineStageTopOfPipeBit, TimeQueryPool, 0);
-#endif
                     var clearColors = stackalloc[]
                     {
                         new ClearValue(new ClearColorValue(0f, 0f, 0f, 1f)),
@@ -125,10 +114,6 @@ namespace Aliquip
                     _vk.CmdExecuteCommands(commandBuffer, 1, _secondaryCommandBuffers[0][i]);
 
                     _vk.CmdEndRenderPass(commandBuffer);
-#if DEBUG
-                    _vk.CmdWriteTimestamp
-                        (commandBuffer, PipelineStageFlags.PipelineStageBottomOfPipeBit, TimeQueryPool, 1);
-#endif
                 }
             );
         }
