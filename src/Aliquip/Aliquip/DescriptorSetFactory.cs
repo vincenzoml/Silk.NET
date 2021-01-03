@@ -33,7 +33,7 @@ namespace Aliquip
 
                 var descriptorSets = new DescriptorSet[count];
                 fixed (DescriptorSet* pDescriptorSets = descriptorSets)
-                    _vk.AllocateDescriptorSets(_logicalDeviceProvider.LogicalDevice, allocInfo, pDescriptorSets);
+                    _vk.AllocateDescriptorSets(_logicalDeviceProvider.LogicalDevice, allocInfo, pDescriptorSets).ThrowCode();
                 
                 return descriptorSets;
             }

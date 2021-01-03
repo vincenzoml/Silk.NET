@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -51,7 +52,6 @@ namespace Aliquip
 
         private sealed class MaterialInfo
         {
-            public DescriptorPool DescriptorPool { get; set; }
             public List<ISceneObject> Objects { get; } = new();
             public PipelineLayout PipelineLayout { get; }
             public Pipeline GraphicsPipeline { get; }
@@ -61,11 +61,9 @@ namespace Aliquip
             (
                 PipelineLayout pipelineLayout,
                 Pipeline graphicsPipeline,
-                DescriptorSetLayout descriptorSetLayout,
-                DescriptorPool descriptorPool
+                DescriptorSetLayout descriptorSetLayout
             )
             {
-                DescriptorPool = descriptorPool;
                 PipelineLayout = pipelineLayout;
                 GraphicsPipeline = graphicsPipeline;
                 DescriptorSetLayout = descriptorSetLayout;
@@ -78,13 +76,15 @@ namespace Aliquip
             public Allocation[] Allocations { get; }
             public MappedMemoryRange[] Ranges { get; }
             public DescriptorSet[] DescriptorSets { get; }
+            public DescriptorPool DescriptorPool { get; }
 
-            public SceneObjectInfo(Buffer[] buffers, Allocation[] allocations, MappedMemoryRange[] ranges, DescriptorSet[] descriptorSets)
+            public SceneObjectInfo(Buffer[] buffers, Allocation[] allocations, MappedMemoryRange[] ranges, DescriptorSet[] descriptorSets, DescriptorPool descriptorPool)
             {
                 Buffers = buffers;
                 Allocations = allocations;
                 Ranges = ranges;
                 DescriptorSets = descriptorSets;
+                DescriptorPool = descriptorPool;
             }
         }
         
@@ -124,6 +124,7 @@ namespace Aliquip
         private Dictionary<IMaterial, MaterialInfo> _materialInfos = new();
         private Dictionary<IModel, ModelBuffer> _modelBuffers = new();
         private Dictionary<ISceneObject, SceneObjectInfo> _objectInfos = new();
+        private ReaderWriterLockSlim _infoLock = new();
         private int _commandBufferCount;
 
         public Scene3D
@@ -230,70 +231,74 @@ namespace Aliquip
 
         public unsafe void AddObject(ISceneObject sceneObject)
         {
-
-            if (_objectInfos.ContainsKey(sceneObject))
-                throw new ArgumentException("Cannot add scene object twice");
-            
-            if (_materialInfos.TryGetValue(sceneObject.Material, out var materialInfo))
-                materialInfo.Objects.Add(sceneObject);
-            else
+            _infoLock.EnterWriteLock();
+            try
             {
-                BuildMaterialInfo(sceneObject.Material);
-                _materialInfos[sceneObject.Material].Objects.Add(sceneObject);
-            }
+                if (_objectInfos.ContainsKey(sceneObject))
+                    throw new ArgumentException("Cannot add scene object twice");
 
-            if (!_modelBuffers.ContainsKey(sceneObject.Model))
+                if (_materialInfos.TryGetValue(sceneObject.Material, out var materialInfo))
+                    materialInfo.Objects.Add(sceneObject);
+                else
+                {
+                    BuildMaterialInfo(sceneObject.Material);
+                    _materialInfos[sceneObject.Material].Objects.Add(sceneObject);
+                }
+
+                if (!_modelBuffers.ContainsKey(sceneObject.Model))
+                {
+                    BuildBuffer(sceneObject.Model);
+                }
+                
+                BuildObjectInfo(sceneObject);
+
+                UpdateDescriptorSet(sceneObject);
+
+                var info = _objectInfos[sceneObject];
+                var ubo = new UniformBufferObject
+                (
+                    // model: sceneObject.WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                    model: Matrix4X4<float>.Identity, view: _cameraProvider.ViewMatrix
+                );
+
+                for (int i = 0; i < CommandBufferCount; i++)
+                {
+                    var data = info.Allocations[i].MappedData.ToPointer();
+                    *(UniformBufferObject*) (byte*) data = ubo;
+                }
+
+                fixed (MappedMemoryRange* ranges = info.Ranges)
+                    _vk.FlushMappedMemoryRanges
+                            (_logicalDeviceProvider.LogicalDevice, (uint) CommandBufferCount, ranges)
+                        .ThrowCode();
+            }
+            finally
             {
-                BuildBuffer(sceneObject.Model);
+                _infoLock.ExitWriteLock();
             }
-
-            BuildObjectInfo(sceneObject);
-            
-            UpdateDescriptorSet(sceneObject);
-
-            var info = _objectInfos[sceneObject];
-            var ubo = new UniformBufferObject
-            (
-                // model: sceneObject.WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
-                model: Matrix4X4<float>.Identity,
-                view: _cameraProvider.ViewMatrix
-            );
-
-            for (int i = 0; i < CommandBufferCount; i++)
-            {
-                var data = info.Allocations[i].MappedData.ToPointer();
-                *(UniformBufferObject*) (byte*) data = ubo;
-            }
-            
-            fixed(MappedMemoryRange* ranges = info.Ranges)
-                _vk.FlushMappedMemoryRanges(_logicalDeviceProvider.LogicalDevice, (uint) CommandBufferCount, ranges).ThrowCode();
         }
         
         private unsafe void OnCommandBufferCountChange()
         {
-            var objects = _objectInfos.Keys.ToArray();
-            
-            foreach (var o in objects)
+            _infoLock.EnterWriteLock();
+            try
             {
-                DisposeObjectInfo(o);
-            }
+                var objects = _objectInfos.Keys.ToArray();
 
-            foreach (var (m, info) in _materialInfos)
-            {
-                _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, info.DescriptorPool, null);
-                var v = m.DescriptorPoolSizes.ToArray();
-                for (int i = 0; i < v.Length; i++)
+                foreach (var o in objects)
                 {
-                    v[i].DescriptorCount = (uint) CommandBufferCount;
+                    DisposeObjectInfo(o);
                 }
 
-                info.DescriptorPool = _descriptorPoolFactory.CreateDescriptorPool(v);
+                foreach (var o in objects)
+                {
+                    BuildObjectInfo(o);
+                    UpdateDescriptorSet(o);
+                }
             }
-
-            foreach (var o in objects)
+            finally
             {
-                BuildObjectInfo(o);
-                UpdateDescriptorSet(o);
+                _infoLock.ExitWriteLock();
             }
         }
 
@@ -309,16 +314,32 @@ namespace Aliquip
             fixed (DescriptorSet* p = info.DescriptorSets)
                 _vk.FreeDescriptorSets
                 (
-                    _logicalDeviceProvider.LogicalDevice, _materialInfos[sceneObject.Material].DescriptorPool,
+                    _logicalDeviceProvider.LogicalDevice, info.DescriptorPool,
                     (uint) info.DescriptorSets.Length,
                     p
                 ).ThrowCode();
+            
+            _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, info.DescriptorPool, null);
         }
 
         private unsafe void BuildObjectInfo(ISceneObject sceneObject)
         {
-            DescriptorSet[] CreateDescriptorSet()
-                => _descriptorSetFactory.CreateDescriptorSets(_materialInfos[sceneObject.Material].DescriptorPool, CommandBufferCount, _materialInfos[sceneObject.Material].DescriptorSetLayout);
+            var material = sceneObject.Material;
+            DescriptorPool CreateDescriptorPool()
+            {
+                var v = material.DescriptorPoolSizes.ToArray();
+                for (int i = 0; i < v.Length; i++)
+                {
+                    v[i].DescriptorCount = (uint) CommandBufferCount;
+                }
+
+                return _descriptorPoolFactory.CreateDescriptorPool(v);
+            }
+
+            var descriptorPool = CreateDescriptorPool();
+            
+            DescriptorSet[] CreateDescriptorSets()
+                => _descriptorSetFactory.CreateDescriptorSets(descriptorPool, CommandBufferCount, _materialInfos[sceneObject.Material].DescriptorSetLayout);
             
             (Buffer[] UniformBuffers, Allocation[] UniformBufferAllocations, MappedMemoryRange[] Ranges) CreateUniformBuffers()
             {
@@ -346,7 +367,7 @@ namespace Aliquip
 
             var uniformBuffers = CreateUniformBuffers();
             
-            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffers, uniformBuffers.UniformBufferAllocations, uniformBuffers.Ranges, CreateDescriptorSet());
+            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffers, uniformBuffers.UniformBufferAllocations, uniformBuffers.Ranges, CreateDescriptorSets(), descriptorPool);
         }
 
         private unsafe void UpdateDescriptorSet(ISceneObject sceneObject)
@@ -357,7 +378,7 @@ namespace Aliquip
                 var writeDescriptorSetList = new List<WriteDescriptorSet>();
                 
                 var bufferInfo = new DescriptorBufferInfo
-                    (objectInfo.Buffers[i], (ulong) objectInfo.Allocations[i].Offset, (ulong) sizeof(UniformBufferObject));
+                    (objectInfo.Buffers[i], 0, (ulong) sizeof(UniformBufferObject));
 
                 writeDescriptorSetList.Add(new WriteDescriptorSet(dstBinding: 0, dstArrayElement: 0, descriptorType: DescriptorType.UniformBuffer,
                     descriptorCount: 1, dstSet: objectInfo.DescriptorSets[i], pBufferInfo: &bufferInfo));
@@ -412,7 +433,7 @@ namespace Aliquip
             _commandBufferFactory.RunSingleTime(_transferQueueProvider.TransferQueueIndex, _transferQueueProvider.TransferQueue,
                 (commandBuffer) =>
                 {
-                    var region = new BufferCopy(0, dstOffset, bufferSize);
+                    var region = new BufferCopy((ulong) stagingBufferAllocation.Offset, dstOffset, bufferSize);
                     _vk.CmdCopyBuffer(commandBuffer, stagingBuffer, dstBuffer, 1, &region);   
                 });
 
@@ -429,8 +450,8 @@ namespace Aliquip
                 stackalloc uint[] {_graphicsQueueProvider.GraphicsQueueIndex, _transferQueueProvider.TransferQueueIndex}
             );
 
-            var vertexOffset = (ulong) 0 + (ulong) bufferAllocation.Offset;
-            var indexOffset = (ulong) (model.VertexSize * model.VertexCount) + (ulong) bufferAllocation.Offset;
+            var vertexOffset = (ulong) 0;
+            var indexOffset = (ulong) (model.VertexSize * model.VertexCount);
             
             CopyDataToBufferViaStaging(model.Vertices, buffer, vertexOffset);
             CopyDataToBufferViaStaging(model.Indices, buffer, indexOffset);
@@ -440,17 +461,6 @@ namespace Aliquip
 
         private unsafe void BuildMaterialInfo(IMaterial material)
         {
-            DescriptorPool CreateDescriptorPool()
-            {
-                var v = material.DescriptorPoolSizes.ToArray();
-                for (int i = 0; i < v.Length; i++)
-                {
-                    v[i].DescriptorCount = (uint) CommandBufferCount;
-                }
-
-                return _descriptorPoolFactory.CreateDescriptorPool(v);
-            }
-            
             DescriptorSetLayout CreateDescriptorSetLayout()
                 => _descriptorSetLayoutFactory.CreateDescriptorSetLayout(material.DescriptorSetLayoutBindings);
             var descriptorLayout = CreateDescriptorSetLayout();
@@ -469,7 +479,7 @@ namespace Aliquip
                 );
             
             _materialInfos[material] = new MaterialInfo
-                (pipelineLayout, CreateGraphicsPipeline(), descriptorLayout, CreateDescriptorPool());
+                (pipelineLayout, CreateGraphicsPipeline(), descriptorLayout);
             CommandBufferNeedsRebuild = true;
         }
 
@@ -481,6 +491,7 @@ namespace Aliquip
                 _vma.FreeMemory(modelBuffer.Allocation);
             }
             _modelBuffers.Clear();
+            _infoLock.Dispose();
         }
     }
 }

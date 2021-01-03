@@ -47,12 +47,18 @@ namespace Aliquip.Sandbox
             {
                 if (color.X >= 1 || color.Y >= 1 || color.Z >= 1)
                     color /= 255f;
+
+                MovableSceneObject o;
                 switch (primitive)
                 {
                     case Primitive.Quad:
-                        var q = Instantiate<Quad>(color);
-                        Scene3D.AddObject(q);
-                        return q;
+                        o = Instantiate<Quad>(color);
+                        Scene3D.AddObject(o);
+                        return o;
+                    case Primitive.Cube:
+                        o = Instantiate<Cube>(color);
+                        Scene3D.AddObject(o);
+                        return o;
                     default:
                         throw new ArgumentException(nameof(primitive));
                 }
@@ -62,6 +68,7 @@ namespace Aliquip.Sandbox
             {
                 var lifetime = _host.Services.GetRequiredService<IHostApplicationLifetime>();
                 var window = _host.Services.GetRequiredService<IWindowProvider>().Window;
+                window.VSync = true;
                 window.Run
                 (
                     () =>

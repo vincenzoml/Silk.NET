@@ -12,7 +12,7 @@ layout( push_constant ) uniform Camera {
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
-layout(location = 2) in vec2 fragCoord; // unused, but bound to be compatible with single vertex type.
+layout(location = 2) in vec2 inTexCoord; // unused, but bound to be compatible with single vertex type.
 
 layout(location = 0) out vec3 fragColor;
 

@@ -41,7 +41,7 @@ namespace Aliquip
 
             public uint[] Indices { get; } =
             {
-                0, 1, 2, 2, 3, 0
+                0, 1, 2, 3
             };
 
             ReadOnlySpan<byte> IModel.Vertices => MemoryMarshal.Cast<Vertex, byte>(Vertices.AsSpan());
@@ -54,8 +54,8 @@ namespace Aliquip
                 {
                     new(new(-0.5f, -0.5f, 0.0f), color, new(1.0f, 0.0f)),
                     new(new(0.5f, -0.5f, 0.0f), color, new(0.0f, 0.0f)),
+                    new(new(-0.5f, 0.5f, 0.0f), color, new(1.0f, 1.0f)),
                     new(new(0.5f, 0.5f, 0.0f), color, new(0.0f, 1.0f)),
-                    new(new(-0.5f, 0.5f, 0.0f), color, new(1.0f, 1.0f))
                 };
             }
         }

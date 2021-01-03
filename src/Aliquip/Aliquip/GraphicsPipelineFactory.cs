@@ -77,7 +77,7 @@ namespace Aliquip
                 );
 
                 var inputAssembly = new PipelineInputAssemblyStateCreateInfo
-                    (topology: PrimitiveTopology.TriangleList, primitiveRestartEnable: false);
+                    (topology: PrimitiveTopology.TriangleStrip, primitiveRestartEnable: false);
 
                 var viewport = new Viewport
                     (0, 0, _swapchainProvider.SwapchainExtent.Width, _swapchainProvider.SwapchainExtent.Height, 0f, 1f);
