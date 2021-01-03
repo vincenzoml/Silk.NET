@@ -1,7 +1,17 @@
-﻿using Aliquip.Sandbox;
+﻿using System.Threading.Tasks;
+using Aliquip.Sandbox;
+using Silk.NET.Maths;
 
 using var sandbox = Sandbox.Create();
 
-sandbox.AddPrimitive(Primitives.Quad);
+var quad = sandbox.AddPrimitive(Primitives.Quad);
 
-sandbox.Run();
+sandbox.Run(
+    async () =>
+    {
+        while (true)
+        {
+            await Task.Delay(1);
+            quad.Position += Vector3D<float>.UnitX / 1000;
+        }
+    });
