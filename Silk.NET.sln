@@ -363,6 +363,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aliquip", "src\Aliquip\Aliq
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AliquipDemo", "src\Aliquip\AliquipDemo\AliquipDemo.csproj", "{F1C98995-B93C-42B3-BA77-87BF435A872A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aliquip.Sandbox", "src\Aliquip\Aliquip.Sandbox\Aliquip.Sandbox.csproj", "{51FAADA7-ABA7-4ED7-9737-29518E014D3D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -2179,6 +2181,18 @@ Global
 		{C06556DC-52AF-44AE-99B8-1251C18C3973}.Release|x64.Build.0 = Release|Any CPU
 		{C06556DC-52AF-44AE-99B8-1251C18C3973}.Release|x86.ActiveCfg = Release|Any CPU
 		{C06556DC-52AF-44AE-99B8-1251C18C3973}.Release|x86.Build.0 = Release|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Debug|x64.Build.0 = Debug|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Debug|x86.Build.0 = Debug|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Release|x64.ActiveCfg = Release|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Release|x64.Build.0 = Release|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Release|x86.ActiveCfg = Release|Any CPU
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2343,6 +2357,7 @@ Global
 		{0BB47DB2-B5EA-4EAB-903A-87698FCECC1A} = {C6F8AC4E-7B2F-4621-99D5-8EFEBEF2443F}
 		{F1C98995-B93C-42B3-BA77-87BF435A872A} = {C6F8AC4E-7B2F-4621-99D5-8EFEBEF2443F}
 		{C06556DC-52AF-44AE-99B8-1251C18C3973} = {DFA0E841-33E5-4533-AF00-964E21A141B8}
+		{51FAADA7-ABA7-4ED7-9737-29518E014D3D} = {C6F8AC4E-7B2F-4621-99D5-8EFEBEF2443F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F5273D7F-3334-48DF-94E3-41AE6816CD4D}

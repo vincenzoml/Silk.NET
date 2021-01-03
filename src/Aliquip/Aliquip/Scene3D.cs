@@ -253,19 +253,13 @@ namespace Aliquip
             foreach (var (m, info) in _materialInfos)
             {
                 _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, info.DescriptorPool, null);
-                info.DescriptorPool = _descriptorPoolFactory.CreateDescriptorPool
-                (
-                    m.DescriptorPoolSizes
-                        .Select
-                        (
-                            x =>
-                            {
-                                x.DescriptorCount = (uint) CommandBufferCount;
-                                return x;
-                            }
-                        )
-                        .ToArray()
-                );
+                var v = m.DescriptorPoolSizes.ToArray();
+                for (int i = 0; i < v.Length; i++)
+                {
+                    v[i].DescriptorCount = (uint) CommandBufferCount;
+                }
+
+                info.DescriptorPool = _descriptorPoolFactory.CreateDescriptorPool(v);
             }
 
             foreach (var o in objects)
@@ -411,19 +405,13 @@ namespace Aliquip
         {
             DescriptorPool CreateDescriptorPool()
             {
-                return _descriptorPoolFactory.CreateDescriptorPool
-                (
-                    material.DescriptorPoolSizes
-                        .Select
-                        (
-                            x =>
-                            {
-                                x.DescriptorCount = (uint) CommandBufferCount;
-                                return x;
-                            }
-                        )
-                        .ToArray()
-                );
+                var v = material.DescriptorPoolSizes.ToArray();
+                for (int i = 0; i < v.Length; i++)
+                {
+                    v[i].DescriptorCount = (uint) CommandBufferCount;
+                }
+
+                return _descriptorPoolFactory.CreateDescriptorPool(v);
             }
             
             DescriptorSetLayout CreateDescriptorSetLayout()
