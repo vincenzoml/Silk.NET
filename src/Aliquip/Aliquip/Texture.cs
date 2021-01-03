@@ -111,7 +111,8 @@ namespace Aliquip
             var (imageMemory, memoryOffset) = _memoryFactory.Allocate
             (
                 memoryRequirements.Size,
-                FindMemoryType(memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit)
+                FindMemoryType(memoryRequirements.MemoryTypeBits, MemoryPropertyFlags.MemoryPropertyDeviceLocalBit),
+                memoryRequirements.Alignment
             );
             _vk.BindImageMemory(_logicalDeviceProvider.LogicalDevice, image, imageMemory, memoryOffset);
 

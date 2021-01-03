@@ -45,7 +45,7 @@ namespace Aliquip
             _blockSize = 1 << 13; // 8192
         }
         
-        public unsafe (DeviceMemory, ulong) Allocate(ulong size, uint memoryTypeIndex)
+        public unsafe (DeviceMemory, ulong) Allocate(ulong size, uint memoryTypeIndex, ulong alignment)
         {
             if (!_memoryTypeInfos.TryGetValue(memoryTypeIndex, out var info))
             {
@@ -56,7 +56,13 @@ namespace Aliquip
             (DeviceMemory, ulong) SubAllocate(AllocInfo active)
             {
                 var offset = active.RunningOffset;
-                active.RunningOffset += size;
+                var padding = (ulong)0;
+                while ((padding + offset) % alignment != 0)
+                {
+                    padding++;
+                }
+
+                active.RunningOffset += size + padding;
 
                 if (active.Size - active.RunningOffset < 30)
                 {
@@ -64,7 +70,7 @@ namespace Aliquip
                     info.Retired.Add(active);
                 }
 
-                return (active.Memory, offset);
+                return (active.Memory, offset + padding);
             }
 
             if (size > _blockSize)

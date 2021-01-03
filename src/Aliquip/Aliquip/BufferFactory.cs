@@ -55,7 +55,7 @@ namespace Aliquip
             }
 
             var (memory, offset) = _memoryFactory.Allocate
-                (memoryRequirements.Size, FindMemoryType(memoryRequirements.MemoryTypeBits, properties));
+                (memoryRequirements.Size, FindMemoryType(memoryRequirements.MemoryTypeBits, properties), memoryRequirements.Alignment);
             _vk.BindBufferMemory(_logicalDeviceProvider.LogicalDevice, buffer, memory, offset);
 
             return (buffer, memory, offset);

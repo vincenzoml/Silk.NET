@@ -9,6 +9,6 @@ namespace Aliquip
 {
     public interface IMemoryFactory
     {
-        (DeviceMemory, ulong) Allocate(ulong size, uint memoryTypeIndex);
+        (DeviceMemory, ulong) Allocate(ulong size, uint memoryTypeIndex, ulong alignment);
     }
 }
