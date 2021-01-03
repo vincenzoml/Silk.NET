@@ -12,13 +12,13 @@ namespace Aliquip.Sandbox
     {
         public static void Run(this ISandbox sandbox, Action action)
         {
-            Task.Run(action);
+            sandbox.Window.Update += (d) => action();
             sandbox.Run();
         }
         
-        public static void Run(this ISandbox sandbox, Func<Task> action)
+        public static void Run(this ISandbox sandbox, Action<double> action)
         {
-            Task.Run(action);
+            sandbox.Window.Update += action;
             sandbox.Run();
         }
     }
