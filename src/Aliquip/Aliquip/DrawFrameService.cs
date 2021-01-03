@@ -101,7 +101,9 @@ namespace Aliquip
             }
 
             _vk.GetPhysicalDeviceProperties(physicalDeviceProvider.Device, out var physicalDeviceProperties);
+#if DEBUG
             _nanosecondsPerTimestampStep = physicalDeviceProperties.Limits.TimestampPeriod;
+#endif
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

@@ -59,9 +59,9 @@ namespace AliquipDemo
 
             int i = 0;
             var scene = host.Services.GetRequiredService<Scene3D>();
-            for (int x = -50; x < 50; x++)
+            for (int x = -10; x < 10; x++)
             {
-                for (int y = -50; y < 50; y++)
+                for (int y = -10; y < 10; y++)
                 {
                     i++;
                     scene.AddObject
@@ -80,8 +80,7 @@ namespace AliquipDemo
             
             host.Services.GetRequiredService<ILogger<Program>>().LogInformation("Created {0} models", i);
 
-            window.UpdatesPerSecond = Double.MaxValue;
-            window.FramesPerSecond = Double.MaxValue;
+            window.FramesPerSecond = 1000;
             window.Run
             (
                 () =>
