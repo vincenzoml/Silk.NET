@@ -4,7 +4,9 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Drawing;
 using System.Threading.Tasks;
+using Silk.NET.Maths;
 
 namespace Aliquip.Sandbox
 {
@@ -20,6 +22,11 @@ namespace Aliquip.Sandbox
         {
             sandbox.Window.Update += action;
             sandbox.Run();
+        }
+
+        public static MovableSceneObject AddPrimitive(this ISandbox sandbox, Primitive primitive, Color color)
+        {
+            return sandbox.AddPrimitive(primitive, new Vector3D<float>(color.R / 255f, color.G / 255f, color.B / 255f));
         }
     }
 }

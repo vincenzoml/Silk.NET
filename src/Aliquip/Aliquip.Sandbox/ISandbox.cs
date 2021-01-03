@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
 namespace Aliquip.Sandbox
@@ -18,6 +19,6 @@ namespace Aliquip.Sandbox
         ILogger<T> GetLogger<T>();
         T GetService<T>();
         T Instantiate<T>(params object[] extraParams);
-        MovableSceneObject AddPrimitive(Primitives primitive);
+        MovableSceneObject AddPrimitive(Primitive primitive, Vector3D<float> color);
     }
 }

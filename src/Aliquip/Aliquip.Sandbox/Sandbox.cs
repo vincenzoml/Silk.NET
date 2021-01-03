@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
 namespace Aliquip.Sandbox
@@ -42,12 +43,14 @@ namespace Aliquip.Sandbox
             public T Instantiate<T>(params object[] extraParams)
                 => ActivatorUtilities.CreateInstance<T>(GetService<IServiceProvider>(), extraParams);
 
-            public MovableSceneObject AddPrimitive(Primitives primitive)
+            public MovableSceneObject AddPrimitive(Primitive primitive, Vector3D<float> color)
             {
+                if (color.X >= 1 || color.Y >= 1 || color.Z >= 1)
+                    color /= 255f;
                 switch (primitive)
                 {
-                    case Primitives.Quad:
-                        var q = Instantiate<Quad>();
+                    case Primitive.Quad:
+                        var q = Instantiate<Quad>(color);
                         Scene3D.AddObject(q);
                         return q;
                     default:

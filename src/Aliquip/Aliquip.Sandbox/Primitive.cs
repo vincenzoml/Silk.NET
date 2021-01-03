@@ -5,7 +5,7 @@
 
 namespace Aliquip.Sandbox
 {
-    public enum Primitives
+    public enum Primitive
     {
         Quad
     }
