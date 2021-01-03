@@ -11,18 +11,19 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+      <PackageReference Include="Silk.NET.GLFW" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Input.Glfw" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Input.Sdl" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Maths" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Vulkan" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Vulkan.Extensions.EXT" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Vulkan.Extensions.KHR" Version="2.0.0" />
+      <PackageReference Include="Silk.NET.Windowing.Sdl" Version="2.0.0" />
       <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
       <PackageReference Include="System.Reactive" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Input\Silk.NET.Input.Common\Silk.NET.Input.Common.csproj" />
-      <ProjectReference Include="..\..\Input\Silk.NET.Input.Glfw\Silk.NET.Input.Glfw.csproj" />
-      <ProjectReference Include="..\..\Input\Silk.NET.Input.Sdl\Silk.NET.Input.Sdl.csproj" />
-      <ProjectReference Include="..\..\Maths\Silk.NET.Maths\Silk.NET.Maths.csproj" />
-      <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.EXT\Silk.NET.Vulkan.Extensions.EXT.csproj" />
-      <ProjectReference Include="..\..\Vulkan\Extensions\Silk.NET.Vulkan.Extensions.KHR\Silk.NET.Vulkan.Extensions.KHR.csproj" />
-      <ProjectReference Include="..\..\Vulkan\Silk.NET.Vulkan\Silk.NET.Vulkan.csproj" />
       <ProjectReference Include="..\VMASharp\VMASharp\VMASharp.csproj" />
     </ItemGroup>
 
