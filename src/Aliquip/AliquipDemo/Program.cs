@@ -1,10 +1,9 @@
 ﻿using Aliquip.Sandbox;
-using Silk.NET.Maths;
 
 using var sandbox = Sandbox.Create();
 
-sandbox.AddPrimitive(Primitive.Cube, new(146, 100, 214));
-var quad = sandbox.AddPrimitive(Primitive.Quad, new(146, 100, 214));
-quad.Position += Vector3D<float>.UnitX * 5;
+sandbox.AddPrimitive(Primitive.Cube, 0, 1, 0);
+var quad = sandbox.AddPrimitive(Primitive.Quad, 1, 0, 0);
+quad.Position = new(3, 0, 0);
 
 sandbox.Run();

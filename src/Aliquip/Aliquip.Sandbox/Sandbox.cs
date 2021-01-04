@@ -45,7 +45,7 @@ namespace Aliquip.Sandbox
 
             public MovableSceneObject AddPrimitive(Primitive primitive, Vector3D<float> color)
             {
-                if (color.X >= 1 || color.Y >= 1 || color.Z >= 1)
+                if (color.X > 1 || color.Y > 1 || color.Z > 1)
                     color /= 255f;
 
                 MovableSceneObject o;

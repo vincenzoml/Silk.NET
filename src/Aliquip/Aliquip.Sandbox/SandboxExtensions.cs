@@ -28,5 +28,11 @@ namespace Aliquip.Sandbox
         {
             return sandbox.AddPrimitive(primitive, new Vector3D<float>(color.R / 255f, color.G / 255f, color.B / 255f));
         }
+
+        public static MovableSceneObject AddPrimitive
+            (this ISandbox sandbox, Primitive primitive, float r, float g, float b)
+        {
+            return sandbox.AddPrimitive(primitive, new Vector3D<float>(r, g, b));
+        }
     }
 }
