@@ -27,6 +27,7 @@ namespace Aliquip
         private readonly IMsaaProvider _msaaProvider;
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly ISampleShadingProvider _sampleShadingProvider;
+        private readonly IPipelineCacheProvider _pipelineCacheProvider;
 
         public GraphicsPipelineFactory
         (
@@ -37,7 +38,8 @@ namespace Aliquip
             IRenderPassProvider renderPassProvider,
             IMsaaProvider msaaProvider,
             IPhysicalDeviceProvider physicalDeviceProvider,
-            ISampleShadingProvider sampleShadingProvider
+            ISampleShadingProvider sampleShadingProvider,
+            IPipelineCacheProvider pipelineCacheProvider
         )
         {
             _vk = vk;
@@ -48,6 +50,7 @@ namespace Aliquip
             _msaaProvider = msaaProvider;
             _physicalDeviceProvider = physicalDeviceProvider;
             _sampleShadingProvider = sampleShadingProvider;
+            _pipelineCacheProvider = pipelineCacheProvider;
         }
 
         public unsafe Pipeline CreatePipeline(PipelineLayout pipelineLayout, ShaderModule vertShader, VertexInputAttributeDescription[] vertexInputAttributeDescriptions, VertexInputBindingDescription vertexInputBindingDescription, ShaderModule fragShader)
@@ -129,7 +132,7 @@ namespace Aliquip
                 );
 
                 _vk.CreateGraphicsPipelines
-                        (_logicalDeviceProvider.LogicalDevice, default, 1, &pipelineInfo, null, out var graphicsPipeline)
+                        (_logicalDeviceProvider.LogicalDevice, _pipelineCacheProvider.UsePipelineCache ? _pipelineCacheProvider.PipelineCache : default, 1, &pipelineInfo, null, out var graphicsPipeline)
                     .ThrowCode();
                 return graphicsPipeline;
             }

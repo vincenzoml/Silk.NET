@@ -104,6 +104,9 @@ namespace Aliquip
                         )
                     )
                 )
+                .AddSingleton<PipelineCacheProvider>()
+                .AddSingleton(x => (IPipelineCacheProvider)x.GetRequiredService<PipelineCacheProvider>())
+                .AddHostedService(x => x.GetRequiredService<PipelineCacheProvider>())
                 ;
         }
     }
