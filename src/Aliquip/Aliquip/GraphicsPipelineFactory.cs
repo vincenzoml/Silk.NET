@@ -28,6 +28,7 @@ namespace Aliquip
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly ISampleShadingProvider _sampleShadingProvider;
         private readonly IPipelineCacheProvider _pipelineCacheProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
 
         public GraphicsPipelineFactory
         (
@@ -39,7 +40,8 @@ namespace Aliquip
             IMsaaProvider msaaProvider,
             IPhysicalDeviceProvider physicalDeviceProvider,
             ISampleShadingProvider sampleShadingProvider,
-            IPipelineCacheProvider pipelineCacheProvider
+            IPipelineCacheProvider pipelineCacheProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _vk = vk;
@@ -51,6 +53,7 @@ namespace Aliquip
             _physicalDeviceProvider = physicalDeviceProvider;
             _sampleShadingProvider = sampleShadingProvider;
             _pipelineCacheProvider = pipelineCacheProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
         }
 
         public unsafe Pipeline CreatePipeline(PipelineLayout pipelineLayout, ShaderModule vertShader, VertexInputAttributeDescription[] vertexInputAttributeDescriptions, VertexInputBindingDescription vertexInputBindingDescription, ShaderModule fragShader)

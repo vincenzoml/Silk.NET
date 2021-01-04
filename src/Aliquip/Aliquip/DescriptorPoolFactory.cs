@@ -13,12 +13,14 @@ namespace Aliquip
         private readonly Vk _vk;
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
 
-        public DescriptorPoolFactory(Vk vk, ISwapchainProvider swapchainProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        public DescriptorPoolFactory(Vk vk, ISwapchainProvider swapchainProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _vk = vk;
             _swapchainProvider = swapchainProvider;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
         }
 
         public unsafe DescriptorPool CreateDescriptorPool(DescriptorPoolSize[] descriptorPoolSizes)

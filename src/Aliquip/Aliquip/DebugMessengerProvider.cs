@@ -29,6 +29,7 @@ namespace Aliquip
                 pfnUserCallback: new PfnDebugUtilsMessengerCallbackEXT(Callback)
             );
         private readonly Vk _vk;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private readonly ILogger _generalLogger;
         private readonly ILogger _validationLogger;
         private readonly ILogger _performanceLogger;
@@ -66,12 +67,13 @@ namespace Aliquip
             return Vk.False;
         }
 
-        public DebugMessengerProvider(Vk vk, ILoggerFactory loggerFactory)
+        public DebugMessengerProvider(Vk vk, ILoggerFactory loggerFactory, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _generalLogger = loggerFactory.CreateLogger("Vulkan.DebugMessenger.General");
             _validationLogger = loggerFactory.CreateLogger("Vulkan.DebugMessenger.Validation");
             _performanceLogger = loggerFactory.CreateLogger("Vulkan.DebugMessenger.Performance");
             _vk = vk;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
         }
 
         public unsafe void Attach(Instance instance)

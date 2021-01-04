@@ -14,12 +14,15 @@ namespace Aliquip
     {
         private readonly Instance _instance;
         private readonly KhrSurface _khrSurface;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         public SurfaceKHR Surface { get; }
 
-        public unsafe SurfaceProvider(KhrSurface khrSurface, IInstanceProvider instanceProvider, IWindowProvider windowProvider)
+        public unsafe SurfaceProvider(KhrSurface khrSurface, IInstanceProvider instanceProvider, IWindowProvider windowProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _khrSurface = khrSurface;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
             _instance = instanceProvider.Instance;
+
             Surface = windowProvider.Window.VkSurface!.Create<AllocationCallbacks>
                     (_instance.ToHandle(), null)
                 .ToSurface();

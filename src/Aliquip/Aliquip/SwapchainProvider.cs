@@ -16,6 +16,7 @@ namespace Aliquip
     {
         private readonly KhrSwapchain _khrSwapchain;
         private readonly ILogicalDeviceProvider _deviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private readonly IWindow _window;
         private readonly uint _imageCount;
         private readonly ILogger _logger;
@@ -30,11 +31,24 @@ namespace Aliquip
         public Format SwapchainFormat { get; private set; }
         public Extent2D SwapchainExtent { get; private set; }
 
-        public unsafe SwapchainProvider(ILogger<SwapchainProvider> logger, IFormatRater formatRater, IColorspaceRater colorspaceRater, IWindowProvider windowProvider, ISwapchainSupportProvider swapchainSupportProvider, IPhysicalDeviceProvider physicalDeviceProvider
-        , IQueueFamilyProvider queueFamilyProvider, ISurfaceProvider surfaceProvider, KhrSwapchain khrSwapchain, ILogicalDeviceProvider deviceProvider)
+        public unsafe SwapchainProvider
+        (
+            ILogger<SwapchainProvider> logger,
+            IFormatRater formatRater,
+            IColorspaceRater colorspaceRater,
+            IWindowProvider windowProvider,
+            ISwapchainSupportProvider swapchainSupportProvider,
+            IPhysicalDeviceProvider physicalDeviceProvider,
+            IQueueFamilyProvider queueFamilyProvider,
+            ISurfaceProvider surfaceProvider,
+            KhrSwapchain khrSwapchain,
+            ILogicalDeviceProvider deviceProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider
+        )
         {
             _khrSwapchain = khrSwapchain;
             _deviceProvider = deviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
             _window = windowProvider.Window;
             _logger = logger;
             _swapchainSupportProvider = swapchainSupportProvider;
@@ -75,11 +89,6 @@ namespace Aliquip
                 PresentModeKHR best = PresentModeKHR.PresentModeFifoKhr;
                 foreach (var availablePresentMode in availablePresentModes)
                 {
-                    if (availablePresentMode == PresentModeKHR.PresentModeMailboxKhr)
-                    {
-                        return PresentModeKHR.PresentModeMailboxKhr;
-                    }
-
                     if (availablePresentMode == PresentModeKHR.PresentModeFifoRelaxedKhr)
                     {
                         best = PresentModeKHR.PresentModeFifoRelaxedKhr;
@@ -90,7 +99,7 @@ namespace Aliquip
                     // and VK_PRESENT_MODE_FIFO_KHR is guaranteed and our default fallback
                     // therefore we are not rating those.
                 }
-                
+
                 if (maximum == 0)
                     logger.LogCritical("No suitable surface format found");
 
@@ -101,28 +110,45 @@ namespace Aliquip
 
             _surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.Formats);
             _presentMode = ChooseSwapPresentMode(supportDetails.PresentModes);
-            
+
             _imageCount = 3;
-            
+
             var hasMaxImage = supportDetails.Capabilities.MaxImageCount > 0;
             if (hasMaxImage && _imageCount > supportDetails.Capabilities.MaxImageCount)
                 _imageCount = supportDetails.Capabilities.MaxImageCount;
 
             if (_imageCount < supportDetails.Capabilities.MinImageCount)
                 _imageCount = supportDetails.Capabilities.MinImageCount;
-            
-            logger.LogDebug("Best possible format: {format}, rating: {rating}", formatRater.BestPossibleFormat.Item1, formatRater.BestPossibleFormat.Item2);
+
+            logger.LogDebug
+            (
+                "Best possible format: {format}, rating: {rating}", formatRater.BestPossibleFormat.Item1,
+                formatRater.BestPossibleFormat.Item2
+            );
             var formatRating = formatRater.Rate(_surfaceFormat.Format);
-            logger.LogDebug("Selected format: {format}, rating: {rating} ({percent}%)", _surfaceFormat.Format, formatRating, MathF.Round((float)formatRating / (float)formatRater.BestPossibleFormat.Item2 * 100f, 2));
-            logger.LogDebug("Best possible colorspace: {colorspace}, rating: {rating}", colorspaceRater.BestPossibleColorspace.Item1, colorspaceRater.BestPossibleColorspace.Item2);
+            logger.LogDebug
+            (
+                "Selected format: {format}, rating: {rating} ({percent}%)", _surfaceFormat.Format, formatRating,
+                MathF.Round((float) formatRating / (float) formatRater.BestPossibleFormat.Item2 * 100f, 2)
+            );
+            logger.LogDebug
+            (
+                "Best possible colorspace: {colorspace}, rating: {rating}",
+                colorspaceRater.BestPossibleColorspace.Item1, colorspaceRater.BestPossibleColorspace.Item2
+            );
             var colorspaceRating = colorspaceRater.Rate(_surfaceFormat.ColorSpace);
-            logger.LogDebug("Selected colorspace: {colorspace}, rating: {rating}, ({percent}%)", _surfaceFormat.ColorSpace, colorspaceRating, MathF.Round((float)colorspaceRating / (float)colorspaceRater.BestPossibleColorspace.Item2 * 100f, 2));
+            logger.LogDebug
+            (
+                "Selected colorspace: {colorspace}, rating: {rating}, ({percent}%)", _surfaceFormat.ColorSpace,
+                colorspaceRating,
+                MathF.Round((float) colorspaceRating / (float) colorspaceRater.BestPossibleColorspace.Item2 * 100f, 2)
+            );
             logger.LogDebug("Selected present mode: {presentMode}", _presentMode);
             logger.LogDebug("Image count: {imageCount}", _imageCount);
 
             Recreate(null);
         }
-        
+
         public unsafe void Recreate(Vector2D<int>? newSize)
         {            
             Extent2D ChooseSwapExtend(SurfaceCapabilitiesKHR capabilities)

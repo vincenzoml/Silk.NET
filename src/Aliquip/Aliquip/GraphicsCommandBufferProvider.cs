@@ -20,11 +20,9 @@ namespace Aliquip
         private readonly IDescriptorSetFactory _descriptorSetFactory;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
         private readonly IScene _scene;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private CommandBuffer[]? _primaryCommandBuffers;
         private CommandBuffer[][]? _secondaryCommandBuffers;
-#if DEBUG
-        public QueryPool TimeQueryPool { get; set; }
-#endif
         
         public unsafe CommandBuffer* this[int index]
         {
@@ -52,7 +50,8 @@ namespace Aliquip
             IPipelineLayoutFactory pipelineLayoutFactory,
             IDescriptorSetFactory descriptorSetFactory,
             ILogicalDeviceProvider logicalDeviceProvider,
-            IScene scene
+            IScene scene,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _vk = vk;
@@ -66,6 +65,7 @@ namespace Aliquip
             _descriptorSetFactory = descriptorSetFactory;
             _logicalDeviceProvider = logicalDeviceProvider;
             _scene = scene;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             Recreate();
         }
@@ -120,10 +120,6 @@ namespace Aliquip
         
         public unsafe void Dispose()
         {
-#if DEBUG
-            _vk.DestroyQueryPool(_logicalDeviceProvider.LogicalDevice, TimeQueryPool, null);
-#endif
-
             foreach (var secondaryCommandBuffer in _secondaryCommandBuffers)
             {
                 _commandBufferFactory.FreeCommandBuffers(secondaryCommandBuffer, _graphicsQueueProvider.GraphicsQueueIndex);

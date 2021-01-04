@@ -15,25 +15,27 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private readonly Texture _texture;
 
         private static Dictionary<Texture, SimpleTextured3DMaterial> _materials = new();
         
         public static SimpleTextured3DMaterial Create
-            (Texture texture, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+            (Texture texture, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             if (_materials.TryGetValue(texture, out var v))
                 return v;
 
-            v = new SimpleTextured3DMaterial(texture, vk, resourceProvider, logicalDeviceProvider);
+            v = new SimpleTextured3DMaterial(texture, vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
             _materials[texture] = v;
             return v;
         }
 
-        private SimpleTextured3DMaterial(Texture texture, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        private SimpleTextured3DMaterial(Texture texture, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             unsafe ShaderModule CreateShaderModule(string path)
             {

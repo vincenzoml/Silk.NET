@@ -121,6 +121,7 @@ namespace Aliquip
         private readonly IWindowProvider _windowProvider;
         private readonly ILogger _logger;
         private readonly VulkanMemoryAllocator _vma;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private Dictionary<IMaterial, MaterialInfo> _materialInfos = new();
         private Dictionary<IModel, ModelBuffer> _modelBuffers = new();
         private Dictionary<ISceneObject, SceneObjectInfo> _objectInfos = new();
@@ -143,7 +144,8 @@ namespace Aliquip
             IDescriptorPoolFactory descriptorPoolFactory,
             IWindowProvider windowProvider,
             ILogger<Scene3D> logger,
-            VulkanMemoryAllocator vma
+            VulkanMemoryAllocator vma,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _vk = vk;
@@ -161,6 +163,7 @@ namespace Aliquip
             _windowProvider = windowProvider;
             _logger = logger;
             _vma = vma;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
             CommandBufferNeedsRebuild = true;
         }
 

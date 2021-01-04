@@ -13,12 +13,14 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private readonly Dictionary<uint, CommandPool> _pools = new();
 
-        public unsafe CommandPoolProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider)
+        public unsafe CommandPoolProvider(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
         }
 
         public unsafe void Dispose()
@@ -37,7 +39,7 @@ namespace Aliquip
                 
                 var createInfo = new CommandPoolCreateInfo(queueFamilyIndex: queueFamilyIndex);
 
-                _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out cp).ThrowCode();
+                _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, _allocationCallbacksProvider.AllocationCallbacks, out cp).ThrowCode();
                 _pools[queueFamilyIndex] = cp;
                 return cp;
             }

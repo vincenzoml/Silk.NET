@@ -29,6 +29,7 @@ namespace Aliquip
         private readonly uint _width;
         private readonly uint _height;
         private readonly ImageAspectFlags _aspectFlags;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         public uint MipLevels { get; }
         public Image Image { get; }
         private ImageLayout _layout = ImageLayout.Undefined;
@@ -54,7 +55,8 @@ namespace Aliquip
             bool createSampler,
             bool useMipmaps,
             ImageAspectFlags aspectFlags,
-            ImageUsageFlags imageUsageFlags
+            ImageUsageFlags imageUsageFlags,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _vk = vk;
@@ -66,6 +68,7 @@ namespace Aliquip
             _bufferFactory = bufferFactory;
             _vma = vma;
             _aspectFlags = aspectFlags;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
             Format = format;
 
             if (useMipmaps)

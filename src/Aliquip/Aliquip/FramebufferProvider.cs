@@ -19,9 +19,22 @@ namespace Aliquip
         private readonly IColorImageProvider _colorImageProvider;
         private readonly IMsaaProvider _msaaProvider;
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         public Framebuffer[] Framebuffers { get; private set; }
 
-        public unsafe FramebufferProvider(Vk vk, ILogicalDeviceProvider deviceProvider, ISwapchainProvider swapchainProvider, IRenderPassProvider renderPassProvider, IImageViewProvider imageViewProvider, IDepthImageProvider depthImageProvider, IColorImageProvider colorImageProvider, IMsaaProvider msaaProvider, IPhysicalDeviceProvider physicalDeviceProvider)
+        public unsafe FramebufferProvider
+        (
+            Vk vk,
+            ILogicalDeviceProvider deviceProvider,
+            ISwapchainProvider swapchainProvider,
+            IRenderPassProvider renderPassProvider,
+            IImageViewProvider imageViewProvider,
+            IDepthImageProvider depthImageProvider,
+            IColorImageProvider colorImageProvider,
+            IMsaaProvider msaaProvider,
+            IPhysicalDeviceProvider physicalDeviceProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider
+        )
         {
             _vk = vk;
             _deviceProvider = deviceProvider;
@@ -32,6 +45,7 @@ namespace Aliquip
             _colorImageProvider = colorImageProvider;
             _msaaProvider = msaaProvider;
             _physicalDeviceProvider = physicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             Recreate();
         }

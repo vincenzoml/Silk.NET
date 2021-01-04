@@ -19,8 +19,10 @@ namespace Aliquip
         public Instance Instance { get; }
         private Vk _vk;
         private readonly ILogger _logger;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
 
-        public InstanceProvider(Vk vk, ILogger<InstanceProvider> logger, IWindowProvider windowProvider
+        public InstanceProvider(Vk vk, ILogger<InstanceProvider> logger, IWindowProvider windowProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider
 #if DEBUG
             , IDebugMessengerProvider debugMessengerProvider
 #endif
@@ -28,6 +30,7 @@ namespace Aliquip
         {
             _vk = vk;
             _logger = logger;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             ApplicationInfo appInfo = new ApplicationInfo(
                 pApplicationName: (byte*) SilkMarshal.StringToPtr("Project Aliquip"),
@@ -71,7 +74,7 @@ namespace Aliquip
             );
             
             { // hide instance variable
-                _vk.CreateInstance(&instanceCreateInfo, null, out var instance);
+                _vk.CreateInstance(&instanceCreateInfo, _allocationCallbacksProvider.AllocationCallbacks, out var instance).ThrowCode();
                 Instance = instance;
             }
             
@@ -85,7 +88,7 @@ namespace Aliquip
 
         public void Dispose()
         {
-            _vk.DestroyInstance(Instance, null);
+            _vk.DestroyInstance(Instance, _allocationCallbacksProvider.AllocationCallbacks);
         }
     }
 }

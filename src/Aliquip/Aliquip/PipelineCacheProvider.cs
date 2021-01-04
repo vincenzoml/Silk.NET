@@ -25,6 +25,7 @@ namespace Aliquip
         public bool UsePipelineCache { get; private set; }
         private readonly string? _path;
         private readonly ILogger _logger;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
 
         public unsafe PipelineCacheProvider
         (
@@ -33,12 +34,14 @@ namespace Aliquip
             ILogicalDeviceProvider logicalDeviceProvider,
             ILogger<PipelineCacheProvider> logger,
             IHostEnvironment environment,
-            IPhysicalDeviceProvider physicalDeviceProvider
+            IPhysicalDeviceProvider physicalDeviceProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
             _logger = logger;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
             var section = configuration.GetSection("Pipeline Cache");
             var useStr = section["Enabled"];
             if (useStr is null || !bool.TryParse(useStr, out var useRes))

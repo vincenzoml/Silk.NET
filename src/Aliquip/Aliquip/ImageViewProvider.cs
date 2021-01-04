@@ -13,13 +13,15 @@ namespace Aliquip
         private readonly Vk _vk;
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         public ImageView[] ImageViews { get; private set; }
 
-        public unsafe ImageViewProvider(Vk vk, ISwapchainProvider swapchainProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        public unsafe ImageViewProvider(Vk vk, ISwapchainProvider swapchainProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _vk = vk;
             _swapchainProvider = swapchainProvider;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             Recreate();
         }

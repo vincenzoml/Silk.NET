@@ -18,9 +18,9 @@ namespace Aliquip
 
         private static readonly Dictionary<Vector3D<float>, QuadModel> _models = new();
         
-        public Quad(Vector3D<float> color, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider) : base()
+        public Quad(Vector3D<float> color, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
         {
-            Material = Simple3DMaterial.Create(vk, resourceProvider, logicalDeviceProvider);
+            Material = Simple3DMaterial.Create(vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
 
             if (!_models.TryGetValue(color, out var model))
             {

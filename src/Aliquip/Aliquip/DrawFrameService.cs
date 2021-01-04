@@ -33,6 +33,7 @@ namespace Aliquip
         private readonly IGraphicsPipelineFactory _graphicsPipelineFactory;
         private readonly ILogger _logger;
         private readonly IScene _scene;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private IDisposable _subscription;
         private readonly Semaphore[] _imageAvailableSemaphores;
         private readonly Semaphore[] _renderFinishedSemaphores;
@@ -55,7 +56,8 @@ namespace Aliquip
             IGraphicsPipelineFactory graphicsPipelineFactory,
             IPhysicalDeviceProvider physicalDeviceProvider,
             ILogger<DrawFrameService> logger,
-            IScene scene
+            IScene scene,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _windowProvider = windowProvider;
@@ -71,6 +73,7 @@ namespace Aliquip
             _graphicsPipelineFactory = graphicsPipelineFactory;
             _logger = logger;
             _scene = scene;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             _imageAvailableSemaphores = new Semaphore[MaxFramesInFlight];
             _renderFinishedSemaphores = new Semaphore[MaxFramesInFlight];

@@ -16,6 +16,7 @@ namespace Aliquip
     {
         private readonly IPhysicalDeviceProvider _physicalDeviceProvider;
         private readonly Vk _vk;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         public Device LogicalDevice { get; private set; }
         public Queue GraphicsQueue { get; }
         public uint GraphicsQueueIndex { get; set; }
@@ -24,10 +25,12 @@ namespace Aliquip
         public Queue TransferQueue { get; }
         public uint TransferQueueIndex { get; }
 
-        public unsafe LogicalDeviceProvider(IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vk vk, ISampleShadingProvider sampleShadingProvider)
+        public unsafe LogicalDeviceProvider(IQueueFamilyProvider queueFamilyProvider, IPhysicalDeviceProvider physicalDeviceProvider, Vk vk, ISampleShadingProvider sampleShadingProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _physicalDeviceProvider = physicalDeviceProvider;
             _vk = vk;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
             // TODO: dedup device extensions
             // (LogicalDeviceProvider & PhysicalDeviceProvider)
             var deviceExtensions = new List<string>();

@@ -12,11 +12,13 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
 
-        public unsafe DescriptorSetLayoutFactory(Vk vk, ILogicalDeviceProvider logicalDeviceProvider)
+        public unsafe DescriptorSetLayoutFactory(Vk vk, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
         }
 
         public unsafe DescriptorSetLayout CreateDescriptorSetLayout(DescriptorSetLayoutBinding[] bindings)

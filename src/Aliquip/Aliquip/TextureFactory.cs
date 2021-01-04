@@ -24,6 +24,7 @@ namespace Aliquip
         private readonly ICommandBufferFactory _commandBufferFactory;
         private readonly IGraphicsQueueProvider _graphicsQueueProvider;
         private readonly VulkanMemoryAllocator _vma;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
         private readonly Dictionary<string, Texture> _cache = new();
         public Texture this[string name]
         {
@@ -48,7 +49,8 @@ namespace Aliquip
             IPhysicalDeviceProvider physicalDeviceProvider,
             ICommandBufferFactory commandBufferFactory,
             IGraphicsQueueProvider graphicsQueueProvider,
-            VulkanMemoryAllocator vma
+            VulkanMemoryAllocator vma,
+            IAllocationCallbacksProvider allocationCallbacksProvider
         )
         {
             _vk = vk;
@@ -60,6 +62,7 @@ namespace Aliquip
             _commandBufferFactory = commandBufferFactory;
             _graphicsQueueProvider = graphicsQueueProvider;
             _vma = vma;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
         }
 
         public unsafe Texture CreateImage(Image<Rgba32> src, bool createSampler, bool useMipmaps, SampleCountFlags numSamples, ImageAspectFlags aspectFlags, ImageUsageFlags imageUsageFlags = default)
@@ -70,7 +73,8 @@ namespace Aliquip
                 _transferQueueProvider, _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider,
                 _bufferFactory, _vma, createSampler, useMipmaps, aspectFlags,
                 imageUsageFlags | ImageUsageFlags.ImageUsageTransferDstBit | ImageUsageFlags.ImageUsageSampledBit |
-                ImageUsageFlags.ImageUsageTransferSrcBit
+                ImageUsageFlags.ImageUsageTransferSrcBit,
+                _allocationCallbacksProvider
             );
             
             var pixelCount = src.Width * src.Height;
@@ -111,7 +115,8 @@ namespace Aliquip
             (
                 width, height, format, numSamples, _vk, _commandBufferFactory, _transferQueueProvider,
                 _logicalDeviceProvider, _physicalDeviceProvider, _graphicsQueueProvider, _bufferFactory, _vma,
-                createSampler, useMipmaps, aspectFlags, imageUsageFlags
+                createSampler, useMipmaps, aspectFlags, imageUsageFlags,
+                _allocationCallbacksProvider
             );
         }
 

@@ -15,19 +15,21 @@ namespace Aliquip
     {
         private readonly Vk _vk;
         private readonly ILogicalDeviceProvider _logicalDeviceProvider;
+        private readonly IAllocationCallbacksProvider _allocationCallbacksProvider;
 
         private static Simple3DMaterial? _cache;
         
         public static Simple3DMaterial Create
-            (Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+            (Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
-            return _cache ??= new Simple3DMaterial(vk, resourceProvider, logicalDeviceProvider);
+            return _cache ??= new Simple3DMaterial(vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
         }
 
-        private Simple3DMaterial(Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider)
+        private Simple3DMaterial(Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider)
         {
             _vk = vk;
             _logicalDeviceProvider = logicalDeviceProvider;
+            _allocationCallbacksProvider = allocationCallbacksProvider;
 
             unsafe ShaderModule CreateShaderModule(string path)
             {

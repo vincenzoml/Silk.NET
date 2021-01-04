@@ -23,12 +23,13 @@ namespace Aliquip
             ITextureFactory textureFactory,
             Vk vk,
             ILogicalDeviceProvider logicalDeviceProvider,
+            IAllocationCallbacksProvider allocationCallbacksProvider,
             Matrix4X4<float> worldToLocal
         )
         {
             WorldToLocal = worldToLocal;
             Model = Simple3DFileModel.Create(fileName, loggerFactory.CreateLogger<Simple3DFileModel>());
-            Material = SimpleTextured3DMaterial.Create(textureFactory[fileName + ".png"], vk, resourceProvider, logicalDeviceProvider);
+            Material = SimpleTextured3DMaterial.Create(textureFactory[fileName + ".png"], vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
         }
     }
 }
