@@ -4,25 +4,34 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Numerics;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.Windowing;
 
 namespace Aliquip
 {
     internal sealed class CameraProvider : ICameraProvider, IDisposable
     {
-        private readonly IConfiguration _configuration;
         private readonly ISwapchainProvider _swapchainProvider;
-        private readonly IInputContext _inputContext;
         private readonly IWindowProvider _windowProvider;
         private readonly float _fov;
-        private readonly IDisposable _subscription;
-        private readonly float _speed;
         private Vector3D<float> _position;
+        private Vector3D<float> _cameraFront;
+        private Vector2 _lastMousePos;
+        private float _cameraYaw = -90f;
+        private float _cameraPitch = 0f;
+        private Vector3D<float> _cameraDirection = Vector3D<float>.Zero;
+        private readonly IMouse _mouse;
+        private readonly IKeyboard _keyboard;
+        private bool _inputEnabled;
+
+        private static readonly Vector3D<float> Up = Vector3D<float>.UnitY;
 
         public Matrix4X4<float> ViewMatrix
-            => Matrix4X4.CreateLookAt(_position, new(0, 0, 0), Vector3D<float>.UnitZ);
+            => Matrix4X4.CreateLookAt(_position, _position + _cameraFront, Up);
 
         public Matrix4X4<float> ProjectionMatrix 
         => Matrix4X4.CreatePerspectiveFieldOfView
@@ -32,60 +41,128 @@ namespace Aliquip
             (float) _swapchainProvider.SwapchainExtent.Height, 0.1f, 1000f
         );
 
-        public CameraProvider(IConfiguration configuration, ISwapchainProvider swapchainProvider, IInputContext inputContext, IWindowProvider windowProvider)
+        public CameraProvider(IConfiguration configuration, ISwapchainProvider swapchainProvider, IInputContext inputContext, IWindowProvider windowProvider,
+            ILogger<CameraProvider> logger)
         {
-            _configuration = configuration;
             _swapchainProvider = swapchainProvider;
-            _inputContext = inputContext;
             _windowProvider = windowProvider;
 
-            if (!int.TryParse(_configuration["Field Of View"], out var intFov))
+            _mouse = inputContext.Mice[0];
+            _keyboard = inputContext.Keyboards[0];
+
+            logger.LogInformation("Using Mouse: {name}", _mouse.Name);
+            logger.LogInformation("Using Keyboard: {name}", _keyboard.Name);
+            
+            if (!int.TryParse(configuration["Field Of View"], out var intFov))
                 intFov = 45;
             _fov = intFov * MathF.PI / 180f;
             
-            if (!float.TryParse(_configuration["Camera Speed"], out _speed))
-                _speed = .1f;
+            // if (!float.TryParse(_configuration["Camera Speed"], out _speed))
+            //     _speed = .1f;
 
-            _position = new(2f, 2f, 2f);
+            _position = new Vector3D<float>(2f, 0, 0);
             
             _windowProvider.Window.Update += Update;
+            _cameraFront = default;
+
+            _mouse.MouseMove += OnMouseMove;
+            _mouse.Click += OnMouseClick;
+            _inputEnabled = true;
+            _windowProvider.Window.FocusChanged += OnFocusChanged;
+            _windowProvider.Window.Center();
+            _mouse.Cursor.CursorMode = CursorMode.Raw;
+        }
+
+        private void OnMouseClick(IMouse mouse, MouseButton button, Vector2 position)
+        {
+            _mouse.Cursor.CursorMode = CursorMode.Raw;
+        }
+
+        private void OnFocusChanged(bool newFocs)
+        {
+            _inputEnabled = newFocs;
+            _lastMousePos = default;
+        }
+
+        private static float DegreesToRadians(float degrees)
+        {
+            return MathF.PI / 180f * degrees;
+        }
+        
+        private void OnMouseMove(IMouse mouse, Vector2 position)
+        {
+            if (!_inputEnabled)
+                return;
+            
+            var lookSensitivity = 0.1f;
+            if (_lastMousePos == default) { _lastMousePos = position; }
+            else
+            {
+                var xOffset = (position.X - _lastMousePos.X) * lookSensitivity;
+                var yOffset = (position.Y - _lastMousePos.Y) * lookSensitivity;
+                _lastMousePos = position;
+
+                _cameraYaw += xOffset;
+                _cameraPitch -= yOffset;
+
+                //We don't want to be able to look behind us by going over our head or under our feet so make sure it stays within these bounds
+                _cameraPitch = Math.Clamp(_cameraPitch, -89.0f, 89.0f);
+
+                _cameraDirection.X = MathF.Cos(DegreesToRadians(_cameraYaw)) * MathF.Cos(DegreesToRadians(_cameraPitch));
+                _cameraDirection.Y = MathF.Sin(DegreesToRadians(_cameraPitch));
+                _cameraDirection.Z = MathF.Sin(DegreesToRadians(_cameraYaw)) * MathF.Cos(DegreesToRadians(_cameraPitch));
+                _cameraFront = Vector3D.Normalize(_cameraDirection);
+            }
         }
 
         public void Dispose()
         {
             _windowProvider.Window.Update -= Update;
+            _mouse.MouseMove -= OnMouseMove;
+            _mouse.Click -= OnMouseClick;
         }
 
-        private void Update(double obj)
+        private void Update(double deltaTime)
         {
-            if (_inputContext.Keyboards[0].IsKeyPressed(Key.S))
-            {
-                _position += Vector3D<float>.UnitX * _speed;
-            }
-
-            if (_inputContext.Keyboards[0].IsKeyPressed(Key.W))
-            {
-                _position -= Vector3D<float>.UnitX * _speed;
-            }
+            if (!_inputEnabled)
+                return;
             
-            if (_inputContext.Keyboards[0].IsKeyPressed(Key.A))
-            {
-                _position += Vector3D<float>.UnitY * _speed;
-            }
+            var moveSpeed = 2.5f * (float) deltaTime;
 
-            if (_inputContext.Keyboards[0].IsKeyPressed(Key.D))
+            if (_keyboard.IsKeyPressed(Key.W))
             {
-                _position -= Vector3D<float>.UnitY * _speed;
+                //Move forwards
+                _position += moveSpeed * _cameraFront;
             }
-            
-            if (_inputContext.Keyboards[0].IsKeyPressed(Key.Space))
+            if (_keyboard.IsKeyPressed(Key.S))
             {
-                _position += Vector3D<float>.UnitZ * _speed;
+                //Move backwards
+                _position -= moveSpeed * _cameraFront;
             }
-
-            if (_inputContext.Keyboards[0].IsKeyPressed(Key.ControlLeft))
+            if (_keyboard.IsKeyPressed(Key.A))
             {
-                _position -= Vector3D<float>.UnitZ * _speed;
+                //Move left
+                _position -= Vector3D.Normalize(Vector3D.Cross(_cameraFront, Up)) * moveSpeed;
+            }
+            if (_keyboard.IsKeyPressed(Key.D))
+            {
+                //Move right
+                _position += Vector3D.Normalize(Vector3D.Cross(_cameraFront, Up)) * moveSpeed;
+            }
+            if (_keyboard.IsKeyPressed(Key.Space))
+            {
+                //Move up
+                _position += Up * moveSpeed;
+            }
+            if (_keyboard.IsKeyPressed(Key.ControlLeft))
+            {
+                //Move up
+                _position -= Up * moveSpeed;
+            }
+            if (_keyboard.IsKeyPressed(Key.Escape))
+            {
+                // show cursor again
+                _mouse.Cursor.CursorMode = CursorMode.Normal;
             }
         }
     }
