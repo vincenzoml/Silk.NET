@@ -8,6 +8,9 @@ namespace Aliquip.Sandbox
     public enum Primitive
     {
         Quad,
-        Cube
+        Cube,
+        SpiralSphere,
+        StackedSphere,
+        Sphere = SpiralSphere,
     }
 }

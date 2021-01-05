@@ -59,6 +59,14 @@ namespace Aliquip.Sandbox
                         o = Instantiate<Cube>(color);
                         Scene3D.AddObject(o);
                         return o;
+                    case Primitive.SpiralSphere:
+                        o = Instantiate<Sphere>(color, SphereType.Spiral);
+                        Scene3D.AddObject(o);
+                        return o;
+                    case Primitive.StackedSphere:
+                        o = Instantiate<Sphere>(color, SphereType.Stacked);
+                        Scene3D.AddObject(o);
+                        return o;
                     default:
                         throw new ArgumentException(nameof(primitive));
                 }
