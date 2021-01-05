@@ -34,8 +34,8 @@ namespace Aliquip
 
             var c = cbs[0];
             var submitInfo = new SubmitInfo(commandBufferCount: 1, pCommandBuffers: &c);
-            _vk.QueueSubmit(queueFamily, 1, submitInfo, default);
-            _vk.QueueWaitIdle(queueFamily); // TODO: run in background (async/await? :eyes:)
+            _vk.QueueSubmit(queueFamily, 1, submitInfo, default).ThrowCode();
+            _vk.QueueWaitIdle(queueFamily).ThrowCode(); // TODO: run in background (async/await? :eyes:)
             
             FreeCommandBuffers(cbs, queueFamilyIndex);
         }
@@ -57,7 +57,12 @@ namespace Aliquip
                 commandBufferCount: (uint) commandBuffers.Length
             );
 
-            _vk.AllocateCommandBuffers(_logicalDeviceProvider.LogicalDevice, &allocInfo, commandBuffers).ThrowCode();
+            fixed (CommandBuffer* pCommandBuffers = commandBuffers)
+            {
+                _vk.AllocateCommandBuffers
+                        (_logicalDeviceProvider.LogicalDevice, &allocInfo, pCommandBuffers)
+                    .ThrowCode();
+            }
 
             if (record is not null)
             {
@@ -65,9 +70,9 @@ namespace Aliquip
                 
                 for (int i = 0; i < amount; i++)
                 {
-                    _vk.BeginCommandBuffer(commandBuffers[i], commandBufferBeginInfo.Value);
+                    _vk.BeginCommandBuffer(commandBuffers[i], commandBufferBeginInfo.Value).ThrowCode();
                     record(commandBuffers[i], i);
-                    _vk.EndCommandBuffer(commandBuffers[i]);
+                    _vk.EndCommandBuffer(commandBuffers[i]).ThrowCode();
                 }
             }
 

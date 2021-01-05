@@ -17,8 +17,6 @@ namespace Aliquip
         private readonly ILogger _logger;
         public AllocationCallbacks AllocationCallbacks { get; }
         private GCHandle _selfHandle;
-        private static volatile uint _totalAllocated = 0;
-        private static volatile uint _totalAllocations = 0;
 
         public unsafe AllocationCallbacksProvider(ILogger<AllocationCallbacksProvider> logger)
         {
@@ -42,12 +40,12 @@ namespace Aliquip
         
         private static unsafe void* Allocate(nuint size, nuint alignment)
         {
-            var arr = GC.AllocateUninitializedArray<byte>((int) (size + alignment) - 1 + sizeof(IntPtr), true);
+            var arr = GC.AllocateUninitializedArray<byte>((int) (size + alignment - 1) + sizeof(IntPtr) + sizeof(UIntPtr), true);
             var allocatedHandle = GCHandle.Alloc(arr, GCHandleType.Normal);
             var handlePtr = GCHandle.ToIntPtr(allocatedHandle);
             fixed (byte* pArr = arr)
             {
-                var address = (nint) (pArr + sizeof(IntPtr));
+                var address = (nint) (pArr + sizeof(IntPtr) + sizeof(IntPtr));
                 address += address % (nint) alignment;
                 *((IntPtr*) address - 1) = handlePtr;
                 *((UIntPtr*) address - 2) = alignment;
@@ -66,15 +64,12 @@ namespace Aliquip
         private static unsafe void* Allocation
             (void* pUserData, nuint size, nuint alignment, SystemAllocationScope allocationScope)
         {
-            var total = Interlocked.Add(ref _totalAllocated, (uint) size);
-            var count = Interlocked.Increment(ref _totalAllocations);
-            
             var handle = GCHandle.FromIntPtr((IntPtr) pUserData);
             var @this = (AllocationCallbacksProvider?) handle.Target;
             if (@this is null)
                 return null;
 
-            @this._logger.LogTrace("Allocation: {size} {alignment} {scope} {total} {count}", size, alignment, allocationScope, total, count);
+            @this._logger.LogTrace("Allocation: {size} {alignment} {scope}", size, alignment, allocationScope);
             return Allocate(size, alignment);
         }
 

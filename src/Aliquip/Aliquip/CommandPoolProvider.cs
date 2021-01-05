@@ -39,7 +39,7 @@ namespace Aliquip
                 
                 var createInfo = new CommandPoolCreateInfo(queueFamilyIndex: queueFamilyIndex);
 
-                _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, _allocationCallbacksProvider.AllocationCallbacks, out cp).ThrowCode();
+                _vk.CreateCommandPool(_logicalDeviceProvider.LogicalDevice, &createInfo, null, out cp).ThrowCode();
                 _pools[queueFamilyIndex] = cp;
                 return cp;
             }
