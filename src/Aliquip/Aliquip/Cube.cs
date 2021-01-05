@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -16,9 +17,9 @@ namespace Aliquip
         public override IMaterial Material { get; }
         public override IModel Model { get; }
 
-        private static readonly Dictionary<Vector3D<float>, CubeModel> _models = new();
+        private static readonly Dictionary<Vector3, CubeModel> _models = new();
         
-        public Cube(Vector3D<float> color, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
+        public Cube(Vector3 color, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
         {
             Material = Simple3DMaterial.Create(vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
 
@@ -45,7 +46,7 @@ namespace Aliquip
 
             ReadOnlySpan<uint> IModel.Indices => Indices;
 
-            public CubeModel(Vector3D<float> color)
+            public CubeModel(Vector3 color)
             {
                 /*
 http://www.asmcommunity.net/forums/topic/?id=6284.

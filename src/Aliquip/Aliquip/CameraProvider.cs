@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.Vulkan;
 using Silk.NET.Windowing;
 
 namespace Aliquip
@@ -18,23 +19,23 @@ namespace Aliquip
         private readonly ISwapchainProvider _swapchainProvider;
         private readonly IWindowProvider _windowProvider;
         private readonly float _fov;
-        private Vector3D<float> _position;
-        private Vector3D<float> _cameraFront;
+        private Vector3 _position;
+        private Vector3 _cameraFront;
         private Vector2 _lastMousePos;
         private float _cameraYaw = -90f;
         private float _cameraPitch = 0f;
-        private Vector3D<float> _cameraDirection = Vector3D<float>.Zero;
+        private Vector3 _cameraDirection = Vector3.Zero;
         private readonly IMouse _mouse;
         private readonly IKeyboard _keyboard;
         private bool _inputEnabled;
 
-        private static readonly Vector3D<float> Up = Vector3D<float>.UnitY;
+        private Vector3 _up = Vector3.UnitY;
 
-        public Matrix4X4<float> ViewMatrix
-            => Matrix4X4.CreateLookAt(_position, _position + _cameraFront, Up);
+        public Matrix4x4 ViewMatrix
+            => Matrix4x4.CreateLookAt(_position, _position + _cameraFront, _up);
 
-        public Matrix4X4<float> ProjectionMatrix 
-        => Matrix4X4.CreatePerspectiveFieldOfView
+        public Matrix4x4 ProjectionMatrix 
+        => Matrix4x4.CreatePerspectiveFieldOfView
         (
             _fov,
             (float) _swapchainProvider.SwapchainExtent.Width /
@@ -60,7 +61,7 @@ namespace Aliquip
             // if (!float.TryParse(_configuration["Camera Speed"], out _speed))
             //     _speed = .1f;
 
-            _position = new Vector3D<float>(2f, 0, 0);
+            _position = new Vector3(2f, 0, 0);
             
             _windowProvider.Window.Update += Update;
             _cameraFront = default;
@@ -111,7 +112,7 @@ namespace Aliquip
                 _cameraDirection.X = MathF.Cos(DegreesToRadians(_cameraYaw)) * MathF.Cos(DegreesToRadians(_cameraPitch));
                 _cameraDirection.Y = MathF.Sin(DegreesToRadians(_cameraPitch));
                 _cameraDirection.Z = MathF.Sin(DegreesToRadians(_cameraYaw)) * MathF.Cos(DegreesToRadians(_cameraPitch));
-                _cameraFront = Vector3D.Normalize(_cameraDirection);
+                _cameraFront = Vector3.Normalize(_cameraDirection);
             }
         }
 
@@ -129,6 +130,9 @@ namespace Aliquip
             
             var moveSpeed = 2.5f * (float) deltaTime;
 
+            if (_keyboard.IsKeyPressed(Key.ShiftLeft))
+                moveSpeed *= 10;
+
             if (_keyboard.IsKeyPressed(Key.W))
             {
                 //Move forwards
@@ -142,22 +146,22 @@ namespace Aliquip
             if (_keyboard.IsKeyPressed(Key.A))
             {
                 //Move left
-                _position -= Vector3D.Normalize(Vector3D.Cross(_cameraFront, Up)) * moveSpeed;
+                _position -= Vector3.Normalize(Vector3.Cross(_cameraFront, _up)) * moveSpeed;
             }
             if (_keyboard.IsKeyPressed(Key.D))
             {
                 //Move right
-                _position += Vector3D.Normalize(Vector3D.Cross(_cameraFront, Up)) * moveSpeed;
+                _position += Vector3.Normalize(Vector3.Cross(_cameraFront, _up)) * moveSpeed;
             }
             if (_keyboard.IsKeyPressed(Key.Space))
             {
                 //Move up
-                _position += Up * moveSpeed;
+                _position += _up * moveSpeed;
             }
             if (_keyboard.IsKeyPressed(Key.ControlLeft))
             {
                 //Move up
-                _position -= Up * moveSpeed;
+                _position -= _up * moveSpeed;
             }
             if (_keyboard.IsKeyPressed(Key.Escape))
             {

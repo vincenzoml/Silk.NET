@@ -3,6 +3,7 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
+using System.Numerics;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -13,7 +14,7 @@ namespace Aliquip
     {
         public IMaterial Material { get; }
         public IModel Model { get; }
-        public Matrix4X4<float> WorldToLocal { get; }
+        public Matrix4x4 WorldToLocal { get; }
 
         public Simple3DFileObject
         (
@@ -24,7 +25,7 @@ namespace Aliquip
             Vk vk,
             ILogicalDeviceProvider logicalDeviceProvider,
             IAllocationCallbacksProvider allocationCallbacksProvider,
-            Matrix4X4<float> worldToLocal
+            Matrix4x4 worldToLocal
         )
         {
             WorldToLocal = worldToLocal;

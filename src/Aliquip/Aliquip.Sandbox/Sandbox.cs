@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -43,7 +44,7 @@ namespace Aliquip.Sandbox
             public T Instantiate<T>(params object[] extraParams)
                 => ActivatorUtilities.CreateInstance<T>(GetService<IServiceProvider>(), extraParams);
 
-            public MovableSceneObject AddPrimitive(Primitive primitive, Vector3D<float> color)
+            public MovableSceneObject AddPrimitive(Primitive primitive, Vector3 color)
             {
                 if (color.X > 1 || color.Y > 1 || color.Z > 1)
                     color /= 255f;

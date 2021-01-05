@@ -4,6 +4,7 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Numerics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Silk.NET.Maths;
@@ -19,6 +20,6 @@ namespace Aliquip.Sandbox
         ILogger<T> GetLogger<T>();
         T GetService<T>();
         T Instantiate<T>(params object[] extraParams);
-        MovableSceneObject AddPrimitive(Primitive primitive, Vector3D<float> color);
+        MovableSceneObject AddPrimitive(Primitive primitive, Vector3 color);
     }
 }

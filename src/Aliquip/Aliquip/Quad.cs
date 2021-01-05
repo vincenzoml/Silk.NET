@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -16,9 +17,9 @@ namespace Aliquip
         public override IMaterial Material { get; }
         public override IModel Model { get; }
 
-        private static readonly Dictionary<Vector3D<float>, QuadModel> _models = new();
+        private static readonly Dictionary<Vector3, QuadModel> _models = new();
         
-        public Quad(Vector3D<float> color, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
+        public Quad(Vector3 color, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
         {
             Material = Simple3DMaterial.Create(vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
 
@@ -48,7 +49,7 @@ namespace Aliquip
 
             ReadOnlySpan<uint> IModel.Indices => Indices;
 
-            public QuadModel(Vector3D<float> color)
+            public QuadModel(Vector3 color)
             {
                 Vertices = new Vertex[]
                 {

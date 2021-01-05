@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 
@@ -70,7 +71,7 @@ namespace Aliquip
         public unsafe PushConstantRange[] PushConstantRanges
             => new[]
             {
-                new PushConstantRange(ShaderStageFlags.ShaderStageVertexBit, 0, (uint) sizeof(Matrix4X4<float>))
+                new PushConstantRange(ShaderStageFlags.ShaderStageVertexBit, 0, (uint) sizeof(Matrix4x4))
             };
 
         public unsafe DescriptorSetLayoutBinding[] DescriptorSetLayoutBindings

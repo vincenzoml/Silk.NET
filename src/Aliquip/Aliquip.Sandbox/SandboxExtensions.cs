@@ -5,6 +5,7 @@
 
 using System;
 using System.Drawing;
+using System.Numerics;
 using System.Threading.Tasks;
 using Silk.NET.Maths;
 
@@ -26,13 +27,13 @@ namespace Aliquip.Sandbox
 
         public static MovableSceneObject AddPrimitive(this ISandbox sandbox, Primitive primitive, Color color)
         {
-            return sandbox.AddPrimitive(primitive, new Vector3D<float>(color.R / 255f, color.G / 255f, color.B / 255f));
+            return sandbox.AddPrimitive(primitive, new Vector3(color.R / 255f, color.G / 255f, color.B / 255f));
         }
 
         public static MovableSceneObject AddPrimitive
             (this ISandbox sandbox, Primitive primitive, float r, float g, float b)
         {
-            return sandbox.AddPrimitive(primitive, new Vector3D<float>(r, g, b));
+            return sandbox.AddPrimitive(primitive, new Vector3(r, g, b));
         }
     }
 }

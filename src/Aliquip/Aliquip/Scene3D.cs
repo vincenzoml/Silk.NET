@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -23,11 +24,11 @@ namespace Aliquip
         private struct UniformBufferObject
         {
             [FieldOffset(0)]
-            public Matrix4X4<float> Model;
+            public Matrix4x4 Model;
             [FieldOffset(64)]
-            public Matrix4X4<float> View;
+            public Matrix4x4 View;
 
-            public UniformBufferObject(Matrix4X4<float> model, Matrix4X4<float> view)
+            public UniformBufferObject(Matrix4x4 model, Matrix4x4 view)
             {
                 Model = model;
                 View = view;
@@ -190,7 +191,7 @@ namespace Aliquip
                     _vk.CmdPushConstants
                     (
                         commandBuffer, materialInfo.PipelineLayout, ShaderStageFlags.ShaderStageVertexBit, 0,
-                        (uint) sizeof(Matrix4X4<float>), ref cameraProjection
+                        (uint) sizeof(Matrix4x4), ref cameraProjection
                     );
 
                     var descriptorSet = objectInfo.DescriptorSets[index];
@@ -221,8 +222,7 @@ namespace Aliquip
         {
             var ubo = new UniformBufferObject
             (
-                model: sceneObject
-                    .WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                model: sceneObject.WorldToLocal, // Matrix4x4.Identity, // Matrix4x4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
                 view: _cameraProvider.ViewMatrix
             );
 
@@ -260,8 +260,8 @@ namespace Aliquip
                 var info = _objectInfos[sceneObject];
                 var ubo = new UniformBufferObject
                 (
-                    // model: sceneObject.WorldToLocal, // Matrix4X4<float>.Identity, // Matrix4X4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
-                    model: Matrix4X4<float>.Identity, view: _cameraProvider.ViewMatrix
+                    // model: sceneObject.WorldToLocal, // Matrix4x4.Identity, // Matrix4x4.CreateRotationZ((float) ((timeDiff.TotalMilliseconds / 10) * MathF.PI / 180f)),
+                    model: Matrix4x4.Identity, view: _cameraProvider.ViewMatrix
                 );
 
                 for (int i = 0; i < CommandBufferCount; i++)
@@ -361,7 +361,7 @@ namespace Aliquip
                     ranges[i] = new MappedMemoryRange
                     (
                         memory: uniformBufferAllocations[i].DeviceMemory, offset: (ulong)uniformBufferAllocations[i].Offset,
-                        size: (ulong) uniformBufferAllocations[i].Offset
+                        size: (ulong) sizeof(UniformBufferObject)
                     );
                 }
 
@@ -378,7 +378,8 @@ namespace Aliquip
             var objectInfo = _objectInfos[sceneObject];
             for (int i = 0; i < CommandBufferCount; i++)
             {
-                var writeDescriptorSetList = new List<WriteDescriptorSet>();
+                var wds = sceneObject.Material.WriteDescriptorSets.ToArray();
+                var writeDescriptorSetList = new List<WriteDescriptorSet>(wds.Length);
                 
                 var bufferInfo = new DescriptorBufferInfo
                     (objectInfo.Buffers[i], 0, (ulong) sizeof(UniformBufferObject));
@@ -386,7 +387,7 @@ namespace Aliquip
                 writeDescriptorSetList.Add(new WriteDescriptorSet(dstBinding: 0, dstArrayElement: 0, descriptorType: DescriptorType.UniformBuffer,
                     descriptorCount: 1, dstSet: objectInfo.DescriptorSets[i], pBufferInfo: &bufferInfo));
 
-                foreach (var (descriptorSet, a, b, c) in sceneObject.Material.WriteDescriptorSets)
+                foreach (var (descriptorSet, a, b, c) in wds)
                 {
                     var res = descriptorSet;
                     if (a.HasValue)

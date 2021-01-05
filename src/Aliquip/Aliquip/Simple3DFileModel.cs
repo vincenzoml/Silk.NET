@@ -64,7 +64,7 @@ namespace Aliquip
                             (
                                 new Vertex
                                 (
-                                    new Vector3D<float>(pos.X, pos.Y, pos.Z), new Vector3D<float>(1, 1, 1),
+                                    new Vector3(pos.X, pos.Y, pos.Z), new Vector3(1, 1, 1),
                                     new Vector2D<float>(texture.X, 1.0f - texture.Y)
                                 )
                             );

@@ -3,6 +3,7 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -14,15 +15,15 @@ namespace Aliquip
     {
         private const int PositionOffset = 0;
         [FieldOffset(PositionOffset)]
-        public Vector3D<float> Position;
+        public Vector3 Position;
         private const int ColorOffset = sizeof(float) * 3;
         [FieldOffset(ColorOffset)]
-        public Vector3D<float> Color;
+        public Vector3 Color;
         private const int TextureCoordinateOffset = sizeof(float) * 6;
         [FieldOffset(TextureCoordinateOffset)] 
         public Vector2D<float> TextureCoordinate;
 
-        public Vertex(Vector3D<float> position, Vector3D<float> color, Vector2D<float> textureCoordinate)
+        public Vertex(Vector3 position, Vector3 color, Vector2D<float> textureCoordinate)
         {
             Position = position;
             Color = color;

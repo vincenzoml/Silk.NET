@@ -3,6 +3,7 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
+using System.Numerics;
 using Silk.NET.Maths;
 
 namespace Aliquip
@@ -11,6 +12,6 @@ namespace Aliquip
     {
         IMaterial Material { get; }
         IModel Model { get; }
-        Matrix4X4<float> WorldToLocal { get; }
+        Matrix4x4 WorldToLocal { get; }
     }
 }

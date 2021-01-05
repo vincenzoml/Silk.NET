@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -22,10 +23,10 @@ namespace Aliquip
         public override IMaterial Material { get; }
         public override IModel Model { get; }
 
-        private static readonly Dictionary<Vector3D<float>, SpiralSphereModel> _spirals = new();
-        private static readonly Dictionary<Vector3D<float>, StackedSphereModel> _stackeds = new();
+        private static readonly Dictionary<Vector3, SpiralSphereModel> _spirals = new();
+        private static readonly Dictionary<Vector3, StackedSphereModel> _stackeds = new();
         
-        public Sphere(Vector3D<float> color, SphereType type, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
+        public Sphere(Vector3 color, SphereType type, Vk vk, IResourceProvider resourceProvider, ILogicalDeviceProvider logicalDeviceProvider, IAllocationCallbacksProvider allocationCallbacksProvider) : base()
         {
             Material = Simple3DMaterial.Create(vk, resourceProvider, logicalDeviceProvider, allocationCallbacksProvider);
 
@@ -66,7 +67,7 @@ namespace Aliquip
 
             ReadOnlySpan<uint> IModel.Indices => Indices;
 
-            public StackedSphereModel(Vector3D<float> color, int stacks = 8 * QualityFactor, int slices = 16 * QualityFactor, float radius = 1)
+            public StackedSphereModel(Vector3 color, int stacks = 8 * QualityFactor, int slices = 16 * QualityFactor, float radius = 1)
             {
                 var vertices = new List<Vertex>();
                 var indices = new List<uint>();
@@ -111,7 +112,7 @@ namespace Aliquip
 
             ReadOnlySpan<uint> IModel.Indices => Indices;
             
-            public SpiralSphereModel(Vector3D<float> color, int loops = 8 * QualityFactor, int segmentsPerLoop = 16 * QualityFactor, float radius = 1)
+            public SpiralSphereModel(Vector3 color, int loops = 8 * QualityFactor, int segmentsPerLoop = 16 * QualityFactor, float radius = 1)
             {
                 var vertices = new List<Vertex>();
                 var indices = new List<uint>();

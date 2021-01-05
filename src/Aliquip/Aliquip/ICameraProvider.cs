@@ -3,13 +3,14 @@
 // You may modify and distribute Silk.NET under the terms
 // of the MIT license. See the LICENSE file for details.
 
+using System.Numerics;
 using Silk.NET.Maths;
 
 namespace Aliquip
 {
     public interface ICameraProvider
     {
-        Matrix4X4<float> ViewMatrix { get; }
-        Matrix4X4<float> ProjectionMatrix { get; }
+        Matrix4x4 ViewMatrix { get; }
+        Matrix4x4 ProjectionMatrix { get; }
     }
 }

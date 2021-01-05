@@ -63,63 +63,72 @@ namespace Aliquip
                 byte[]? bytes = null;
                 if (_path is not null)
                 {
-                    _logger.LogDebug("Using physical pipeline cache at {path}", _path);
-
-                    if (File.Exists(_path))
+                    try
                     {
-                        bytes = File.ReadAllBytes(_path!);
+                        _logger.LogDebug("Using physical pipeline cache at {path}", _path);
 
-                        // when loading, we want to verify the cache actually fits the currently selected physical device (it's vendor)
-                        // this is done using the header, which looks like this:
-                        // 4 bytes length (ignored)
-                        // 4 bytes header version
-                        // 4 bytes vendor id
-                        // 4 bytes device id
-                        // UUID_SIZE uuid (ignored)
-                        // see https://www.khronos.org/registry/vulkan/specs/1.2/html/vkspec.html (look for vkGetPipelineCacheData)
-
-                        var version = (PipelineCacheHeaderVersion) BinaryPrimitives.ReadInt32LittleEndian
-                            (bytes.AsSpan(4, 4));
-                        if (version == PipelineCacheHeaderVersion.One)
+                        if (File.Exists(_path))
                         {
-                            var vendorId = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(8, 4));
-                            var deviceId = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(12, 4));
+                            bytes = File.ReadAllBytes(_path!);
 
-                            var deviceProperties = _vk.GetPhysicalDeviceProperty(physicalDeviceProvider.Device);
-                            if (deviceProperties.VendorID != vendorId)
+                            // when loading, we want to verify the cache actually fits the currently selected physical device (it's vendor)
+                            // this is done using the header, which looks like this:
+                            // 4 bytes length (ignored)
+                            // 4 bytes header version
+                            // 4 bytes vendor id
+                            // 4 bytes device id
+                            // UUID_SIZE uuid (ignored)
+                            // see https://www.khronos.org/registry/vulkan/specs/1.2/html/vkspec.html (look for vkGetPipelineCacheData)
+
+                            var version = (PipelineCacheHeaderVersion) BinaryPrimitives.ReadInt32LittleEndian
+                                (bytes.AsSpan(4, 4));
+                            if (version == PipelineCacheHeaderVersion.One)
                             {
-                                _logger.LogWarning("Cannot load stored pipeline cache. VendorID mismatch.");
-                                bytes = null;
-                            }
-                            else if (deviceProperties.DeviceID != deviceId)
-                            {
-                                _logger.LogWarning("Cannot load stored pipeline cache. DeviceID mismatch.");
-                                bytes = null;
+                                var vendorId = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(8, 4));
+                                var deviceId = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(12, 4));
+
+                                var deviceProperties = _vk.GetPhysicalDeviceProperty(physicalDeviceProvider.Device);
+                                if (deviceProperties.VendorID != vendorId)
+                                {
+                                    _logger.LogWarning("Cannot load stored pipeline cache. VendorID mismatch.");
+                                    bytes = null;
+                                }
+                                else if (deviceProperties.DeviceID != deviceId)
+                                {
+                                    _logger.LogWarning("Cannot load stored pipeline cache. DeviceID mismatch.");
+                                    bytes = null;
+                                }
+                                else
+                                {
+                                    _logger.LogDebug
+                                    (
+                                        "Stored pipeline cache loaded. {vendorId} {deviceId}", vendorId switch
+                                        {
+                                            0x1002 => "AMD",
+                                            0x1010 => "ImgTec",
+                                            0x10DE => "NVIDIA",
+                                            0x13B5 => "ARM",
+                                            0x5143 => "Qualcomm",
+                                            0x8086 => "INTEL",
+                                            _ => "unknown vendor: " + vendorId
+                                        }, deviceId
+                                    );
+                                }
                             }
                             else
                             {
-                                _logger.LogDebug
-                                (
-                                    "Stored pipeline cache loaded. {vendorId} {deviceId}", vendorId switch
-                                    {
-                                        0x1002 => "AMD",
-                                        0x1010 => "ImgTec",
-                                        0x10DE => "NVIDIA",
-                                        0x13B5 => "ARM",
-                                        0x5143 => "Qualcomm",
-                                        0x8086 => "INTEL",
-                                        _ => "unknown vendor: " + vendorId
-                                    }, deviceId
-                                );
+                                // if the version doesn't match, log a warning, skip verifying rest.
+                                _logger.LogWarning("During Pipeline read: header version unknown");
                             }
-                        }
-                        else
-                        {
-                            // if the version doesn't match, log a warning, skip verifying rest.
-                            _logger.LogWarning("During Pipeline read: header version unknown");
-                        }
 
-                        createInfo.InitialDataSize = (nuint) (bytes?.Length ?? 0);
+                            createInfo.InitialDataSize = (nuint) (bytes?.Length ?? 0);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to load physical pipeline cache.");
+                        if (File.Exists(_path))
+                            File.Delete(_path);
                     }
                 }
                 else
