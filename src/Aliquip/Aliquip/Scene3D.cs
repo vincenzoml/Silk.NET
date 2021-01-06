@@ -213,6 +213,7 @@ namespace Aliquip
 
         public unsafe void OnFrameComplete(uint index)
         {
+            // TODO: THIS IS A HUUUUUGE GC ISSUE
             var arr = GC.AllocateUninitializedArray<MappedMemoryRange>(_objectInfos.Count, true);
             int i = 0;
             foreach (var (sceneObject, info) in _objectInfos)
@@ -375,7 +376,7 @@ namespace Aliquip
         {
             var objectInfo = _objectInfos[sceneObject];
             var wds = sceneObject.Material.WriteDescriptorSets.ToArray();
-            Span<WriteDescriptorSet> writeDescriptorSets = stackalloc WriteDescriptorSet[wds.Length + 1];
+            Span<WriteDescriptorSet> writeDescriptorSets = new WriteDescriptorSet[wds.Length + 1];
             for (int i = 0; i < CommandBufferCount; i++)
             {
 
