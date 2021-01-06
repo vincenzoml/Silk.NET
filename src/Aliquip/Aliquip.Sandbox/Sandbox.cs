@@ -75,6 +75,7 @@ namespace Aliquip.Sandbox
 
             public void Run()
             {
+                Scene3D.Optimise();
                 var lifetime = _host.Services.GetRequiredService<IHostApplicationLifetime>();
                 var window = _host.Services.GetRequiredService<IWindowProvider>().Window;
                 window.VSync = true;

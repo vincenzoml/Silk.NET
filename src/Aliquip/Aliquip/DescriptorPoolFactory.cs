@@ -4,6 +4,7 @@
 // of the MIT license. See the LICENSE file for details.
 
 using System;
+using System.Linq;
 using Silk.NET.Vulkan;
 
 namespace Aliquip
@@ -29,7 +30,7 @@ namespace Aliquip
             fixed (DescriptorPoolSize* pPoolSizes = descriptorPoolSizes)
                 poolInfo = new DescriptorPoolCreateInfo
                 (
-                    poolSizeCount: (uint)descriptorPoolSizes.Length, pPoolSizes: pPoolSizes, maxSets: (uint) _swapchainProvider.SwapchainImages.Length
+                    poolSizeCount: (uint)descriptorPoolSizes.Length, pPoolSizes: pPoolSizes, maxSets: (uint) descriptorPoolSizes.Sum(x => x.DescriptorCount)
                 );
 
             _vk.CreateDescriptorPool(_logicalDeviceProvider.LogicalDevice, &poolInfo, null, out var descriptorPool).ThrowCode();

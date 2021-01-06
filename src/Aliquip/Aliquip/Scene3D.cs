@@ -57,35 +57,40 @@ namespace Aliquip
             public PipelineLayout PipelineLayout { get; }
             public Pipeline GraphicsPipeline { get; }
             public DescriptorSetLayout DescriptorSetLayout { get; }
+            public DescriptorPool? DescriptorPool { get; } // result of optimization
 
             public MaterialInfo
             (
                 PipelineLayout pipelineLayout,
                 Pipeline graphicsPipeline,
-                DescriptorSetLayout descriptorSetLayout
+                DescriptorSetLayout descriptorSetLayout,
+                DescriptorPool? descriptorPool
             )
             {
                 PipelineLayout = pipelineLayout;
                 GraphicsPipeline = graphicsPipeline;
                 DescriptorSetLayout = descriptorSetLayout;
+                DescriptorPool = descriptorPool;
             }
         }
         
         private sealed class SceneObjectInfo
         {
-            public Buffer[] Buffers { get; }
-            public Allocation[] Allocations { get; }
-            public MappedMemoryRange[] Ranges { get; }
+            public Buffer[] UboBuffers { get; }
+            public Allocation[] UboAllocations { get; }
+            public MappedMemoryRange[] UboRanges { get; }
             public DescriptorSet[] DescriptorSets { get; }
             public DescriptorPool DescriptorPool { get; }
+            public bool OwnDescriptorPool { get; }
 
-            public SceneObjectInfo(Buffer[] buffers, Allocation[] allocations, MappedMemoryRange[] ranges, DescriptorSet[] descriptorSets, DescriptorPool descriptorPool)
+            public SceneObjectInfo(Buffer[] uboBuffers, Allocation[] uboAllocations, MappedMemoryRange[] uboRanges, DescriptorSet[] descriptorSets, DescriptorPool descriptorPool, bool ownDescriptorPool)
             {
-                Buffers = buffers;
-                Allocations = allocations;
-                Ranges = ranges;
+                UboBuffers = uboBuffers;
+                UboAllocations = uboAllocations;
+                UboRanges = uboRanges;
                 DescriptorSets = descriptorSets;
                 DescriptorPool = descriptorPool;
+                OwnDescriptorPool = ownDescriptorPool;
             }
         }
         
@@ -226,8 +231,8 @@ namespace Aliquip
                 view: _cameraProvider.ViewMatrix
             );
 
-            var data = info.Allocations[index].MappedData.ToPointer();
-            var range = info.Ranges[index];
+            var data = info.UboAllocations[index].MappedData.ToPointer();
+            var range = info.UboRanges[index];
             *(UniformBufferObject*) (byte*) data = ubo;
             return range;
         }
@@ -266,11 +271,11 @@ namespace Aliquip
 
                 for (int i = 0; i < CommandBufferCount; i++)
                 {
-                    var data = info.Allocations[i].MappedData.ToPointer();
+                    var data = info.UboAllocations[i].MappedData.ToPointer();
                     *(UniformBufferObject*) (byte*) data = ubo;
                 }
 
-                fixed (MappedMemoryRange* ranges = info.Ranges)
+                fixed (MappedMemoryRange* ranges = info.UboRanges)
                     _vk.FlushMappedMemoryRanges
                             (_logicalDeviceProvider.LogicalDevice, (uint) CommandBufferCount, ranges)
                         .ThrowCode();
@@ -280,7 +285,7 @@ namespace Aliquip
                 _infoLock.ExitWriteLock();
             }
         }
-        
+
         private unsafe void OnCommandBufferCountChange()
         {
             _infoLock.EnterWriteLock();
@@ -308,21 +313,14 @@ namespace Aliquip
         private unsafe void DisposeObjectInfo(ISceneObject sceneObject)
         {
             var info = _objectInfos[sceneObject];
-            for (int i = 0; i < info.Allocations.Length; i++)
+            for (int i = 0; i < info.UboAllocations.Length; i++)
             {
-                _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, info.Buffers[i], null);
-                _vma.FreeMemory(info.Allocations[i]);
+                _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, info.UboBuffers[i], null);
+                _vma.FreeMemory(info.UboAllocations[i]);
             }
-
-            fixed (DescriptorSet* p = info.DescriptorSets)
-                _vk.FreeDescriptorSets
-                (
-                    _logicalDeviceProvider.LogicalDevice, info.DescriptorPool,
-                    (uint) info.DescriptorSets.Length,
-                    p
-                ).ThrowCode();
             
-            _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, info.DescriptorPool, null);
+            if (info.OwnDescriptorPool)
+                _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, info.DescriptorPool, null);
         }
 
         private unsafe void BuildObjectInfo(ISceneObject sceneObject)
@@ -370,21 +368,22 @@ namespace Aliquip
 
             var uniformBuffers = CreateUniformBuffers();
             
-            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffers, uniformBuffers.UniformBufferAllocations, uniformBuffers.Ranges, CreateDescriptorSets(), descriptorPool);
+            _objectInfos[sceneObject] = new SceneObjectInfo(uniformBuffers.UniformBuffers, uniformBuffers.UniformBufferAllocations, uniformBuffers.Ranges, CreateDescriptorSets(), descriptorPool, true);
         }
 
         private unsafe void UpdateDescriptorSet(ISceneObject sceneObject)
         {
             var objectInfo = _objectInfos[sceneObject];
+            var wds = sceneObject.Material.WriteDescriptorSets.ToArray();
+            Span<WriteDescriptorSet> writeDescriptorSets = stackalloc WriteDescriptorSet[wds.Length + 1];
             for (int i = 0; i < CommandBufferCount; i++)
             {
-                var wds = sceneObject.Material.WriteDescriptorSets.ToArray();
-                var writeDescriptorSetList = new List<WriteDescriptorSet>(wds.Length);
-                
-                var bufferInfo = new DescriptorBufferInfo
-                    (objectInfo.Buffers[i], 0, (ulong) sizeof(UniformBufferObject));
 
-                writeDescriptorSetList.Add(new WriteDescriptorSet(dstBinding: 0, dstArrayElement: 0, descriptorType: DescriptorType.UniformBuffer,
+                var bufferInfo = new DescriptorBufferInfo
+                    (objectInfo.UboBuffers[i], 0, (ulong) sizeof(UniformBufferObject));
+
+                int j = 0;
+                writeDescriptorSets[j++] = (new WriteDescriptorSet(dstBinding: 0, dstArrayElement: 0, descriptorType: DescriptorType.UniformBuffer,
                     descriptorCount: 1, dstSet: objectInfo.DescriptorSets[i], pBufferInfo: &bufferInfo));
 
                 foreach (var (descriptorSet, a, b, c) in wds)
@@ -410,13 +409,12 @@ namespace Aliquip
 
                     res.DstSet = objectInfo.DescriptorSets[i];
 
-                    writeDescriptorSetList.Add(res);
+                    writeDescriptorSets[j++] = (res);
                 }
                 
-                var arr = writeDescriptorSetList.ToArray();
-                fixed (WriteDescriptorSet* p = arr)
+                fixed(WriteDescriptorSet* p = writeDescriptorSets) 
                     _vk.UpdateDescriptorSets
-                        (_logicalDeviceProvider.LogicalDevice, (uint) arr.Length, p, 0, null);
+                    (_logicalDeviceProvider.LogicalDevice, (uint) writeDescriptorSets.Length, p, 0, null);
             }
         }
 
@@ -483,12 +481,70 @@ namespace Aliquip
                 );
             
             _materialInfos[material] = new MaterialInfo
-                (pipelineLayout, CreateGraphicsPipeline(), descriptorLayout);
+                (pipelineLayout, CreateGraphicsPipeline(), descriptorLayout, null);
             CommandBufferNeedsRebuild = true;
+        }
+
+        public unsafe void Optimise()
+        {
+            var v1 = _materialInfos
+                .Select(x => (x.Key, x.Value.Objects));
+            var v2 = v1
+                .SelectMany(x => x.Key.DescriptorPoolSizes.Select(x2 => (x2.Type, x.Objects)))
+                .SelectMany(x => x.Objects.Select(x2 => (x.Type, x2)));
+            var v3 = v2
+                .GroupBy(x => x.Type);
+            var v4 = v3
+                .Select(x => new DescriptorPoolSize(x.Key, (uint) (x.Count() * CommandBufferCount)))
+                .ToArray();
+
+            var pool = _descriptorPoolFactory.CreateDescriptorPool(v4);
+            
+            foreach (var (material, materialInfo) in _materialInfos)
+            {
+                if (materialInfo is null)
+                    continue;
+                
+                DescriptorSet[] CreateDescriptorSets()
+                    => _descriptorSetFactory.CreateDescriptorSets(pool, CommandBufferCount, materialInfo.DescriptorSetLayout);
+                
+                foreach (var obj in materialInfo.Objects)
+                {
+                    var objInfo = _objectInfos[obj];
+
+                    if (objInfo.OwnDescriptorPool)
+                        _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, objInfo.DescriptorPool, null);
+
+                    _objectInfos[obj] = new SceneObjectInfo
+                    (
+                        objInfo.UboBuffers, objInfo.UboAllocations, objInfo.UboRanges, CreateDescriptorSets(), pool,
+                        false
+                    );
+                    UpdateDescriptorSet(obj);
+                }
+            }
+        }
+
+        private unsafe void DisposeMaterial(MaterialInfo material)
+        {
+            foreach (var obj in material.Objects)
+            {
+                DisposeObjectInfo(obj);
+            }
+
+            if (material.DescriptorPool.HasValue)
+                _vk.DestroyDescriptorPool(_logicalDeviceProvider.LogicalDevice, material.DescriptorPool.Value, null);
+            _vk.DestroyPipeline(_logicalDeviceProvider.LogicalDevice, material.GraphicsPipeline, null);
+            _vk.DestroyPipelineLayout(_logicalDeviceProvider.LogicalDevice, material.PipelineLayout, null);
+            _vk.DestroyDescriptorSetLayout(_logicalDeviceProvider.LogicalDevice, material.DescriptorSetLayout, null);
         }
 
         public unsafe void Dispose()
         {
+            foreach (var (_, info) in _materialInfos)
+                DisposeMaterial(info);
+            _materialInfos.Clear();
+            
             foreach (var modelBuffer in _modelBuffers.Values)
             {
                 _vk.DestroyBuffer(_logicalDeviceProvider.LogicalDevice, modelBuffer.Buffer, null);

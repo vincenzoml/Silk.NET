@@ -17,7 +17,8 @@ namespace Aliquip
         bool CommandBufferNeedsRebuild { get; set; }
         int CommandBufferCount { get; set; }
         void RecordCommandBuffer(CommandBuffer commandBuffer, int index);
-        void AddObject(ISceneObject sceneObject);
         void OnFrameComplete(uint index);
+        void AddObject(ISceneObject sceneObject);
+        void Optimise();
     }
 }
