@@ -23,8 +23,6 @@ Silk.NET works on any .NET Standard 2.0 compliant platform. This includes .NET 5
 </div>
 
 <br />
-<br />
-<br />
 
 <h1 align="center">Features</h1>
 
