@@ -82,6 +82,7 @@ Silk.NET is a [.NET Foundation](https://www.dotnetfoundation.org/projects) proje
 <div>
     <a href="https://www.jetbrains.com/?from=Silk.NET" align="right"><img src="documentation/readme/jetbrains.svg" alt="JetBrains" class="logo-footer" width="72" align="left">
     <a><br/>
-        Special thanks to [JetBrains](https://www.jetbrains.com/?from=Silk.NET) for supporting us with open-source licenses for their IDEs. </a>
+        
+Special thanks to [JetBrains](https://www.jetbrains.com/?from=Silk.NET) for supporting us with open-source licenses for their IDEs. </a>
 </div>
 
