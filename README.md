@@ -73,8 +73,9 @@ Silk.NET uses and encourages [Early Pull Requests](https://medium.com/practical-
 - Come chat with us on [Discord](https://discord.gg/DTHHXRt)!
 
 <h1 align="center">Licensing and governance</h1>
+
 Silk.NET is distributed under the very permissive MIT/X11 license and all dependencies are distributed under MIT-compatible licenses.
-<br />
+
 Silk.NET is a [.NET Foundation](https://www.dotnetfoundation.org/projects) project, and has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. For more information, see the [.NET Foundation Code of Conduct](http://www.dotnetfoundation.org/code-of-conduct).
 
 ---
