@@ -11,11 +11,11 @@
 
 </div>
 
-<div>
-
-Silk.NET is a high-speed, advanced library, providing bindings to popular low-level APIs such as Vulkan and OpenGL. Use Silk.NET to add cross-platform 3D graphics, audio, compute and haptics to your C# application.
+<div> 
 
 Silk.NET is your one-stop-shop for high-speed .NET multimedia, graphics, and compute; providing bindings to popular low-level APIs such as OpenGL, OpenCL, OpenAL, OpenXR, GLFW, SDL, Vulkan, Assimp, and DirectX.
+
+Use Silk.NET to spruce up applications with cross-platform 3D graphics, audio, compute and haptics!
 
 Silk.NET works on any .NET Standard 2.0 compliant platform, including .NET 5.0, Xamarin, .NET Framework 4.6.1+, and .NET Core 2.0+.
 
