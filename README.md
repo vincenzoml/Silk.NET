@@ -40,6 +40,7 @@ In addition to providing high-speed, direct, and transparent bindings, we provid
 Silk.NET caters for anything you could need in swift development of multimedia, graphics, compute applications. Silk.NET is an all-in-one solution, complete with Graphics, Compute, Audio, Input, and Windowing.
 
 <h1 align="center">The team</h1>
+
 We currently have the following maintainers:
 - [Dylan P.](https://github.com/Perksey) from [Ultz](https://github.com/Ultz)
 - [Kai J.](https://github.com/HurricanKai) from the open-source community
