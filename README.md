@@ -2,7 +2,7 @@
     <a href="#"><img align="center" src="documentation/readme/wordmark480.png" height="96"></a>
     <br />
 </h1>
-<div>
+<div align="center">
 
 [![NuGet Version](https://img.shields.io/nuget/v/Silk.NET)](https://nuget.org/packages/Silk.NET)
 [![Preview Feed](https://img.shields.io/badge/nuget-experimental%20feed-yellow)](https://dev.azure.com/UltzOS/Silk.NET/_packaging?_a=feed&feed=Experimental)
@@ -17,7 +17,7 @@ Silk.NET is a high-speed, advanced library, providing bindings to popular low-le
 Silk.NET works on any .NET Standard 2.0 compliant platform. This includes .NET 5.0, Xamarin, .NET Framework 4.6.1+, and .NET Core 2.0+.
 </div>
 <br />
-<div align="center">
+<div>
     <a href="https://dotnetfoundation.org" align="right"><img src="https://dotnetfoundation.org/img/logo_v4.svg" alt=".NET Foundation" class="logo-footer" width="72" align="left">
     <a><br/>
         Proud to be an official project under the benevolent <a href="https://dotnetfoundation.org">.NET Foundation</a> umbrella. </a>
