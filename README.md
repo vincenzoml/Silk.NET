@@ -1,20 +1,27 @@
 <h1 align="center">
     <a href="#"><img align="center" src="documentation/readme/wordmark480.png" height="96"></a>
     <br />
+</h1>
+<div align="center">
 
 [![NuGet Version](https://img.shields.io/nuget/v/Silk.NET)](https://nuget.org/packages/Silk.NET)
 [![Preview Feed](https://img.shields.io/badge/nuget-experimental%20feed-yellow)](https://dev.azure.com/UltzOS/Silk.NET/_packaging?_a=feed&feed=Experimental)
 [![CI Build](https://github.com/Ultz/Silk.NET/workflows/CI%20Build/badge.svg)](https://dev.azure.com/UltzOS/Silk.NET/_build/latest?definitionId=2&branchName=master)
 [![Join our Discord](https://img.shields.io/badge/chat%20on-discord-7289DA)](https://discord.gg/DTHHXRt)
 
-</h1>
+</div>
 
+<div>
 Silk.NET is a high-speed, advanced library, providing bindings to popular low-level APIs such as Vulkan and OpenGL. Use Silk.NET to add cross-platform 3D graphics, audio, compute and haptics to your C# application.
 
 Silk.NET works on any .NET Standard 2.0 compliant platform. This includes .NET 5.0, Xamarin, .NET Framework 4.6.1+, and .NET Core 2.0+.
+</div>
+<div>
+    <img src="https://dotnetfoundation.org/img/logo_v4.svg" alt=".NET Foundation" class="logo-footer" width="74" align="left">
+    <a>
+        Proud to be an official project under the benevolent .NET Foundation umbrella. </a>
+</div>
 
-<a href="https://dotnetfoundation.org/"><img align="left" src="documentation/readme/dnf.svg" height="90"></a>
-<a href="https://www.jetbrains.com/"><img align="right" src="documentation/readme/jetbrains.svg" height="130"></a>
 <br />
 <br />
 <br />
