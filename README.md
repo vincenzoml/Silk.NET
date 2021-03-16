@@ -2,7 +2,7 @@
     <a href="#"><img align="center" src="documentation/readme/wordmark480.png" height="96"></a>
     <br />
 </h1>
-<div align="center">
+<div>
 
 [![NuGet Version](https://img.shields.io/nuget/v/Silk.NET)](https://nuget.org/packages/Silk.NET)
 [![Preview Feed](https://img.shields.io/badge/nuget-experimental%20feed-yellow)](https://dev.azure.com/UltzOS/Silk.NET/_packaging?_a=feed&feed=Experimental)
@@ -79,7 +79,7 @@ Silk.NET is a [.NET Foundation](https://www.dotnetfoundation.org/projects) proje
 
 ---
 
-<div align="center">
+<div>
     <a href="https://www.jetbrains.com/?from=Silk.NET" align="right"><img src="documentation/readme/jetbrains.svg" alt="JetBrains" class="logo-footer" width="72" align="left">
     <a><br/>
         
