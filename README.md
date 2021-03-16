@@ -20,7 +20,7 @@ Silk.NET works on any .NET Standard 2.0 compliant platform. This includes .NET 5
 <div>
     <a href="https://dotnetfoundation.org" align="right"><img src="https://dotnetfoundation.org/img/logo_v4.svg" alt=".NET Foundation" class="logo-footer" width="72" align="left">
     <a><br/>
-        Proud to be an official project under the benevolent .NET Foundation umbrella. </a>
+        Proud to be an official project under the benevolent <a href="https://dotnetfoundation.org">.NET Foundation umbrella.</a> </a>
 </div>
 
 <br />
