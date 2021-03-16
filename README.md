@@ -17,7 +17,7 @@ Silk.NET is a high-speed, advanced library, providing bindings to popular low-le
 Silk.NET works on any .NET Standard 2.0 compliant platform. This includes .NET 5.0, Xamarin, .NET Framework 4.6.1+, and .NET Core 2.0+.
 </div>
 <div>
-    <img src="https://dotnetfoundation.org/img/logo_v4.svg" alt=".NET Foundation" class="logo-footer" width="72" align="left">
+    <a href="https://dotnetfoundation.org" align="right"><img src="https://dotnetfoundation.org/img/logo_v4.svg" alt=".NET Foundation" class="logo-footer" width="72" align="left">
     <a><br/>
         Proud to be an official project under the benevolent .NET Foundation umbrella. </a>
 </div>
