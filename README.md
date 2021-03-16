@@ -76,8 +76,8 @@ Silk.NET is distributed under the very permissive MIT/X11 license and all depend
 Silk.NET is a [.NET Foundation](https://www.dotnetfoundation.org/projects) project, and has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. For more information, see the [.NET Foundation Code of Conduct](http://www.dotnetfoundation.org/code-of-conduct).
 
 <div>
-    <a href="https://www.jetbrains.com/?from=Silk.NET" align="right"><img src="https://dotnetfoundation.org/img/logo_v4.svg" alt="Jetbrains" class="logo-footer" width="72" align="left">
+    <a href="https://www.jetbrains.com/?from=Silk.NET" align="right"><img src="documentation/readme/jetbrains.svg" alt="Jetbrains" class="logo-footer" width="72" align="left">
     <a><br/>
-        Special thanks to Jetbrains for supporting Silk.NET with open-source licenses to their astounding lineup of IDEs. </a>
+        Special thanks to Jetbrains for supporting us with open-source licenses for their IDEs. </a>
 </div>
 
